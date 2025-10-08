@@ -12,29 +12,26 @@
 </head>
 <body>
 <header class="site-header container">
-<div class="brand">
-<div class="logo">💼</div>
-<div class="titles">
-<h1>CRM Local</h1>
-<p class="subtitle">Gérez vos clients en toute simplicité</p>
-</div>
-</div>
-<nav class="actions">
-<button id="themeToggle" class="btn ghost" title="Basculer thème" aria-label="Basculer le thème">🌞</button>
-<a class="btn primary" href="/">Tableau de bord</a>
-</nav>
+  <div class="brand">
+    <div class="logo">💼</div>
+    <div class="titles">
+      <h1>CRM Local</h1>
+      <p class="subtitle">Gérez vos clients en toute simplicité</p>
+    </div>
+  </div>
+  <nav class="actions">
+    <button id="themeToggle" class="btn ghost" title="Basculer thème" aria-label="Basculer le thème">🌞</button>
+    <a class="btn primary" href="/">Tableau de bord</a>
+  </nav>
 </header>
 
-
 <main class="container">
-{% block content %}{% endblock %}
+  {% block content %}{% endblock %}
 </main>
 
-
 <footer class="site-footer container">
-<small>© CRM Local — Stockage SQLite</small>
+  <small>© CRM Local — Stockage SQLite</small>
 </footer>
-
 
 <script>
 // Init theme from saved preference or OS
@@ -45,12 +42,11 @@ const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-schem
 root.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
 btn.textContent = root.getAttribute('data-theme') === 'dark' ? '🌙' : '🌞';
 
-
 btn?.addEventListener('click', () => {
-const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-root.setAttribute('data-theme', next);
-localStorage.setItem('theme', next);
-btn.textContent = next === 'dark' ? '🌙' : '🌞';
+  const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  btn.textContent = next === 'dark' ? '🌙' : '🌞';
 });
 </script>
 </body>
