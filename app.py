@@ -1,7 +1,9 @@
 from typing import Optional
 
+from io import BytesIO
+
 from fastapi import FastAPI, Depends, Request, Form, HTTPException, UploadFile, File
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
@@ -9,6 +11,7 @@ from database import init_db, get_session
 from models import ClientCreate, ClientUpdate
 import crud
 from importers import parse_clients_excel
+from openpyxl import Workbook
 from uuid import uuid4
 #uvicorn app:app --reload
 
@@ -184,3 +187,83 @@ async def import_clients(
             errors.append(f"Ligne {row_number} : {exc}")
 
     return store_report(created, len(rows), errors, file.filename)
+
+
+@app.get("/clients/import/template")
+def download_import_template():
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Clients"
+
+    headers = [
+        "company_name",
+        "name",
+        "email",
+        "phone",
+        "billing_address",
+        "depannage",
+        "astreinte",
+        "tags",
+        "status",
+    ]
+    sheet.append(headers)
+
+    sample_rows = [
+        {
+            "company_name": "Exemple SARL",
+            "name": "Alice Martin",
+            "email": "alice@example.fr",
+            "phone": "0102030405",
+            "billing_address": "10 rue des Fleurs\n75000 Paris",
+            "depannage": "refacturable",
+            "astreinte": "incluse_refacturable",
+            "tags": "premium, 2024",
+            "status": "actif",
+        },
+        {
+            "company_name": "Solutions BTP",
+            "name": "Bruno Carrel",
+            "email": "bruno@solutionsbtp.fr",
+            "phone": "0611223344",
+            "billing_address": "5 avenue du Port\n44000 Nantes",
+            "depannage": "non_refacturable",
+            "astreinte": "incluse_non_refacturable",
+            "tags": "chantier",
+            "status": "actif",
+        },
+        {
+            "company_name": "Collectif Horizon",
+            "name": "Chloé Bernard",
+            "email": "chloe@collectif-horizon.fr",
+            "phone": "0499887766",
+            "billing_address": "42 boulevard National\n13001 Marseille",
+            "depannage": "refacturable",
+            "astreinte": "pas_d_astreinte",
+            "tags": "association",
+            "status": "inactif",
+        },
+    ]
+
+    for row in sample_rows:
+        sheet.append([row.get(column, "") for column in headers])
+
+    for column_cells in sheet.columns:
+        max_length = 0
+        column = column_cells[0].column_letter
+        for cell in column_cells:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        sheet.column_dimensions[column].width = min(max_length + 2, 50)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+
+    headers_dict = {
+        "Content-Disposition": "attachment; filename=modele_import_clients.xlsx"
+    }
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers_dict,
+    )
