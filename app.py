@@ -2,10 +2,8 @@ from typing import Optional, Dict
 
 from io import BytesIO
 
-from io import BytesIO
-
 from fastapi import FastAPI, Depends, Request, Form, HTTPException, UploadFile, File
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
@@ -296,13 +294,17 @@ def _build_client_import_template() -> BytesIO:
     return buffer
 
 
-def _template_response() -> StreamingResponse:
+def _template_response() -> Response:
     buffer = _build_client_import_template()
+    content = buffer.getvalue()
     headers_dict = {
-        "Content-Disposition": "attachment; filename=modele_import_clients.xlsx"
+        "Content-Disposition": (
+            "attachment; filename=modele_import_clients.xlsx; "
+            "filename*=UTF-8''modele_import_clients.xlsx"
+        )
     }
-    return StreamingResponse(
-        buffer,
+    return Response(
+        content=content,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers=headers_dict,
     )
