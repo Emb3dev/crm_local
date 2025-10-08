@@ -7,7 +7,16 @@ def list_clients(session: Session, q: Optional[str] = None, limit: int = 50) -> 
     if q:
         like = f"%{q}%"
         stmt = stmt.where(
-            (Client.name.ilike(like)) | (Client.email.ilike(like)) | (Client.tags.ilike(like))
+            (
+                Client.name.ilike(like)
+                | Client.company_name.ilike(like)
+                | Client.email.ilike(like)
+                | Client.phone.ilike(like)
+                | Client.billing_address.ilike(like)
+                | Client.depannage.ilike(like)
+                | Client.astreinte.ilike(like)
+                | Client.tags.ilike(like)
+            )
         )
     return session.exec(stmt.limit(limit)).all()
 

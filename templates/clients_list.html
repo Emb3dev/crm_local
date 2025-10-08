@@ -2,65 +2,118 @@
 {% block title %}Clients — CRM Local{% endblock %}
 {% block content %}
 <section class="panel">
-<div class="panel-header">
-<h2>Clients</h2>
-<form class="search" hx-get="/_clients" hx-target="#list" hx-trigger="keyup changed delay:300ms">
-<input type="text" name="q" placeholder="Rechercher (nom, email, tag…)" value="{{ q }}" />
-<button class="btn ghost" type="submit">Rechercher</button>
-</form>
-</div>
+  <div class="panel-header">
+    <h2>Clients</h2>
+    <form class="search" hx-get="/_clients" hx-target="#list" hx-trigger="keyup changed delay:300ms">
+      <input type="text" name="q" placeholder="Rechercher (entreprise, client, contact…)" value="{{ q }}" />
+      <button class="btn ghost" type="submit">Rechercher</button>
+    </form>
+  </div>
 
-
-<div class="table-wrap" id="list">
-<table class="table">
-<thead>
-<tr>
-<th>Nom</th>
-<th>Email</th>
-<th>Téléphone</th>
-<th>Tags</th>
-<th>Statut</th>
-<th class="th-actions">Actions</th>
-</tr>
-</thead>
-<tbody>
-{% for c in clients %}
-<tr>
-<td data-label="Nom">{{ c.name }}</td>
-<td data-label="Email">{{ c.email or "—" }}</td>
-<td data-label="Téléphone">{{ c.phone or "—" }}</td>
-<td data-label="Tags">{{ c.tags or "—" }}</td>
-<td data-label="Statut"><span class="badge {{ c.status or 'neutral' }}">{{ c.status or "—" }}</span></td>
-<td class="actions">
-<form action="/clients/{{ c.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ c.name }} ?')">
-<button class="btn danger sm" title="Supprimer">🗑️</button>
-</form>
-</td>
-</tr>
-{% endfor %}
-{% if not clients %}
-<tr><td colspan="6" class="empty">Aucun résultat</td></tr>
-{% endif %}
-</tbody>
-</table>
-</div>
+  <div class="table-wrap" id="list">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Entreprise</th>
+          <th>Client</th>
+          <th>Email</th>
+          <th>Téléphone</th>
+          <th>Adresse de facturation</th>
+          <th>Dépannage</th>
+          <th>Astreinte</th>
+          <th>Tags</th>
+          <th>Statut</th>
+          <th class="th-actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in clients %}
+        <tr>
+          <td data-label="Entreprise">{{ c.company_name }}</td>
+          <td data-label="Client">{{ c.name }}</td>
+          <td data-label="Email">{{ c.email or "—" }}</td>
+          <td data-label="Téléphone">{{ c.phone or "—" }}</td>
+          <td data-label="Adresse de facturation">{{ c.billing_address or "—" }}</td>
+          <td data-label="Dépannage">{{ depannage_options.get(c.depannage, "—") }}</td>
+          <td data-label="Astreinte">{{ astreinte_options.get(c.astreinte, "—") }}</td>
+          <td data-label="Tags">{{ c.tags or "—" }}</td>
+          <td data-label="Statut">
+            {% set status_key = c.status or "" %}
+            <span class="badge {{ 'success' if status_key == 'actif' else 'neutral' if not status_key else 'danger' }}">
+              {{ status_options.get(status_key, status_key or "—") }}
+            </span>
+          </td>
+          <td class="actions">
+            <form action="/clients/{{ c.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ c.name }} ?')">
+              <button class="btn danger sm" title="Supprimer">🗑️</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not clients %}
+        <tr><td colspan="10" class="empty">Aucun résultat</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
 </section>
 
-
 <section class="panel">
-<div class="panel-header">
-<h2>Nouveau client</h2>
-</div>
-<form action="/clients/new" method="post" class="form-grid">
-<label>
-<span>Nom *</span>
-<input name="name" required placeholder="Ex: Dupont SARL"/>
-</label>
-<label>
-<span>Email</span>
-<input name="email" type="email" placeholder="contact@exemple.fr"/>
-</label>
-<label>
-<span>Téléphone</span>
-<input name="phone" placeholder="06 12 34 56 78"/>
+  <div class="panel-header">
+    <h2>Nouveau client</h2>
+  </div>
+  <form action="/clients/new" method="post" class="form-grid">
+    <label>
+      <span>Nom entreprise *</span>
+      <input name="company_name" required placeholder="Ex: Dupont SARL" />
+    </label>
+    <label>
+      <span>Nom client *</span>
+      <input name="name" required placeholder="Ex: Jeanne Martin" />
+    </label>
+    <label>
+      <span>Email</span>
+      <input name="email" type="email" placeholder="contact@exemple.fr" />
+    </label>
+    <label>
+      <span>Téléphone</span>
+      <input name="phone" placeholder="06 12 34 56 78" />
+    </label>
+    <label class="full">
+      <span>Adresse de facturation</span>
+      <textarea name="billing_address" rows="3" placeholder="Rue, code postal, ville…"></textarea>
+    </label>
+    <label>
+      <span>Dépannage</span>
+      <select name="depannage">
+        {% for value, label in depannage_options.items() %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>Astreinte</span>
+      <select name="astreinte">
+        {% for value, label in astreinte_options.items() %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>Tags</span>
+      <input name="tags" placeholder="Ex: premium, 2024" />
+    </label>
+    <label>
+      <span>Statut</span>
+      <select name="status">
+        {% for value, label in status_options.items() %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="form-actions full">
+      <button class="btn primary" type="submit">Ajouter</button>
+    </div>
+  </form>
+</section>
 {% endblock %}
