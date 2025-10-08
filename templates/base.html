@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{% block title %}CRM Local{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css" />
+<script src="https://unpkg.com/htmx.org@2.0.2"></script>
+</head>
+<body>
+<header class="site-header container">
+<div class="brand">
+<div class="logo">💼</div>
+<div class="titles">
+<h1>CRM Local</h1>
+<p class="subtitle">Gérez vos clients en toute simplicité</p>
+</div>
+</div>
+<nav class="actions">
+<button id="themeToggle" class="btn ghost" title="Basculer thème" aria-label="Basculer le thème">🌞</button>
+<a class="btn primary" href="/">Tableau de bord</a>
+</nav>
+</header>
+
+
+<main class="container">
+{% block content %}{% endblock %}
+</main>
+
+
+<footer class="site-footer container">
+<small>© CRM Local — Stockage SQLite</small>
+</footer>
+
+
+<script>
+// Init theme from saved preference or OS
+const root = document.documentElement;
+const btn = document.getElementById('themeToggle');
+const saved = localStorage.getItem('theme');
+const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+root.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+btn.textContent = root.getAttribute('data-theme') === 'dark' ? '🌙' : '🌞';
+
+
+btn?.addEventListener('click', () => {
+const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+root.setAttribute('data-theme', next);
+localStorage.setItem('theme', next);
+btn.textContent = next === 'dark' ? '🌙' : '🌞';
+});
+</script>
+</body>
+</html>
