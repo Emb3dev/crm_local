@@ -1,76 +1,81 @@
-from typing import Optional
+
+from __future__ import annotations
+
 from datetime import datetime
-from sqlalchemy import Column, String
-from sqlmodel import SQLModel, Field
+from typing import List, Optional
+
+from sqlalchemy import Boolean, Column, String, Text
+from sqlmodel import Field, Relationship, SQLModel
 
 
-# =======================
-# TABLE ENTREPRISE
-# =======================
-class EntrepriseBase(SQLModel):
-    nom: str = Field(index=True, description="Nom de l'entreprise")
-    adresse_facturation: Optional[str] = None
-    tag: Optional[str] = None
-    statut: bool = Field(default=True, description="Actif ou non")
+class ContactBase(SQLModel):
+    """Contact rattaché à un client entreprise."""
+
+    name: str = Field(description="Nom du contact")
+    email: Optional[str] = Field(default=None, description="Email du contact")
+    phone: Optional[str] = Field(default=None, description="Téléphone du contact")
 
 
-class Entreprise(EntrepriseBase, table=True):
+class Contact(ContactBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    client_id: Optional[int] = Field(default=None, foreign_key="client.id", index=True)
+    client: Optional["Client"] = Relationship(back_populates="contacts")
 
 
-class EntrepriseCreate(EntrepriseBase):
+class ContactInput(ContactBase):
     pass
 
 
-class EntrepriseUpdate(SQLModel):
-    nom: Optional[str] = None
-    adresse_facturation: Optional[str] = None
-    tag: Optional[str] = None
-    statut: Optional[bool] = None
-
-
-
-
-# =======================
-# TABLE CLIENT (rattachée à une entreprise)
-# =======================
 class ClientBase(SQLModel):
-    company_name: str = Field(index=True, description="Nom de l'entreprise")
-    name: str = Field(index=True, description="Nom du client")
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    company_name: str = Field(
+        sa_column=Column("name", String, index=True, nullable=False),
+        description="Nom de l'entreprise",
+    )
     billing_address: Optional[str] = Field(
         default=None,
-        sa_column=Column("address", String, nullable=True),
+        sa_column=Column("address", Text, nullable=True),
         description="Adresse de facturation",
     )
     depannage: str = Field(
         default="non_refacturable",
-        sa_column=Column("siret", String, nullable=True),
-        description="Type de dépannage",
+        sa_column=Column("depannage", String, nullable=False, default="non_refacturable"),
+        description="Dépannage refacturable ou non",
     )
-    astreinte: str = Field(default="pas_d_astreinte", description="Type d'astreinte")
-    tags: Optional[str] = None
-    status: Optional[str] = Field(default="actif")
+    astreinte: str = Field(
+        default="pas_d_astreinte",
+        sa_column=Column("astreinte", String, nullable=False, default="pas_d_astreinte"),
+        description="Type d'astreinte pour le client",
+    )
+    tag: Optional[str] = Field(
+        default=None,
+        sa_column=Column("tags", String, nullable=True),
+        description="Tag libre",
+    )
+    is_active: bool = Field(
+        default=True,
+        sa_column=Column("is_active", Boolean, nullable=False, server_default="1"),
+        description="Client actif ou non",
+    )
 
 
 class Client(ClientBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    contacts: List[Contact] = Relationship(
+        back_populates="client",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
 
 
 class ClientCreate(ClientBase):
-    pass
+    contacts: List[ContactInput] = Field(default_factory=list)
 
 
 class ClientUpdate(SQLModel):
     company_name: Optional[str] = None
-    name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
     billing_address: Optional[str] = None
     depannage: Optional[str] = None
     astreinte: Optional[str] = None
-    tags: Optional[str] = None
-    status: Optional[str] = None
+    tag: Optional[str] = None
+    is_active: Optional[bool] = None
+    contacts: Optional[List[ContactInput]] = None

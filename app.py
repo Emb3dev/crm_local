@@ -1,125 +1,148 @@
-from fastapi import FastAPI, Depends, Request, Form, HTTPException
+from itertools import zip_longest
+from typing import List
+
+from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
-from database import init_db, get_session
-from models import ClientCreate, ClientUpdate
+
 import crud
-#uvicorn app:app --reload
+from database import get_session, init_db
+from models import ClientCreate, ClientUpdate, ContactInput
 
 app = FastAPI(title="CRM Local")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-DEPANNAGE_OPTIONS = {
-    "refacturable": "Refacturable",
-    "non_refacturable": "Non refacturable",
-}
 
-ASTREINTE_OPTIONS = {
-    "incluse_non_refacturable": "Incluse mais non refacturable",
-    "incluse_refacturable": "Incluse mais refacturable",
-    "pas_d_astreinte": "Pas d'astreinte",
-}
-
-STATUS_OPTIONS = {
-    "actif": "Actif",
-    "inactif": "Inactif",
-}
-
-
-def _clients_context(request: Request, clients, q: str | None):
-    return {
-        "request": request,
-        "clients": clients,
-        "q": q or "",
-        "depannage_options": DEPANNAGE_OPTIONS,
-        "astreinte_options": ASTREINTE_OPTIONS,
-        "status_options": STATUS_OPTIONS,
-    }
 
 @app.on_event("startup")
-def on_startup():
+def on_startup() -> None:
     init_db()
 
-# Page liste
+
+def _as_bool(value: str | None, default: bool = True) -> bool:
+    if value is None:
+        return default
+    return value.lower() in {"1", "true", "on", "oui", "yes"}
+
+
+def _build_contacts(
+    names: List[str], emails: List[str], phones: List[str]
+) -> List[ContactInput]:
+    contacts: List[ContactInput] = []
+    for name, email, phone in zip_longest(names, emails, phones, fillvalue=""):
+        name = (name or "").strip()
+        email = (email or "").strip()
+        phone = (phone or "").strip()
+        if not any((name, email, phone)):
+            continue
+        contact_name = name or email or phone
+        contacts.append(
+            ContactInput(
+                name=contact_name,
+                email=email or None,
+                phone=phone or None,
+            )
+        )
+    return contacts
+
+
 @app.get("/", response_class=HTMLResponse)
-def clients_page(request: Request, q: str | None = None, session: Session = Depends(get_session)):
+def clients_page(
+    request: Request,
+    q: str | None = None,
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
     clients = crud.list_clients(session, q=q)
-    return templates.TemplateResponse("clients_list.html", _clients_context(request, clients, q))
+    return templates.TemplateResponse(
+        "clients_list.html",
+        {"request": request, "clients": clients, "q": q or ""},
+    )
 
-# Fragment liste (HTMX)
+
+
 @app.get("/_clients", response_class=HTMLResponse)
-def clients_fragment(request: Request, q: str | None = None, session: Session = Depends(get_session)):
+def clients_fragment(
+    request: Request,
+    q: str | None = None,
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
     clients = crud.list_clients(session, q=q)
-    return templates.TemplateResponse("clients_list.html", _clients_context(request, clients, q))
+    return templates.TemplateResponse(
+        "clients_list.html",
+        {"request": request, "clients": clients, "q": q or ""},
+    )
 
-# Form création
 @app.post("/clients/new")
 def create_client(
     company_name: str = Form(...),
-    name: str = Form(...),
-    email: str | None = Form(None),
-    phone: str | None = Form(None),
     billing_address: str | None = Form(None),
     depannage: str = Form("non_refacturable"),
     astreinte: str = Form("pas_d_astreinte"),
-    tags: str | None = Form(None),
-    status: str | None = Form("actif"),
-    session: Session = Depends(get_session)
-):
+    tag: str | None = Form(None),
+    is_active: str = Form("true"),
+    contact_name: List[str] = Form([]),
+    contact_email: List[str] = Form([]),
+    contact_phone: List[str] = Form([]),
+    session: Session = Depends(get_session),
+) -> RedirectResponse:
+    contacts = _build_contacts(contact_name, contact_email, contact_phone)
     crud.create_client(
         session,
         ClientCreate(
             company_name=company_name,
-            name=name,
-            email=email,
-            phone=phone,
+
             billing_address=billing_address,
             depannage=depannage,
             astreinte=astreinte,
-            tags=tags,
-            status=status,
+            tag=tag,
+            is_active=_as_bool(is_active),
+            contacts=contacts,
         ),
     )
     return RedirectResponse(url="/", status_code=303)
 
-# Maj
+
 @app.post("/clients/{client_id}/edit")
 def edit_client(
     client_id: int,
     company_name: str = Form(...),
-    name: str = Form(...),
-    email: str | None = Form(None),
-    phone: str | None = Form(None),
     billing_address: str | None = Form(None),
     depannage: str = Form("non_refacturable"),
     astreinte: str = Form("pas_d_astreinte"),
-    tags: str | None = Form(None),
-    status: str | None = Form("actif"),
-    session: Session = Depends(get_session)
-):
+    tag: str | None = Form(None),
+    is_active: str | None = Form(None),
+    contact_name: List[str] = Form([]),
+    contact_email: List[str] = Form([]),
+    contact_phone: List[str] = Form([]),
+    session: Session = Depends(get_session),
+) -> RedirectResponse:
+    contacts = _build_contacts(contact_name, contact_email, contact_phone)
+
     updated = crud.update_client(
         session,
         client_id,
         ClientUpdate(
             company_name=company_name,
-            name=name,
-            email=email,
-            phone=phone,
             billing_address=billing_address,
             depannage=depannage,
             astreinte=astreinte,
-            tags=tags,
-            status=status,
+            tag=tag,
+            is_active=_as_bool(is_active) if is_active is not None else None,
+            contacts=contacts,
         ),
     )
-    if not updated: raise HTTPException(404, "Client introuvable")
+    if not updated:
+        raise HTTPException(404, "Client introuvable")
+
     return RedirectResponse(url="/", status_code=303)
 
+
 @app.post("/clients/{client_id}/delete")
-def remove_client(client_id: int, session: Session = Depends(get_session)):
+def remove_client(client_id: int, session: Session = Depends(get_session)) -> RedirectResponse:
     ok = crud.delete_client(session, client_id)
-    if not ok: raise HTTPException(404, "Client introuvable")
+    if not ok:
+        raise HTTPException(404, "Client introuvable")
     return RedirectResponse(url="/", status_code=303)

@@ -5,7 +5,7 @@
   <div class="panel-header">
     <h2>Clients</h2>
     <form class="search" hx-get="/_clients" hx-target="#list" hx-trigger="keyup changed delay:300ms">
-      <input type="text" name="q" placeholder="Rechercher (entreprise, client, contact…)" value="{{ q }}" />
+      <input type="text" name="q" placeholder="Rechercher (entreprise, contact, email, tag…)" value="{{ q }}" />
       <button class="btn ghost" type="submit">Rechercher</button>
     </form>
   </div>
@@ -15,43 +15,72 @@
       <thead>
         <tr>
           <th>Entreprise</th>
-          <th>Client</th>
-          <th>Email</th>
-          <th>Téléphone</th>
+          <th>Contacts</th>
           <th>Adresse de facturation</th>
           <th>Dépannage</th>
           <th>Astreinte</th>
-          <th>Tags</th>
+          <th>Tag</th>
           <th>Statut</th>
           <th class="th-actions">Actions</th>
         </tr>
       </thead>
       <tbody>
-        {% for c in clients %}
+        {% for client in clients %}
         <tr>
-          <td data-label="Entreprise">{{ c.company_name }}</td>
-          <td data-label="Client">{{ c.name }}</td>
-          <td data-label="Email">{{ c.email or "—" }}</td>
-          <td data-label="Téléphone">{{ c.phone or "—" }}</td>
-          <td data-label="Adresse de facturation">{{ c.billing_address or "—" }}</td>
-          <td data-label="Dépannage">{{ depannage_options.get(c.depannage, "—") }}</td>
-          <td data-label="Astreinte">{{ astreinte_options.get(c.astreinte, "—") }}</td>
-          <td data-label="Tags">{{ c.tags or "—" }}</td>
+          <td data-label="Entreprise">
+            <strong>{{ client.company_name }}</strong>
+          </td>
+          <td data-label="Contacts">
+            {% if client.contacts %}
+            <ul class="contacts-list">
+              {% for contact in client.contacts %}
+              <li>
+                <span class="contact-name">{{ contact.name }}</span>
+                {% if contact.email %}
+                <span class="contact-line">📧 <a href="mailto:{{ contact.email }}">{{ contact.email }}</a></span>
+                {% endif %}
+                {% if contact.phone %}
+                <span class="contact-line">📞 <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a></span>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <span class="muted">—</span>
+            {% endif %}
+          </td>
+          <td data-label="Adresse de facturation">{{ client.billing_address or "—" }}</td>
+          <td data-label="Dépannage">
+            {% if client.depannage == "refacturable" %}
+              Refacturable
+            {% else %}
+              Non refacturable
+            {% endif %}
+          </td>
+          <td data-label="Astreinte">
+            {% if client.astreinte == "incluse_refacturable" %}
+              Incluse (refacturable)
+            {% elif client.astreinte == "incluse_non_refacturable" %}
+              Incluse (non refacturable)
+            {% else %}
+              Pas d'astreinte
+            {% endif %}
+          </td>
+          <td data-label="Tag">{{ client.tag or "—" }}</td>
           <td data-label="Statut">
-            {% set status_key = c.status or "" %}
-            <span class="badge {{ 'success' if status_key == 'actif' else 'neutral' if not status_key else 'danger' }}">
-              {{ status_options.get(status_key, status_key or "—") }}
+            <span class="badge {{ 'actif' if client.is_active else 'inactif' }}">
+              {{ "Actif" if client.is_active else "Inactif" }}
             </span>
           </td>
           <td class="actions">
-            <form action="/clients/{{ c.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ c.name }} ?')">
+            <form action="/clients/{{ client.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ client.company_name }} ?')">
               <button class="btn danger sm" title="Supprimer">🗑️</button>
             </form>
           </td>
         </tr>
         {% endfor %}
         {% if not clients %}
-        <tr><td colspan="10" class="empty">Aucun résultat</td></tr>
+        <tr><td colspan="8" class="empty">Aucun résultat</td></tr>
         {% endif %}
       </tbody>
     </table>
@@ -62,58 +91,141 @@
   <div class="panel-header">
     <h2>Nouveau client</h2>
   </div>
-  <form action="/clients/new" method="post" class="form-grid">
-    <label>
-      <span>Nom entreprise *</span>
+  <form action="/clients/new" method="post" class="form-grid" id="clientForm">
+    <label class="col-span-2">
+      <span>Nom de l'entreprise *</span>
       <input name="company_name" required placeholder="Ex: Dupont SARL" />
     </label>
-    <label>
-      <span>Nom client *</span>
-      <input name="name" required placeholder="Ex: Jeanne Martin" />
-    </label>
-    <label>
-      <span>Email</span>
-      <input name="email" type="email" placeholder="contact@exemple.fr" />
-    </label>
-    <label>
-      <span>Téléphone</span>
-      <input name="phone" placeholder="06 12 34 56 78" />
-    </label>
-    <label class="full">
+
+    <label class="col-span-2">
       <span>Adresse de facturation</span>
-      <textarea name="billing_address" rows="3" placeholder="Rue, code postal, ville…"></textarea>
+      <textarea name="billing_address" rows="3" placeholder="12 rue de Paris&#10;75000 Paris"></textarea>
     </label>
+
     <label>
       <span>Dépannage</span>
       <select name="depannage">
-        {% for value, label in depannage_options.items() %}
-        <option value="{{ value }}">{{ label }}</option>
-        {% endfor %}
+        <option value="non_refacturable">Non refacturable</option>
+        <option value="refacturable">Refacturable</option>
       </select>
     </label>
     <label>
       <span>Astreinte</span>
       <select name="astreinte">
-        {% for value, label in astreinte_options.items() %}
-        <option value="{{ value }}">{{ label }}</option>
-        {% endfor %}
+        <option value="pas_d_astreinte">Pas d'astreinte</option>
+        <option value="incluse_non_refacturable">Incluse (non refacturable)</option>
+        <option value="incluse_refacturable">Incluse (refacturable)</option>
       </select>
     </label>
+
     <label>
-      <span>Tags</span>
-      <input name="tags" placeholder="Ex: premium, 2024" />
+      <span>Tag</span>
+      <input name="tag" placeholder="Ex: Premium" />
     </label>
     <label>
       <span>Statut</span>
-      <select name="status">
-        {% for value, label in status_options.items() %}
-        <option value="{{ value }}">{{ label }}</option>
-        {% endfor %}
+      <select name="is_active">
+        <option value="true" selected>Actif</option>
+        <option value="false">Inactif</option>
       </select>
     </label>
-    <div class="form-actions full">
+
+    <div class="col-span-2">
+      <div class="contacts-header">
+        <h3>Contacts</h3>
+        <button type="button" class="btn ghost sm" data-add-contact>➕ Ajouter un contact</button>
+      </div>
+      <div class="contact-rows" id="contactRows">
+        <div class="contact-row">
+          <label>
+            <span>Nom du contact *</span>
+            <input name="contact_name" placeholder="Ex: Marie Dupont" required data-required="true" />
+          </label>
+          <label>
+            <span>Email</span>
+            <input name="contact_email" type="email" placeholder="marie@exemple.fr" />
+          </label>
+          <label>
+            <span>Téléphone</span>
+            <input name="contact_phone" placeholder="06 12 34 56 78" />
+          </label>
+          <button type="button" class="btn ghost sm contact-remove" aria-label="Supprimer ce contact">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions col-span-2">
       <button class="btn primary" type="submit">Ajouter</button>
     </div>
   </form>
 </section>
+
+<template id="contactTemplate">
+  <div class="contact-row">
+    <label>
+      <span>Nom du contact</span>
+      <input name="contact_name" placeholder="Ex: Jean Martin" />
+    </label>
+    <label>
+      <span>Email</span>
+      <input name="contact_email" type="email" placeholder="jean@exemple.fr" />
+    </label>
+    <label>
+      <span>Téléphone</span>
+      <input name="contact_phone" placeholder="06 11 22 33 44" />
+    </label>
+    <button type="button" class="btn ghost sm contact-remove" aria-label="Supprimer ce contact">✕</button>
+  </div>
+</template>
+
+<script>
+(function () {
+  const container = document.getElementById('contactRows');
+  const addBtn = document.querySelector('[data-add-contact]');
+  const template = document.getElementById('contactTemplate');
+
+  function toggleRemovers() {
+    const rows = container.querySelectorAll('.contact-row');
+    rows.forEach((row, index) => {
+      const remover = row.querySelector('.contact-remove');
+      if (remover) {
+        remover.disabled = rows.length === 1 && index === 0;
+      }
+      const nameInput = row.querySelector('input[name="contact_name"]');
+      if (nameInput) {
+        if (index === 0) {
+          nameInput.required = true;
+          nameInput.dataset.required = 'true';
+        } else {
+          nameInput.required = false;
+          delete nameInput.dataset.required;
+        }
+      }
+    });
+  }
+
+  container.addEventListener('click', (event) => {
+    const button = event.target.closest('.contact-remove');
+    if (!button) return;
+    const rows = container.querySelectorAll('.contact-row');
+    if (rows.length === 1) return;
+    button.closest('.contact-row').remove();
+    toggleRemovers();
+  });
+
+  addBtn?.addEventListener('click', () => {
+    const fragment = template.content.firstElementChild.cloneNode(true);
+    fragment.querySelectorAll('input').forEach((input) => {
+      input.value = '';
+      if (input.dataset.required === 'true') {
+        input.required = false;
+      }
+    });
+    container.appendChild(fragment);
+    toggleRemovers();
+  });
+
+  toggleRemovers();
+})();
+</script>
 {% endblock %}

@@ -1,49 +1,76 @@
 from typing import List, Optional
-from sqlmodel import select, Session
-from models import Client, ClientCreate, ClientUpdate
+
+from sqlalchemy import or_
+from sqlalchemy.orm import selectinload
+from sqlmodel import Session, select
+
+from models import Client, ClientCreate, ClientUpdate, Contact
+
 
 def list_clients(session: Session, q: Optional[str] = None, limit: int = 50) -> List[Client]:
-    stmt = select(Client).order_by(Client.created_at.desc())
+    stmt = select(Client).options(selectinload(Client.contacts)).order_by(Client.created_at.desc())
     if q:
         like = f"%{q}%"
-        stmt = stmt.where(
-            (
-                Client.name.ilike(like)
-                | Client.company_name.ilike(like)
-                | Client.email.ilike(like)
-                | Client.phone.ilike(like)
-                | Client.billing_address.ilike(like)
-                | Client.depannage.ilike(like)
-                | Client.astreinte.ilike(like)
-                | Client.tags.ilike(like)
+        stmt = (
+            stmt.join(Contact, isouter=True)
+            .where(
+                or_(
+                    Client.company_name.ilike(like),
+                    Client.billing_address.ilike(like),
+                    Client.tag.ilike(like),
+                    Contact.name.ilike(like),
+                    Contact.email.ilike(like),
+                    Contact.phone.ilike(like),
+                )
             )
+            .distinct()
         )
     return session.exec(stmt.limit(limit)).all()
 
+
 def get_client(session: Session, client_id: int) -> Optional[Client]:
-    return session.get(Client, client_id)
+    stmt = select(Client).where(Client.id == client_id).options(selectinload(Client.contacts))
+    return session.exec(stmt).one_or_none()
+
 
 def create_client(session: Session, data: ClientCreate) -> Client:
-    c = Client.model_validate(data)
-    session.add(c)
+    payload = data.model_dump(exclude_none=True)
+    contacts_data = payload.pop("contacts", [])
+    client = Client(**payload)
+    client.contacts = [Contact(**c.model_dump(exclude_none=True)) for c in contacts_data]
+    session.add(client)
     session.commit()
-    session.refresh(c)
-    return c
+    session.refresh(client)
+    session.refresh(client, attribute_names=["contacts"])
+    return client
+
 
 def update_client(session: Session, client_id: int, data: ClientUpdate) -> Optional[Client]:
-    c = session.get(Client, client_id)
-    if not c: return None
-    updates = data.model_dump(exclude_unset=True)
-    for k, v in updates.items():
-        setattr(c, k, v)
-    session.add(c)
+    client = session.get(Client, client_id)
+    if not client:
+        return None
+
+    updates = data.model_dump(exclude_unset=True, exclude={"contacts"})
+    for key, value in updates.items():
+        setattr(client, key, value)
+
+    if data.contacts is not None:
+        session.refresh(client, attribute_names=["contacts"])
+        client.contacts.clear()
+        for contact in data.contacts:
+            client.contacts.append(Contact(**contact.model_dump(exclude_none=True)))
+
+    session.add(client)
     session.commit()
-    session.refresh(c)
-    return c
+    session.refresh(client)
+    session.refresh(client, attribute_names=["contacts"])
+    return client
+
 
 def delete_client(session: Session, client_id: int) -> bool:
-    c = session.get(Client, client_id)
-    if not c: return False
-    session.delete(c)
+    client = session.get(Client, client_id)
+    if not client:
+        return False
+    session.delete(client)
     session.commit()
     return True
