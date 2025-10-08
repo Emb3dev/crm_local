@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import FastAPI, Depends, Request, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -31,7 +33,7 @@ STATUS_OPTIONS = {
 }
 
 
-def _clients_context(request: Request, clients, q: str | None):
+def _clients_context(request: Request, clients, q: Optional[str]):
     report_token = request.query_params.get("report")
     report = None
     if report_token:
@@ -57,13 +59,13 @@ def on_startup():
 
 # Page liste
 @app.get("/", response_class=HTMLResponse)
-def clients_page(request: Request, q: str | None = None, session: Session = Depends(get_session)):
+def clients_page(request: Request, q: Optional[str] = None, session: Session = Depends(get_session)):
     clients = crud.list_clients(session, q=q)
     return templates.TemplateResponse("clients_list.html", _clients_context(request, clients, q))
 
 # Fragment liste (HTMX)
 @app.get("/_clients", response_class=HTMLResponse)
-def clients_fragment(request: Request, q: str | None = None, session: Session = Depends(get_session)):
+def clients_fragment(request: Request, q: Optional[str] = None, session: Session = Depends(get_session)):
     clients = crud.list_clients(session, q=q)
     return templates.TemplateResponse("clients_list.html", _clients_context(request, clients, q))
 
@@ -72,13 +74,13 @@ def clients_fragment(request: Request, q: str | None = None, session: Session = 
 def create_client(
     company_name: str = Form(...),
     name: str = Form(...),
-    email: str | None = Form(None),
-    phone: str | None = Form(None),
-    billing_address: str | None = Form(None),
+    email: Optional[str] = Form(None),
+    phone: Optional[str] = Form(None),
+    billing_address: Optional[str] = Form(None),
     depannage: str = Form("non_refacturable"),
     astreinte: str = Form("pas_d_astreinte"),
-    tags: str | None = Form(None),
-    status: str | None = Form("actif"),
+    tags: Optional[str] = Form(None),
+    status: Optional[str] = Form("actif"),
     session: Session = Depends(get_session)
 ):
     crud.create_client(
@@ -103,13 +105,13 @@ def edit_client(
     client_id: int,
     company_name: str = Form(...),
     name: str = Form(...),
-    email: str | None = Form(None),
-    phone: str | None = Form(None),
-    billing_address: str | None = Form(None),
+    email: Optional[str] = Form(None),
+    phone: Optional[str] = Form(None),
+    billing_address: Optional[str] = Form(None),
     depannage: str = Form("non_refacturable"),
     astreinte: str = Form("pas_d_astreinte"),
-    tags: str | None = Form(None),
-    status: str | None = Form("actif"),
+    tags: Optional[str] = Form(None),
+    status: Optional[str] = Form("actif"),
     session: Session = Depends(get_session)
 ):
     updated = crud.update_client(
