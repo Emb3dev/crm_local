@@ -2,6 +2,24 @@
 {% block main_classes %}container container-wide{% endblock %}
 {% block title %}Clients — CRM Local{% endblock %}
 {% block content %}
+{% if import_report %}
+<div class="alert {{ 'success' if not import_report.errors else 'warning' }}">
+  <div class="alert-title">Import terminé</div>
+  <p>
+    {{ import_report.created }} client{{ 's' if import_report.created > 1 else '' }} importé{{ 's' if import_report.created > 1 else '' }}
+    sur {{ import_report.total }} depuis <strong>{{ import_report.filename }}</strong>.
+  </p>
+  {% if import_report.errors %}
+  <p class="alert-subtitle">Certaines lignes n'ont pas pu être importées :</p>
+  <ul class="alert-list">
+    {% for err in import_report.errors %}
+    <li>{{ err }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endif %}
+
 <section class="panel">
   <div class="panel-header">
     <h2>Clients</h2>
@@ -57,6 +75,22 @@
       </tbody>
     </table>
   </div>
+</section>
+
+<section class="panel">
+  <div class="panel-header">
+    <h2>Import Excel</h2>
+  </div>
+  <form action="/clients/import" method="post" enctype="multipart/form-data" class="form-grid import-form">
+    <label class="full">
+      <span>Fichier Excel (.xlsx)</span>
+      <input type="file" name="file" accept=".xlsx,.xlsm,.xltx,.xltm" required />
+    </label>
+    <div class="form-actions full">
+      <button class="btn primary" type="submit">Importer</button>
+      <p class="form-hint">Colonnes minimales : Nom entreprise et Nom client. Colonnes optionnelles prises en charge : Email, Téléphone, Adresse de facturation, Dépannage, Astreinte, Tags, Statut.</p>
+    </div>
+  </form>
 </section>
 
 <section class="panel">
