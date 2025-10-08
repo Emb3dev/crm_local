@@ -16,6 +16,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
+
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
@@ -61,6 +62,7 @@ def clients_page(
     )
 
 
+
 @app.get("/_clients", response_class=HTMLResponse)
 def clients_fragment(
     request: Request,
@@ -72,7 +74,6 @@ def clients_fragment(
         "clients_list.html",
         {"request": request, "clients": clients, "q": q or ""},
     )
-
 
 @app.post("/clients/new")
 def create_client(
@@ -92,6 +93,7 @@ def create_client(
         session,
         ClientCreate(
             company_name=company_name,
+
             billing_address=billing_address,
             depannage=depannage,
             astreinte=astreinte,
@@ -118,6 +120,7 @@ def edit_client(
     session: Session = Depends(get_session),
 ) -> RedirectResponse:
     contacts = _build_contacts(contact_name, contact_email, contact_phone)
+
     updated = crud.update_client(
         session,
         client_id,
@@ -133,6 +136,7 @@ def edit_client(
     )
     if not updated:
         raise HTTPException(404, "Client introuvable")
+
     return RedirectResponse(url="/", status_code=303)
 
 
