@@ -53,6 +53,24 @@ body {
 }
 
 .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem; }
+.container-wide {
+  max-width: none;
+  width: 100%;
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+}
+@media (max-width: 900px) {
+  .container-wide {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+@media (max-width: 600px) {
+  .container-wide {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
 
 /* ---------- HEADER / FOOTER ---------- */
 .site-header, .site-footer {
@@ -131,12 +149,16 @@ body {
   padding: 1rem 1.25rem 1.5rem;
 }
 .form-grid label { display: grid; gap: .35rem; }
-.form-grid .col-span-2 { grid-column: span 2; }
+.form-grid .col-span-2,
+.form-grid .full {
+  grid-column: span 2;
+}
 .form-actions { display: flex; gap: .5rem; align-items: center; }
 
-input, select, button { font: inherit; }
+input, select, textarea, button { font: inherit; }
 
-input, select {
+input, select, textarea {
+  width: 100%;
   padding: .7rem .8rem;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -145,19 +167,30 @@ input, select {
   outline: none;
   transition: border-color .15s, box-shadow .15s, background .15s;
 }
+textarea {
+  min-height: 140px;
+  resize: vertical;
+}
 html[data-theme="dark"] input,
-html[data-theme="dark"] select {
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
   background: #0f172a;
   color: #e5e7eb;
   border-color: #243045;
 }
-input::placeholder { color: var(--muted); }
-input:focus, select:focus {
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+}
+input:focus,
+select:focus,
+textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(59,130,246,0.25);
 }
 html[data-theme="dark"] input:focus,
-html[data-theme="dark"] select:focus {
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] textarea:focus {
   box-shadow: 0 0 0 4px rgba(96,165,250,0.25);
 }
 
