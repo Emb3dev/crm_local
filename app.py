@@ -1,4 +1,6 @@
-from typing import Optional
+from typing import Optional, Dict
+
+from io import BytesIO
 
 from io import BytesIO
 
@@ -189,9 +191,9 @@ async def import_clients(
     return store_report(created, len(rows), errors, file.filename)
 
 
-@app.get("/clients/import/template")
-def download_import_template():
+def _build_client_import_template() -> BytesIO:
     workbook = Workbook()
+
     sheet = workbook.active
     sheet.title = "Clients"
 
@@ -247,6 +249,8 @@ def download_import_template():
     for row in sample_rows:
         sheet.append([row.get(column, "") for column in headers])
 
+    sheet.freeze_panes = "A2"
+
     for column_cells in sheet.columns:
         max_length = 0
         column = column_cells[0].column_letter
@@ -255,10 +259,45 @@ def download_import_template():
                 max_length = max(max_length, len(str(cell.value)))
         sheet.column_dimensions[column].width = min(max_length + 2, 50)
 
+    options_sheet = workbook.create_sheet("Options")
+    options_sheet.append(["Champ", "Valeurs autorisées", "Description"])
+    options_sheet.freeze_panes = "A2"
+
+    def _format_options(options: Dict[str, str]) -> str:
+        return "\n".join(f"{key} — {label}" for key, label in options.items())
+
+    options_sheet.append([
+        "depannage",
+        _format_options(DEPANNAGE_OPTIONS),
+        "Détermine si les interventions sont refacturées.",
+    ])
+    options_sheet.append([
+        "astreinte",
+        _format_options(ASTREINTE_OPTIONS),
+        "Choisissez le type d'astreinte applicable.",
+    ])
+    options_sheet.append([
+        "status",
+        _format_options(STATUS_OPTIONS),
+        "Etat du client dans votre CRM.",
+    ])
+
+    for column_cells in options_sheet.columns:
+        max_length = 0
+        column = column_cells[0].column_letter
+        for cell in column_cells:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        options_sheet.column_dimensions[column].width = min(max_length + 4, 70)
+
     buffer = BytesIO()
     workbook.save(buffer)
     buffer.seek(0)
+    return buffer
 
+
+def _template_response() -> StreamingResponse:
+    buffer = _build_client_import_template()
     headers_dict = {
         "Content-Disposition": "attachment; filename=modele_import_clients.xlsx"
     }
@@ -267,3 +306,9 @@ def download_import_template():
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers=headers_dict,
     )
+
+
+@app.get("/clients/import/template")
+@app.get("/clients/import/template/")
+def download_import_template():
+    return _template_response()
