@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Request, Form, HTTPException
+from fastapi import FastAPI, Depends, Request, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -6,6 +6,8 @@ from sqlmodel import Session
 from database import init_db, get_session
 from models import ClientCreate, ClientUpdate
 import crud
+from importers import parse_clients_excel
+from uuid import uuid4
 #uvicorn app:app --reload
 
 app = FastAPI(title="CRM Local")
@@ -30,6 +32,14 @@ STATUS_OPTIONS = {
 
 
 def _clients_context(request: Request, clients, q: str | None):
+    report_token = request.query_params.get("report")
+    report = None
+    if report_token:
+        reports = getattr(app.state, "import_reports", None)
+        if reports is None:
+            reports = {}
+            app.state.import_reports = reports
+        report = reports.pop(report_token, None)
     return {
         "request": request,
         "clients": clients,
@@ -37,11 +47,13 @@ def _clients_context(request: Request, clients, q: str | None):
         "depannage_options": DEPANNAGE_OPTIONS,
         "astreinte_options": ASTREINTE_OPTIONS,
         "status_options": STATUS_OPTIONS,
+        "import_report": report,
     }
 
 @app.on_event("startup")
 def on_startup():
     init_db()
+    app.state.import_reports = {}
 
 # Page liste
 @app.get("/", response_class=HTMLResponse)
@@ -123,3 +135,50 @@ def remove_client(client_id: int, session: Session = Depends(get_session)):
     ok = crud.delete_client(session, client_id)
     if not ok: raise HTTPException(404, "Client introuvable")
     return RedirectResponse(url="/", status_code=303)
+
+
+@app.post("/clients/import")
+async def import_clients(
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+):
+    def store_report(created: int, total: int, errors: list[str], filename: str) -> RedirectResponse:
+        report_id = uuid4().hex
+        reports = getattr(app.state, "import_reports", None)
+        if reports is None:
+            reports = {}
+            app.state.import_reports = reports
+        reports[report_id] = {
+            "created": created,
+            "errors": errors,
+            "total": total,
+            "filename": filename,
+        }
+        return RedirectResponse(url=f"/?report={report_id}", status_code=303)
+
+    if not file.filename:
+        return store_report(0, 0, ["Aucun fichier sélectionné."], "Import")
+
+    allowed_extensions = (".xlsx", ".xlsm", ".xltx", ".xltm")
+    if not file.filename.lower().endswith(allowed_extensions):
+        return store_report(0, 0, ["Format de fichier non supporté. Merci d'utiliser un fichier Excel (.xlsx)."], file.filename)
+
+    content = await file.read()
+    try:
+        rows = parse_clients_excel(content)
+    except ValueError as exc:
+        return store_report(0, 0, [str(exc)], file.filename)
+
+    created = 0
+    errors: list[str] = []
+    for idx, row in enumerate(rows, start=1):
+        payload = {k: v for k, v in row.items() if not k.startswith("__")}
+        row_number = row.get("__row__", idx)
+        try:
+            crud.create_client(session, ClientCreate(**payload))
+            created += 1
+        except Exception as exc:
+            session.rollback()
+            errors.append(f"Ligne {row_number} : {exc}")
+
+    return store_report(created, len(rows), errors, file.filename)
