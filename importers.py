@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from io import BytesIO
-from typing import Dict, List
+from typing import Dict, List, Optional
 import unicodedata
 
 from openpyxl import load_workbook
@@ -65,7 +65,7 @@ ASTREINTE_CHOICES = {
 }
 
 
-def _normalize_header(header: str | None) -> str:
+def _normalize_header(header: Optional[str]) -> str:
     if header is None:
         return ""
     value = str(header).strip().lower()
