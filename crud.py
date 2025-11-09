@@ -1,7 +1,9 @@
 from typing import List, Optional
+
 from sqlalchemy import delete
 from sqlalchemy.orm import selectinload
-from sqlmodel import select, Session
+from sqlmodel import Session, select
+
 from models import (
     Client,
     ClientCreate,
@@ -119,3 +121,24 @@ def delete_subcontracted_service(
     session.delete(record)
     session.commit()
     return True
+
+
+def list_subcontracted_services(
+    session: Session, q: Optional[str] = None, limit: int = 200
+) -> List[SubcontractedService]:
+    stmt = (
+        select(SubcontractedService)
+        .options(selectinload(SubcontractedService.client))
+        .order_by(SubcontractedService.created_at.desc())
+    )
+    if q:
+        like = f"%{q}%"
+        stmt = stmt.where(
+            (
+                SubcontractedService.prestation_label.ilike(like)
+                | SubcontractedService.category.ilike(like)
+                | SubcontractedService.budget_code.ilike(like)
+                | Client.company_name.ilike(like)
+            )
+        )
+    return session.exec(stmt.limit(limit)).all()

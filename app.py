@@ -212,6 +212,33 @@ def _clients_context(request: Request, clients, q: Optional[str]):
         "focus_id": request.query_params.get("focus"),
     }
 
+def _subcontractings_context(request: Request, services, q: Optional[str]):
+    category_totals: Dict[str, int] = {}
+    frequency_totals: Dict[str, int] = {}
+    total_budget = 0.0
+    client_ids = set()
+
+    for service in services:
+        category_totals[service.category] = category_totals.get(service.category, 0) + 1
+        frequency_totals[service.frequency] = frequency_totals.get(service.frequency, 0) + 1
+        if service.budget is not None:
+            total_budget += float(service.budget)
+        if service.client_id:
+            client_ids.add(service.client_id)
+
+    return {
+        "request": request,
+        "services": services,
+        "q": q or "",
+        "frequency_options": FREQUENCY_OPTIONS,
+        "category_totals": category_totals,
+        "frequency_totals": frequency_totals,
+        "total_budget": total_budget,
+        "total_services": len(services),
+        "distinct_clients": len(client_ids),
+    }
+
+
 @app.on_event("startup")
 def on_startup():
     init_db()
@@ -228,6 +255,18 @@ def clients_page(request: Request, q: Optional[str] = None, session: Session = D
 def clients_fragment(request: Request, q: Optional[str] = None, session: Session = Depends(get_session)):
     clients = crud.list_clients(session, q=q)
     return templates.TemplateResponse("clients_list.html", _clients_context(request, clients, q))
+
+
+@app.get("/prestations", response_class=HTMLResponse)
+def subcontracted_services_page(
+    request: Request,
+    q: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
+    services = crud.list_subcontracted_services(session, q=q)
+    return templates.TemplateResponse(
+        "subcontractings_list.html", _subcontractings_context(request, services, q)
+    )
 
 # Form création
 @app.post("/clients/new")
