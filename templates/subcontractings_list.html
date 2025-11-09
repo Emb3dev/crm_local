@@ -1,121 +1,133 @@
 {% extends "base.html" %}
-{% block main_classes %}app-shell__surface app-shell__surface--wide{% endblock %}
+{% block main_classes %}space-y-12{% endblock %}
 {% block page_eyebrow %}Pilotage opérations{% endblock %}
 {% block page_title %}Prestations sous-traitées & locations{% endblock %}
 {% block page_subtitle %}Visualisez toutes les prestations enregistrées, filtrez par mots-clés et identifiez rapidement les clients et budgets associés.{% endblock %}
 {% block title %}Prestations — CRM Local{% endblock %}
 {% block content %}
-<section class="panel">
-  <div class="panel-header">
-    <div class="panel-title">
-      <h2>Toutes les prestations</h2>
-      <p class="panel-subtitle">Vue consolidée des prestations sous-traitées et locations.</p>
-    </div>
-    <form class="search" role="search" method="get">
-      <input type="text" name="q" placeholder="Rechercher (client, libellé, code budget…)" value="{{ q }}" aria-label="Rechercher une prestation" />
-      <button class="btn ghost" type="submit">Filtrer</button>
-    </form>
-  </div>
-  <div class="panel-body">
-    <div class="summary-cards">
-      <article class="summary-card">
-        <p class="summary-card__label">Prestations actives</p>
-        <p class="summary-card__value">{{ total_services }}</p>
-        <p class="summary-card__hint">{{ distinct_clients }} client{{ 's' if distinct_clients > 1 else '' }} impliqué{{ 's' if distinct_clients > 1 else '' }}</p>
-      </article>
-      <article class="summary-card">
-        <p class="summary-card__label">Budget cumulé</p>
-        {% set budget_formatted = "{:.2f}".format(total_budget).replace(",", " ").replace(".", ",") %}
-        <p class="summary-card__value">{{ budget_formatted }} €</p>
-        <p class="summary-card__hint">Somme des budgets renseignés</p>
-      </article>
-      <article class="summary-card">
-        <p class="summary-card__label">Répartition par fréquence</p>
-        <ul class="summary-card__list">
-          {% for frequency, count in frequency_totals|dictsort %}
-            <li>
-              <strong>{{ frequency_options.get(frequency, frequency) }}</strong>
-              <span>{{ count }} prestation{{ 's' if count > 1 else '' }}</span>
-            </li>
-          {% else %}
-            <li>Aucune fréquence renseignée</li>
-          {% endfor %}
-        </ul>
-      </article>
-      <article class="summary-card">
-        <p class="summary-card__label">Répartition par catégorie</p>
-        <ul class="summary-card__list">
-          {% for category, count in category_totals|dictsort %}
-            <li>
-              <strong>{{ category }}</strong>
-              <span>{{ count }} prestation{{ 's' if count > 1 else '' }}</span>
-            </li>
-          {% else %}
-            <li>Aucune catégorie disponible</li>
-          {% endfor %}
-        </ul>
-      </article>
+<section class="space-y-10">
+  <div class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+      <div class="space-y-2">
+        <h2 class="font-display text-2xl text-white">Toutes les prestations</h2>
+        <p class="text-sm text-slate-300">Vue consolidée des prestations sous-traitées et locations.</p>
+      </div>
+      <form class="flex w-full flex-col gap-3 rounded-2xl border border-white/10 bg-midnight-800/60 p-4 shadow-inner shadow-indigo-500/10 sm:flex-row sm:items-center sm:gap-4 sm:px-5" role="search" method="get">
+        <label class="flex-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+          <span class="sr-only">Rechercher une prestation</span>
+          <input type="text" name="q" placeholder="Rechercher (client, libellé, code budget…)" value="{{ q }}" aria-label="Rechercher une prestation" class="mt-1 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+        </label>
+        <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">Filtrer</button>
+      </form>
     </div>
 
-    <div class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Prestation</th>
-            <th>Client</th>
-            <th>Catégorie</th>
-            <th>Fréquence</th>
-            <th>Code budget</th>
-            <th>Budget</th>
-            <th>Semaines</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% if services %}
-            {% for service in services %}
-              <tr>
-                <td data-label="Prestation">
-                  <strong>{{ service.prestation_label }}</strong>
-                  <div class="table-subtext">Créée le {{ service.created_at.strftime('%d/%m/%Y') }}</div>
-                </td>
-                <td data-label="Client">
-                  {% if service.client %}
-                    <div class="table-strong">{{ service.client.company_name }}</div>
-                    <div class="table-subtext">{{ service.client.name }}</div>
-                  {% else %}
-                    <span>—</span>
-                  {% endif %}
-                </td>
-                <td data-label="Catégorie">{{ service.category }}</td>
-                <td data-label="Fréquence">{{ frequency_options.get(service.frequency, service.frequency) }}</td>
-                <td data-label="Code budget">{{ service.budget_code }}</td>
-                <td data-label="Budget">
-                  {% if service.budget is not none %}
-                    {{ "{:.2f}".format(service.budget).replace(",", " ").replace(".", ",") }} €
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-                <td data-label="Semaines">
-                  {% if service.order_week or service.realization_week %}
-                    <span class="table-subtext">
-                      {% if service.order_week %}Commande&nbsp;: {{ service.order_week }}{% endif %}
-                      {% if service.order_week and service.realization_week %} · {% endif %}
-                      {% if service.realization_week %}Réalisation&nbsp;: {{ service.realization_week }}{% endif %}
-                    </span>
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <article class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-indigo-500/15 backdrop-blur">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">Prestations actives</p>
+        <p class="mt-3 text-3xl font-semibold text-white">{{ total_services }}</p>
+        <p class="mt-3 text-sm text-slate-400">{{ distinct_clients }} client{{ 's' if distinct_clients > 1 else '' }} impliqué{{ 's' if distinct_clients > 1 else '' }}</p>
+      </article>
+      <article class="rounded-3xl border border-emerald-400/30 bg-emerald-500/10 p-6 text-emerald-100 shadow-lg shadow-emerald-500/20 backdrop-blur">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em]">Budget cumulé</p>
+        {% set budget_formatted = "{:.2f}".format(total_budget).replace(",", " ").replace(".", ",") %}
+        <p class="mt-3 text-3xl font-semibold">{{ budget_formatted }} €</p>
+        <p class="mt-3 text-sm">Somme des budgets renseignés</p>
+      </article>
+      <article class="rounded-3xl border border-sky-400/30 bg-sky-500/10 p-6 text-sky-100 shadow-lg shadow-sky-500/20 backdrop-blur">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em]">Répartition par fréquence</p>
+        <ul class="mt-3 space-y-2 text-sm">
+          {% for frequency, count in frequency_totals|dictsort %}
+            <li class="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-slate-200">
+              <strong class="font-semibold text-white/90">{{ frequency_options.get(frequency, frequency) }}</strong>
+              <span>{{ count }} prestation{{ 's' if count > 1 else '' }}</span>
+            </li>
           {% else %}
+            <li class="rounded-2xl border border-dashed border-white/20 bg-white/5 px-3 py-2 text-center text-slate-300">Aucune fréquence renseignée</li>
+          {% endfor %}
+        </ul>
+      </article>
+      <article class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-indigo-500/15 backdrop-blur">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">Répartition par catégorie</p>
+        <ul class="mt-3 space-y-2 text-sm">
+          {% for category, count in category_totals|dictsort %}
+            <li class="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-slate-200">
+              <strong class="font-semibold text-white/90">{{ category }}</strong>
+              <span>{{ count }} prestation{{ 's' if count > 1 else '' }}</span>
+            </li>
+          {% else %}
+            <li class="rounded-2xl border border-dashed border-white/20 bg-white/5 px-3 py-2 text-center text-slate-300">Aucune catégorie disponible</li>
+          {% endfor %}
+        </ul>
+      </article>
+    </div>
+  </div>
+
+  <div class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <h2 class="font-display text-2xl text-white">Détail des prestations</h2>
+      <span class="rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs text-slate-300">{{ total_services }} ligne{{ 's' if total_services > 1 else '' }}</span>
+    </div>
+    <div class="mt-6 overflow-hidden rounded-3xl border border-white/10">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-white/10 text-sm text-slate-200">
+          <thead class="bg-midnight-800/80 text-xs uppercase tracking-[0.3em] text-slate-300">
             <tr>
-              <td class="empty" colspan="7">Aucune prestation enregistrée pour le moment.</td>
+              <th scope="col" class="px-6 py-4 text-left">Prestation</th>
+              <th scope="col" class="px-6 py-4 text-left">Client</th>
+              <th scope="col" class="px-6 py-4 text-left">Catégorie</th>
+              <th scope="col" class="px-6 py-4 text-left">Fréquence</th>
+              <th scope="col" class="px-6 py-4 text-left">Code budget</th>
+              <th scope="col" class="px-6 py-4 text-left">Budget</th>
+              <th scope="col" class="px-6 py-4 text-left">Semaines</th>
             </tr>
-          {% endif %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="divide-y divide-white/10">
+            {% if services %}
+              {% for service in services %}
+                <tr class="bg-midnight-800/60 hover:bg-midnight-700/60">
+                  <td class="px-6 py-5 align-top">
+                    <div class="text-base font-semibold text-white">{{ service.prestation_label }}</div>
+                    <div class="mt-1 text-xs uppercase tracking-[0.3em] text-slate-400">Créée le {{ service.created_at.strftime('%d/%m/%Y') }}</div>
+                  </td>
+                  <td class="px-6 py-5 align-top">
+                    {% if service.client %}
+                      <div class="text-base font-semibold text-white">{{ service.client.company_name }}</div>
+                      <div class="mt-1 text-sm text-slate-300">{{ service.client.name }}</div>
+                    {% else %}
+                      <span class="text-slate-400">—</span>
+                    {% endif %}
+                  </td>
+                  <td class="px-6 py-5 align-top">{{ service.category }}</td>
+                  <td class="px-6 py-5 align-top">
+                    <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ frequency_options.get(service.frequency, service.frequency) }}</span>
+                  </td>
+                  <td class="px-6 py-5 align-top">{{ service.budget_code }}</td>
+                  <td class="px-6 py-5 align-top">
+                    {% if service.budget is not none %}
+                      {{ "{:.2f}".format(service.budget).replace(",", " ").replace(".", ",") }} €
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                  <td class="px-6 py-5 align-top text-xs text-slate-300">
+                    {% if service.order_week or service.realization_week %}
+                      {% if service.order_week %}<span class="font-semibold text-slate-200">Commande&nbsp;:</span> {{ service.order_week }}{% endif %}
+                      {% if service.order_week and service.realization_week %}<span class="mx-2 text-slate-500">•</span>{% endif %}
+                      {% if service.realization_week %}<span class="font-semibold text-slate-200">Réalisation&nbsp;:</span> {{ service.realization_week }}{% endif %}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td class="px-6 py-10 text-center text-sm text-slate-300" colspan="7">Aucune prestation enregistrée pour le moment.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </section>
