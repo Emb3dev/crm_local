@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import List, Optional
 from datetime import datetime
 from sqlalchemy import Column, String
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 
 
 # =======================
@@ -58,6 +58,10 @@ class ClientBase(SQLModel):
 class Client(ClientBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    contacts: List["Contact"] = Relationship(
+        back_populates="client",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
 
 
 class ClientCreate(ClientBase):
@@ -74,3 +78,29 @@ class ClientUpdate(SQLModel):
     astreinte: Optional[str] = None
     tags: Optional[str] = None
     status: Optional[str] = None
+
+
+# =======================
+# TABLE CONTACT (rattachée à un client)
+# =======================
+class ContactBase(SQLModel):
+    name: str = Field(index=True, description="Nom du contact")
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class Contact(ContactBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    client_id: int = Field(foreign_key="client.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    client: Optional[Client] = Relationship(back_populates="contacts")
+
+
+class ContactCreate(ContactBase):
+    pass
+
+
+class ContactUpdate(SQLModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
