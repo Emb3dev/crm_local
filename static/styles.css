@@ -68,10 +68,133 @@ body {
   min-height: 100vh;
   width: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 6vw, 5rem);
   overflow: hidden;
+}
+
+.app-shell__layout {
+  position: relative;
+  z-index: 1;
+  width: min(1280px, 100%);
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  gap: clamp(1.75rem, 5vw, 3rem);
+  align-items: stretch;
+}
+
+.app-shell__layout[data-sidebar-collapsed="true"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app-shell__layout[data-sidebar-collapsed="true"] .sidebar {
+  display: none;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  top: clamp(1.5rem, 4vw, 2.75rem);
+  left: clamp(1.5rem, 4vw, 2.75rem);
+  padding: .55rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  color: var(--text);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  cursor: pointer;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.16);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+  z-index: 2;
+}
+
+.sidebar-toggle span {
+  font-size: 1.05rem;
+}
+
+.sidebar-toggle__label {
+  font-size: .92rem;
+}
+
+.sidebar-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 44px rgba(15, 23, 42, 0.18);
+}
+
+.sidebar-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.sidebar {
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  border-radius: clamp(20px, 3vw, 28px);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  box-shadow: var(--shadow);
+  padding: clamp(1.5rem, 3vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.25rem, 3vw, 1.75rem);
+  color: color-mix(in srgb, var(--muted) 75%, transparent 25%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.sidebar__header {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.sidebar__logo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--text);
+}
+
+.sidebar__caption {
+  margin: 0;
+  font-size: .88rem;
+  color: color-mix(in srgb, var(--muted) 80%, transparent 20%);
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .75rem 1rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--muted) 85%, transparent 15%);
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+
+.sidebar__link span {
+  font-size: 1.1rem;
+}
+
+.sidebar__link:hover,
+.sidebar__link:focus-visible {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--text);
+  outline: none;
+}
+
+.sidebar__link.is-active {
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+  color: color-mix(in srgb, var(--primary) 60%, var(--text) 40%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent);
 }
 
 .app-shell::before,
@@ -125,6 +248,49 @@ body {
 @media (max-width: 720px) {
   .app-shell {
     padding: 1.75rem 1.25rem;
+  }
+
+  .app-shell__layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .app-shell__layout[data-sidebar-collapsed="true"] {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    gap: 1rem;
+  }
+
+  .sidebar__header {
+    gap: .15rem;
+  }
+
+  .sidebar__caption {
+    font-size: .78rem;
+  }
+
+  .sidebar__nav {
+    flex-direction: row;
+    gap: .5rem;
+  }
+
+  .sidebar__link {
+    padding: .6rem .85rem;
+    font-size: .9rem;
+  }
+
+  .sidebar-toggle {
+    position: fixed;
+    top: 1.25rem;
+    left: 1rem;
+    padding: .5rem 1.1rem;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
   }
 
   .app-shell__surface {
