@@ -108,8 +108,7 @@
               <th scope="col" class="px-6 py-4 text-left">Catégorie</th>
               <th scope="col" class="px-6 py-4 text-left">Fréquence</th>
               <th scope="col" class="px-6 py-4 text-left">Statut</th>
-              <th scope="col" class="px-6 py-4 text-left">Code budget</th>
-              <th scope="col" class="px-6 py-4 text-left">Budget</th>
+              <th scope="col" class="px-6 py-4 text-left">Budget &amp; code</th>
               <th scope="col" class="px-6 py-4 text-left">Semaines</th>
               <th scope="col" class="px-6 py-4 text-left">Actions</th>
             </tr>
@@ -145,13 +144,19 @@
                       {{ subcontract_status_options.get(status_value, 'Statut inconnu') }}
                     </span>
                   </td>
-                  <td class="px-6 py-5 align-top">{{ service.budget_code }}</td>
                   <td class="px-6 py-5 align-top">
-                    {% if service.budget is not none %}
-                      {{ "{:.2f}".format(service.budget).replace(",", " ").replace(".", ",") }} €
-                    {% else %}
-                      —
-                    {% endif %}
+                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                      <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-100">
+                        {{ service.budget_code or 'Code inconnu' }}
+                      </span>
+                      <span class="text-base font-semibold text-white">
+                        {% if service.budget is not none %}
+                          {{ "{:.2f}".format(service.budget).replace(",", " ").replace(".", ",") }} €
+                        {% else %}
+                          —
+                        {% endif %}
+                      </span>
+                    </div>
                   </td>
                   <td class="px-6 py-5 align-top text-xs text-slate-300">
                     {% if service.order_week or service.realization_week %}
