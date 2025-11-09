@@ -527,51 +527,5 @@
   </div>
 </section>
 
-<script>
-  (function() {
-    const initForm = (form) => {
-      if (!form || form.dataset.enhanced === 'true') return;
-      const prestationSelect = form.querySelector('[data-prestation-select]');
-      const budgetOutput = form.querySelector('[data-budget-output]');
-      const frequencySelect = form.querySelector('[data-frequency-select]');
-      const weekField = form.querySelector('[data-week-field]');
-      const weekInput = weekField?.querySelector('input');
-
-      const updateBudget = () => {
-        if (!prestationSelect || !budgetOutput) return;
-        const selected = prestationSelect.options[prestationSelect.selectedIndex];
-        budgetOutput.value = selected?.dataset?.budgetCode || '';
-      };
-
-      const toggleWeekField = () => {
-        if (!frequencySelect || !weekField || !weekInput) return;
-        const isPonctual = frequencySelect.value === 'prestation_ponctuelle';
-        weekField.classList.toggle('hidden', !isPonctual);
-        weekInput.disabled = !isPonctual;
-        if (!isPonctual) {
-          weekInput.value = '';
-        }
-      };
-
-      prestationSelect?.addEventListener('change', updateBudget);
-      frequencySelect?.addEventListener('change', toggleWeekField);
-
-      updateBudget();
-      toggleWeekField();
-      form.dataset.enhanced = 'true';
-    };
-
-    const enhanceAll = () => {
-      document.querySelectorAll('.subcontract-form').forEach(initForm);
-    };
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', enhanceAll, { once: true });
-    } else {
-      enhanceAll();
-    }
-
-    document.body?.addEventListener('htmx:afterSwap', enhanceAll);
-  })();
-</script>
+{% include "_subcontract_form_script.html" %}
 {% endblock %}
