@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from sqlalchemy import delete
 from sqlalchemy.orm import selectinload
@@ -14,7 +14,13 @@ from models import (
     SubcontractedServiceCreate,
 )
 
-def list_clients(session: Session, q: Optional[str] = None, limit: int = 50) -> List[Client]:
+def list_clients(
+    session: Session,
+    q: Optional[str] = None,
+    *,
+    filters: Optional[Dict[str, str]] = None,
+    limit: int = 50,
+) -> List[Client]:
     stmt = (
         select(Client)
         .options(
@@ -23,8 +29,10 @@ def list_clients(session: Session, q: Optional[str] = None, limit: int = 50) -> 
         )
         .order_by(Client.created_at.desc())
     )
+    effective_filters = filters or {}
     if q:
         like = f"%{q}%"
+        stmt = stmt.outerjoin(Contact)
         stmt = stmt.where(
             (
                 Client.name.ilike(like)
@@ -35,8 +43,25 @@ def list_clients(session: Session, q: Optional[str] = None, limit: int = 50) -> 
                 | Client.depannage.ilike(like)
                 | Client.astreinte.ilike(like)
                 | Client.tags.ilike(like)
+                | Contact.name.ilike(like)
+                | Contact.email.ilike(like)
+                | Contact.phone.ilike(like)
             )
         )
+        stmt = stmt.distinct()
+
+    status = effective_filters.get("status")
+    if status:
+        stmt = stmt.where(Client.status == status)
+
+    depannage = effective_filters.get("depannage")
+    if depannage:
+        stmt = stmt.where(Client.depannage == depannage)
+
+    astreinte = effective_filters.get("astreinte")
+    if astreinte:
+        stmt = stmt.where(Client.astreinte == astreinte)
+
     return session.exec(stmt.limit(limit)).all()
 
 def get_client(session: Session, client_id: int) -> Optional[Client]:
@@ -124,21 +149,38 @@ def delete_subcontracted_service(
 
 
 def list_subcontracted_services(
-    session: Session, q: Optional[str] = None, limit: int = 200
+    session: Session,
+    q: Optional[str] = None,
+    *,
+    filters: Optional[Dict[str, str]] = None,
+    limit: int = 200,
 ) -> List[SubcontractedService]:
     stmt = (
         select(SubcontractedService)
         .options(selectinload(SubcontractedService.client))
         .order_by(SubcontractedService.created_at.desc())
     )
+    effective_filters = filters or {}
     if q:
         like = f"%{q}%"
+        stmt = stmt.outerjoin(Client)
         stmt = stmt.where(
             (
                 SubcontractedService.prestation_label.ilike(like)
                 | SubcontractedService.category.ilike(like)
                 | SubcontractedService.budget_code.ilike(like)
                 | Client.company_name.ilike(like)
+                | Client.name.ilike(like)
             )
         )
+        stmt = stmt.distinct()
+
+    category = effective_filters.get("category")
+    if category:
+        stmt = stmt.where(SubcontractedService.category == category)
+
+    frequency = effective_filters.get("frequency")
+    if frequency:
+        stmt = stmt.where(SubcontractedService.frequency == frequency)
+
     return session.exec(stmt.limit(limit)).all()
