@@ -1,26 +1,31 @@
 {% extends "base.html" %}
-{% block main_classes %}app-shell__surface app-shell__surface--wide{% endblock %}
+{% block main_classes %}space-y-12{% endblock %}
 {% block page_eyebrow %}Gestion clients{% endblock %}
 {% block page_title %}Portefeuille clients{% endblock %}
 {% block page_subtitle %}Accédez rapidement à vos comptes, filtrez vos données et pilotez l'activité commerciale en quelques clics.{% endblock %}
 {% block title %}Clients — CRM Local{% endblock %}
 {% block content %}
 {% if import_report %}
-<div class="alert {{ 'success' if not import_report.errors else 'warning' }}">
-  <div class="alert-title">Import terminé</div>
-  <p>
-    {{ import_report.created }} client{{ 's' if import_report.created > 1 else '' }} importé{{ 's' if import_report.created > 1 else '' }}
-    sur {{ import_report.total }} depuis <strong>{{ import_report.filename }}</strong>.
-  </p>
-  {% if import_report.errors %}
-  <p class="alert-subtitle">Certaines lignes n'ont pas pu être importées :</p>
-  <ul class="alert-list">
-    {% for err in import_report.errors %}
-    <li>{{ err }}</li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-</div>
+  {% set is_success = not import_report.errors %}
+  {% set alert_classes = 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100' if is_success else 'border-amber-400/40 bg-amber-500/10 text-amber-100' %}
+  <div class="rounded-3xl border {{ alert_classes }} p-6 shadow-xl shadow-indigo-500/20 backdrop-blur">
+    <p class="text-sm font-semibold uppercase tracking-[0.35em]">Import terminé</p>
+    <p class="mt-2 text-base">
+      {{ import_report.created }} client{{ 's' if import_report.created > 1 else '' }} importé{{ 's' if import_report.created > 1 else '' }}
+      sur {{ import_report.total }} depuis <strong>{{ import_report.filename }}</strong>.
+    </p>
+    {% if import_report.errors %}
+      <p class="mt-3 text-sm font-medium text-amber-200/80">Certaines lignes n'ont pas pu être importées :</p>
+      <ul class="mt-2 space-y-1 text-sm">
+        {% for err in import_report.errors %}
+          <li class="flex items-start gap-2">
+            <span aria-hidden="true">⚠️</span>
+            <span>{{ err }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
 {% endif %}
 
 {% set metrics = namespace(contacts=0, services=0, active=0, astreinte=0) %}
@@ -36,53 +41,62 @@
   {% set metrics.services = metrics.services + ((client.subcontractings or []) | length) %}
 {% endfor %}
 
-<section class="dashboard-intro">
-  <div class="dashboard-intro__headline">
-    <span class="dashboard-intro__eyebrow">Synthèse en temps réel</span>
-    <h2>Une vue stratégique de votre portefeuille</h2>
-    <p>
-      Surveillez d'un coup d'œil {{ clients|length }} comptes clés et pilotez {{ metrics.services }} prestation{{ 's' if metrics.services > 1 else '' }}.
-      Les équipes disposent en permanence de la bonne information pour agir vite.
-    </p>
-  </div>
-  <div class="dashboard-intro__metrics">
-    <article class="metric-card">
-      <p class="metric-card__label">Total clients</p>
-      <p class="metric-card__value">{{ clients|length }}</p>
-      <p class="metric-card__hint">Portefeuille complet suivi dans l'outil</p>
-    </article>
-    <article class="metric-card">
-      <p class="metric-card__label">Clients actifs</p>
-      <p class="metric-card__value">{{ metrics.active }}</p>
-      <p class="metric-card__hint">{{ '{:.0f}'.format((metrics.active / clients|length * 100) if clients else 0) }} % du portefeuille</p>
-    </article>
-    <article class="metric-card">
-      <p class="metric-card__label">Sous astreinte</p>
-      <p class="metric-card__value">{{ metrics.astreinte }}</p>
-      <p class="metric-card__hint">{{ astreinte_options.get('incluse_refacturable') }} & {{ astreinte_options.get('incluse_non_refacturable') }}</p>
-    </article>
-    <article class="metric-card">
-      <p class="metric-card__label">Contacts référencés</p>
-      <p class="metric-card__value">{{ metrics.contacts }}</p>
-      <p class="metric-card__hint">Coordonnées centralisées pour chaque client</p>
-    </article>
-  </div>
-</section>
-
-<section class="panel">
-  <div class="panel-header">
-    <div class="panel-title">
-      <h2>Clients</h2>
-      <p class="panel-subtitle">Consultez et filtrez votre portefeuille client.</p>
+<section class="space-y-10">
+  <div class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+    <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+      <div class="space-y-4">
+        <span class="inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-200">Synthèse en temps réel</span>
+        <h2 class="font-display text-2xl font-semibold text-white sm:text-3xl">Une vue stratégique de votre portefeuille</h2>
+        <p class="max-w-2xl text-base text-slate-300">
+          Surveillez d'un coup d'œil {{ clients|length }} comptes clés et pilotez {{ metrics.services }} prestation{{ 's' if metrics.services > 1 else '' }}.
+          Les équipes disposent en permanence de la bonne information pour agir vite.
+        </p>
+      </div>
+      <div class="rounded-3xl border border-white/10 bg-midnight-800/60 p-6 text-sm text-slate-300 shadow shadow-indigo-500/20 lg:max-w-xs">
+        <p class="font-semibold text-white">Pilotage maîtrisé</p>
+        <p class="mt-2">Suivez vos clients, opérations et partenaires au même endroit pour gagner en réactivité.</p>
+      </div>
     </div>
-    <form class="search" role="search" hx-get="/_clients" hx-target="#list" hx-trigger="keyup changed delay:300ms">
-      <input type="text" name="q" placeholder="Rechercher (entreprise, client, contact…)" value="{{ q }}" aria-label="Rechercher un client" />
-      <button class="btn ghost" type="submit">Filtrer</button>
-    </form>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <article class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-indigo-500/15 backdrop-blur">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">Total clients</p>
+        <p class="mt-3 text-3xl font-semibold text-white">{{ clients|length }}</p>
+        <p class="mt-3 text-sm text-slate-400">Portefeuille complet suivi dans l'outil</p>
+      </article>
+      <article class="rounded-3xl border border-emerald-400/30 bg-emerald-500/10 p-6 text-emerald-100 shadow-lg shadow-emerald-500/20 backdrop-blur">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em]">Clients actifs</p>
+        <p class="mt-3 text-3xl font-semibold">{{ metrics.active }}</p>
+        <p class="mt-3 text-sm">{{ '{:.0f}'.format((metrics.active / clients|length * 100) if clients else 0) }} % du portefeuille</p>
+      </article>
+      <article class="rounded-3xl border border-sky-400/30 bg-sky-500/10 p-6 text-sky-100 shadow-lg shadow-sky-500/20 backdrop-blur">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em]">Sous astreinte</p>
+        <p class="mt-3 text-3xl font-semibold">{{ metrics.astreinte }}</p>
+        <p class="mt-3 text-sm">{{ astreinte_options.get('incluse_refacturable') }} & {{ astreinte_options.get('incluse_non_refacturable') }}</p>
+      </article>
+      <article class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-indigo-500/15 backdrop-blur">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">Contacts référencés</p>
+        <p class="mt-3 text-3xl font-semibold text-white">{{ metrics.contacts }}</p>
+        <p class="mt-3 text-sm text-slate-400">Coordonnées centralisées pour chaque client</p>
+      </article>
+    </div>
   </div>
 
-  <div class="panel-body">
-    <div id="list" class="client-list">
+  <section class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+      <div class="space-y-2">
+        <h2 class="font-display text-2xl text-white">Clients</h2>
+        <p class="text-sm text-slate-300">Consultez et filtrez votre portefeuille client.</p>
+      </div>
+      <form class="flex w-full flex-col gap-3 rounded-2xl border border-white/10 bg-midnight-800/60 p-4 shadow-inner shadow-indigo-500/10 sm:flex-row sm:items-center sm:gap-4 sm:px-5" role="search" hx-get="/_clients" hx-target="#list" hx-trigger="keyup changed delay:300ms">
+        <label class="flex-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+          <span class="sr-only">Rechercher un client</span>
+          <input type="text" name="q" placeholder="Rechercher (entreprise, client, contact…)" value="{{ q }}" aria-label="Rechercher un client" class="mt-1 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+        </label>
+        <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">Filtrer</button>
+      </form>
+    </div>
+
+    <div id="list" class="mt-8 space-y-6">
       {% if clients %}
         {% for c in clients %}
           {% set status_key = c.status or "" %}
@@ -90,341 +104,344 @@
           {% set contact_list = c.contacts or [] %}
           {% set contact_total = primary_has_data + (contact_list | length) %}
           {% set is_target = focus_id and focus_id|int == c.id %}
-          <details class="client-card" id="client-{{ c.id }}" {% if is_target %}open{% endif %}>
-            <summary>
-              <div class="client-card__summary">
-                <div class="client-card__identity">
-                  <h3>{{ c.company_name }}</h3>
-                  <p class="client-card__primary">Contact principal :
-                    {% if c.name %}
-                      <strong>{{ c.name }}</strong>
-                    {% else %}
-                      <span class="client-card__empty">à renseigner</span>
-                    {% endif %}
-                  </p>
-                  {% if c.tags %}
-                    <span class="client-card__tags">{{ c.tags }}</span>
+          {% set status_classes = 'border-emerald-400/40 bg-emerald-500/15 text-emerald-100' if status_key == 'actif' else 'border-white/20 bg-white/10 text-slate-200' if not status_key else 'border-rose-400/40 bg-rose-500/20 text-rose-100' %}
+          <details class="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-xl shadow-indigo-500/15 transition-all focus-within:ring-2 focus-within:ring-indigo-400" id="client-{{ c.id }}" {% if is_target %}open{% endif %}>
+            <summary class="flex cursor-pointer flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div class="space-y-2">
+                <h3 class="font-display text-xl text-white">{{ c.company_name }}</h3>
+                <p class="text-sm text-slate-300">Contact principal :
+                  {% if c.name %}
+                    <strong class="text-white">{{ c.name }}</strong>
+                  {% else %}
+                    <span class="text-slate-400">à renseigner</span>
                   {% endif %}
-                </div>
-                <div class="client-card__meta">
-                  <span class="badge {{ 'success' if status_key == 'actif' else 'neutral' if not status_key else 'danger' }}">
-                    {{ status_options.get(status_key, status_key or "—") }}
-                  </span>
-                  <span class="client-card__count">{{ contact_total }} contact{{ 's' if contact_total > 1 else '' }}</span>
-                  <span class="client-card__toggle" aria-hidden="true">▼</span>
-                </div>
+                </p>
+                {% if c.tags %}
+                  <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.3em] text-slate-200">{{ c.tags }}</span>
+                {% endif %}
+              </div>
+              <div class="flex flex-col items-start gap-3 sm:items-end">
+                <span class="inline-flex items-center gap-2 rounded-full border {{ status_classes }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ status_options.get(status_key, status_key or "—") }}</span>
+                <span class="text-sm text-slate-300">{{ contact_total }} contact{{ 's' if contact_total > 1 else '' }}</span>
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm text-slate-200 transition group-open:rotate-180">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
               </div>
             </summary>
-            <div class="client-card__body">
-              <div class="client-card__grid">
-                <section class="client-card__section">
-                  <h4>Informations client</h4>
-                  <dl class="client-card__dl">
+            <div class="space-y-8 border-t border-white/10 bg-midnight-800/40 px-6 py-6">
+              <div class="grid gap-6 lg:grid-cols-2">
+                <section class="space-y-4">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-200">Informations client</h4>
+                  <dl class="grid gap-4 text-sm text-slate-300 sm:grid-cols-2">
                     <div>
-                      <dt>Entreprise</dt>
-                      <dd>{{ c.company_name }}</dd>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Entreprise</dt>
+                      <dd class="mt-1 text-base text-white">{{ c.company_name }}</dd>
                     </div>
                     <div>
-                      <dt>Adresse de facturation</dt>
-                      <dd>{{ c.billing_address or "—" }}</dd>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Adresse de facturation</dt>
+                      <dd class="mt-1 text-base text-white/90">{{ c.billing_address or "—" }}</dd>
                     </div>
                     <div>
-                      <dt>Tags</dt>
-                      <dd>{{ c.tags or "—" }}</dd>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Tags</dt>
+                      <dd class="mt-1 text-base text-white/90">{{ c.tags or "—" }}</dd>
                     </div>
                   </dl>
                 </section>
-                <section class="client-card__section">
-                  <h4>Prestations</h4>
-                  <dl class="client-card__dl">
+                <section class="space-y-4">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-200">Prestations</h4>
+                  <dl class="grid gap-4 text-sm text-slate-300 sm:grid-cols-2">
                     <div>
-                      <dt>Dépannage</dt>
-                      <dd>{{ depannage_options.get(c.depannage, "—") }}</dd>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Dépannage</dt>
+                      <dd class="mt-1 text-base text-white/90">{{ depannage_options.get(c.depannage, "—") }}</dd>
                     </div>
                     <div>
-                      <dt>Astreinte</dt>
-                      <dd>{{ astreinte_options.get(c.astreinte, "—") }}</dd>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Astreinte</dt>
+                      <dd class="mt-1 text-base text-white/90">{{ astreinte_options.get(c.astreinte, "—") }}</dd>
                     </div>
                     <div>
-                      <dt>Statut</dt>
-                      <dd>
-                        <span class="badge {{ 'success' if status_key == 'actif' else 'neutral' if not status_key else 'danger' }}">
-                          {{ status_options.get(status_key, status_key or "—") }}
-                        </span>
-                      </dd>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Statut</dt>
+                      <dd class="mt-1 inline-flex items-center gap-2 rounded-full border {{ status_classes }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ status_options.get(status_key, status_key or "—") }}</dd>
                     </div>
                   </dl>
                 </section>
               </div>
 
-              <section class="client-card__section client-card__section--contacts">
-                <h4>Contacts</h4>
-                <ul class="contact-list">
+              <section class="space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-200">Contacts</h4>
+                  <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">{{ contact_total }} contact{{ 's' if contact_total > 1 else '' }}</span>
+                </div>
+                <ul class="space-y-4">
                   {% if c.name or c.email or c.phone %}
-                    <li class="contact-list__item">
-                      <div class="contact-list__header">
-                        <span class="contact-list__name">{{ c.name or 'Contact principal' }}</span>
-                        <span class="contact-list__badge">Principal</span>
-                      </div>
-                      <div class="contact-list__meta">
-                        {% if c.email %}
-                          <a href="mailto:{{ c.email }}">{{ c.email }}</a>
-                        {% endif %}
-                        {% if c.phone %}
-                          <a href="tel:{{ c.phone }}">{{ c.phone }}</a>
-                        {% endif %}
-                        {% if not c.email and not c.phone %}
-                          <span>Coordonnées à renseigner</span>
-                        {% endif %}
+                    <li class="rounded-2xl border border-white/10 bg-white/5 p-4 shadow shadow-indigo-500/10">
+                      <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p class="text-base font-semibold text-white">{{ c.name or 'Contact principal' }}</p>
+                          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-200">Principal</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3 text-sm text-slate-200">
+                          {% if c.email %}
+                            <a class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 transition hover:border-indigo-300 hover:text-white" href="mailto:{{ c.email }}">{{ c.email }}</a>
+                          {% endif %}
+                          {% if c.phone %}
+                            <a class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 transition hover:border-indigo-300 hover:text-white" href="tel:{{ c.phone }}">{{ c.phone }}</a>
+                          {% endif %}
+                          {% if not c.email and not c.phone %}
+                            <span class="text-slate-400">Coordonnées à renseigner</span>
+                          {% endif %}
+                        </div>
                       </div>
                     </li>
                   {% endif %}
                   {% for contact in contact_list | sort(attribute='name') %}
-                    <li class="contact-list__item">
-                      <div class="contact-list__header">
-                        <span class="contact-list__name">{{ contact.name }}</span>
-                        <form action="/clients/{{ c.id }}/contacts/{{ contact.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ contact.name }} ?')">
-                          <button class="btn danger xs" type="submit" title="Supprimer le contact">🗑️</button>
+                    <li class="rounded-2xl border border-white/10 bg-white/5 p-4 shadow shadow-indigo-500/10">
+                      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p class="text-base font-semibold text-white">{{ contact.name }}</p>
+                          <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-200">
+                            {% if contact.email %}
+                              <a class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 transition hover:border-indigo-300 hover:text-white" href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+                            {% endif %}
+                            {% if contact.phone %}
+                              <a class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 transition hover:border-indigo-300 hover:text-white" href="tel:{{ contact.phone }}">{{ contact.phone }}</a>
+                            {% endif %}
+                            {% if not contact.email and not contact.phone %}
+                              <span class="text-slate-400">Coordonnées à renseigner</span>
+                            {% endif %}
+                          </div>
+                        </div>
+                        <form action="/clients/{{ c.id }}/contacts/{{ contact.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ contact.name }} ?')" class="flex justify-end">
+                          <button class="inline-flex items-center justify-center rounded-full border border-rose-400/40 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-100 transition hover:bg-rose-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" type="submit" title="Supprimer le contact">🗑️</button>
                         </form>
-                      </div>
-                      <div class="contact-list__meta">
-                        {% if contact.email %}
-                          <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
-                        {% endif %}
-                        {% if contact.phone %}
-                          <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a>
-                        {% endif %}
-                        {% if not contact.email and not contact.phone %}
-                          <span>Coordonnées à renseigner</span>
-                        {% endif %}
                       </div>
                     </li>
                   {% endfor %}
                   {% if not (c.name or c.email or c.phone) and not contact_list %}
-                    <li class="contact-list__empty">Aucun contact pour le moment.</li>
+                    <li class="rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-6 text-center text-sm text-slate-400">Aucun contact pour le moment.</li>
                   {% endif %}
                 </ul>
 
-                <form class="contact-form" action="/clients/{{ c.id }}/contacts" method="post">
-                  <div class="contact-form__grid">
-                    <label>
+                <form class="rounded-2xl border border-white/10 bg-midnight-800/60 p-4 shadow-inner shadow-indigo-500/10" action="/clients/{{ c.id }}/contacts" method="post">
+                  <div class="grid gap-4 md:grid-cols-3">
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                       <span>Nom *</span>
-                      <input name="contact_name" required placeholder="Prénom Nom" />
+                      <input name="contact_name" required placeholder="Prénom Nom" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
                     </label>
-                    <label>
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                       <span>Email</span>
-                      <input name="contact_email" type="email" placeholder="contact@exemple.fr" />
+                      <input name="contact_email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
                     </label>
-                    <label>
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                       <span>Téléphone</span>
-                      <input name="contact_phone" placeholder="06 00 00 00 00" />
+                      <input name="contact_phone" placeholder="06 00 00 00 00" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
                     </label>
                   </div>
-                  <div class="form-actions">
-                    <button class="btn ghost sm" type="submit">Ajouter un contact</button>
+                  <div class="mt-4 flex justify-end">
+                    <button class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-5 py-2 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" type="submit">Ajouter un contact</button>
                   </div>
                 </form>
               </section>
 
-              <section class="client-card__section client-card__section--subcontractings">
-                <h4>Prestations sous-traitées & locations</h4>
+              <section class="space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-200">Prestations sous-traitées & locations</h4>
+                  <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">{{ (c.subcontractings or []) | length }} prestation{{ 's' if (c.subcontractings or []) | length > 1 else '' }}</span>
+                </div>
                 {% set services = c.subcontractings | sort(attribute='created_at', reverse=True) %}
                 {% if services %}
-                <ul class="subcontract-list">
-                  {% for service in services %}
-                    {% set frequency_label = frequency_options.get(service.frequency, service.frequency) %}
-                    <li class="subcontract-list__item">
-                      <div class="subcontract-list__header">
-                        <div class="subcontract-list__identity">
-                          <span class="subcontract-list__title">{{ service.prestation_label }}</span>
-                          <span class="subcontract-list__category">{{ service.category }}</span>
+                  <ul class="space-y-4">
+                    {% for service in services %}
+                      {% set frequency_label = frequency_options.get(service.frequency, service.frequency) %}
+                      <li class="rounded-2xl border border-white/10 bg-white/5 p-5 shadow shadow-indigo-500/10">
+                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                          <div>
+                            <p class="text-base font-semibold text-white">{{ service.prestation_label }}</p>
+                            <p class="text-sm text-slate-300">{{ service.category }}</p>
+                          </div>
+                          <div class="flex flex-wrap items-center gap-3">
+                            <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-200">{{ frequency_label }}</span>
+                            <form action="/clients/{{ c.id }}/subcontractings/{{ service.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ service.prestation_label }} ?')">
+                              <button class="inline-flex items-center justify-center rounded-full border border-rose-400/40 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-100 transition hover:bg-rose-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" type="submit" title="Supprimer la prestation">🗑️</button>
+                            </form>
+                          </div>
                         </div>
-                        <div class="subcontract-list__actions">
-                          <span class="badge neutral subcontract-list__badge">{{ frequency_label }}</span>
-                          <form action="/clients/{{ c.id }}/subcontractings/{{ service.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ service.prestation_label }} ?')">
-                            <button class="btn danger xs" type="submit" title="Supprimer la prestation">🗑️</button>
-                          </form>
-                        </div>
-                      </div>
-                      <dl class="subcontract-list__dl">
-                        <div>
-                          <dt>Code budget</dt>
-                          <dd>{{ service.budget_code }}</dd>
-                        </div>
-                        <div>
-                          <dt>Budget</dt>
-                          <dd>
-                            {% if service.budget is not none %}
-                              {{ '{:,.2f}'.format(service.budget).replace(',', ' ').rstrip('0').rstrip('.') }} €
-                            {% else %}
-                              —
-                            {% endif %}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>Semaine de réalisation</dt>
-                          <dd>{{ service.realization_week or '—' }}</dd>
-                        </div>
-                        <div>
-                          <dt>Semaine de commande</dt>
-                          <dd>{{ service.order_week or '—' }}</dd>
-                        </div>
-                      </dl>
-                    </li>
-                  {% endfor %}
-                </ul>
+                        <dl class="mt-4 grid gap-4 text-sm text-slate-300 sm:grid-cols-2">
+                          <div>
+                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Code budget</dt>
+                            <dd class="mt-1 text-base text-white/90">{{ service.budget_code }}</dd>
+                          </div>
+                          <div>
+                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Budget</dt>
+                            <dd class="mt-1 text-base text-white/90">
+                              {% if service.budget is not none %}
+                                {{ '{:,.2f}'.format(service.budget).replace(',', ' ').rstrip('0').rstrip('.') }} €
+                              {% else %}
+                                —
+                              {% endif %}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Semaine de réalisation</dt>
+                            <dd class="mt-1 text-base text-white/90">{{ service.realization_week or '—' }}</dd>
+                          </div>
+                          <div>
+                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Semaine de commande</dt>
+                            <dd class="mt-1 text-base text-white/90">{{ service.order_week or '—' }}</dd>
+                          </div>
+                        </dl>
+                        <p class="mt-4 text-xs uppercase tracking-[0.3em] text-slate-400">Créée le {{ service.created_at.strftime('%d/%m/%Y') }}</p>
+                      </li>
+                    {% endfor %}
+                  </ul>
                 {% else %}
-                  <p class="subcontract-list__empty">Aucune prestation enregistrée pour le moment.</p>
+                  <p class="rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-6 text-center text-sm text-slate-400">Aucune prestation enregistrée pour le moment.</p>
                 {% endif %}
 
-                <form class="subcontract-form" action="/clients/{{ c.id }}/subcontractings" method="post">
-                  <div class="subcontract-form__grid">
-                    <label class="full">
+                <form class="rounded-2xl border border-white/10 bg-midnight-800/60 p-5 shadow-inner shadow-indigo-500/10 subcontract-form" action="/clients/{{ c.id }}/subcontractings" method="post">
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                       <span>Prestation *</span>
-                      <select name="prestation" required data-prestation-select>
+                      <select name="prestation" required data-prestation-select class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
                         <option value="" selected disabled>Choisir une prestation…</option>
                         {% for group in subcontracted_groups %}
-                        <optgroup label="{{ group.title }}">
-                          {% for option in group.options %}
-                          <option value="{{ option.value }}" data-budget-code="{{ option.budget_code }}">{{ option.label }}</option>
-                          {% endfor %}
-                        </optgroup>
+                          <optgroup label="{{ group.title }}">
+                            {% for option in group.options %}
+                              <option value="{{ option.value }}" data-budget-code="{{ option.budget_code }}">{{ option.label }}</option>
+                            {% endfor %}
+                          </optgroup>
                         {% endfor %}
                       </select>
                     </label>
-                    <label>
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                       <span>Code budget</span>
-                      <input type="text" readonly placeholder="Auto" data-budget-output />
+                      <input type="text" readonly placeholder="Auto" data-budget-output class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
                     </label>
-                    <label>
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                       <span>Budget</span>
-                      <input type="number" name="budget" step="0.01" min="0" placeholder="0,00" />
+                      <input type="number" name="budget" step="0.01" min="0" placeholder="0,00" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
                     </label>
-                    <label>
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                       <span>Fréquence</span>
-                      <select name="frequency" required data-frequency-select>
+                      <select name="frequency" required data-frequency-select class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
                         {% for value, label in frequency_options.items() %}
-                        <option value="{{ value }}">{{ label }}</option>
+                          <option value="{{ value }}">{{ label }}</option>
                         {% endfor %}
                       </select>
                     </label>
-                    <label class="subcontract-form__week is-hidden" data-week-field>
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300 subcontract-form__week hidden" data-week-field>
                       <span>Semaine de réalisation</span>
-                      <input type="text" name="realization_week" placeholder="S01" pattern="S\d{2}" disabled />
+                      <input type="text" name="realization_week" placeholder="S01" pattern="S\d{2}" disabled class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 disabled:opacity-60" />
                     </label>
-                    <label>
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                       <span>Semaine de commande</span>
-                      <input type="text" name="order_week" placeholder="S01" pattern="S\d{2}" />
+                      <input type="text" name="order_week" placeholder="S01" pattern="S\d{2}" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
                     </label>
                   </div>
-                  <div class="form-actions">
-                    <button class="btn ghost sm" type="submit">Ajouter une prestation</button>
+                  <div class="mt-5 flex justify-end gap-3">
+                    <button class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-5 py-2 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" type="submit">Ajouter une prestation</button>
                   </div>
                 </form>
               </section>
 
-              <div class="client-card__footer">
+              <div class="flex justify-end">
                 <form action="/clients/{{ c.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ c.company_name }} ?')">
-                  <button class="btn danger sm" type="submit">Supprimer le client</button>
+                  <button class="inline-flex items-center justify-center rounded-full border border-rose-400/40 bg-rose-500/10 px-5 py-2 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" type="submit">Supprimer le client</button>
                 </form>
               </div>
             </div>
           </details>
         {% endfor %}
       {% else %}
-        <p class="client-list__empty">Aucun résultat</p>
+        <p class="rounded-3xl border border-dashed border-white/20 bg-white/5 px-6 py-12 text-center text-sm text-slate-300">Aucun résultat</p>
       {% endif %}
     </div>
-</div>
+  </section>
 </section>
 
-<div class="panels-grid">
-  <section class="panel">
-    <div class="panel-header">
-      <div class="panel-title">
-        <h2>Import Excel</h2>
-        <p class="panel-subtitle">Mettez à jour votre base en important plusieurs clients à la fois.</p>
+<section class="grid gap-8 lg:grid-cols-2">
+  <div class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+    <div class="space-y-2">
+      <h2 class="font-display text-2xl text-white">Import Excel</h2>
+      <p class="text-sm text-slate-300">Mettez à jour votre base en important plusieurs clients à la fois.</p>
+    </div>
+    <form action="/clients/import" method="post" enctype="multipart/form-data" class="mt-6 grid gap-4">
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <span>Fichier Excel (.xlsx)</span>
+        <input type="file" name="file" accept=".xlsx,.xlsm,.xltx,.xltm" required class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white file:mr-4 file:rounded-full file:border-0 file:bg-indigo-500/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white" />
+      </label>
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <button class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-5 py-2 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" type="submit">Importer</button>
+        <a class="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm font-semibold text-slate-200 transition hover:border-indigo-300 hover:bg-indigo-400/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" href="/clients/import/template">Télécharger le modèle Excel</a>
       </div>
-    </div>
-    <div class="panel-body">
-      <form action="/clients/import" method="post" enctype="multipart/form-data" class="form-grid import-form">
-        <label class="full">
-          <span>Fichier Excel (.xlsx)</span>
-          <input type="file" name="file" accept=".xlsx,.xlsm,.xltx,.xltm" required />
-        </label>
-        <div class="form-actions full">
-          <button class="btn primary" type="submit">Importer</button>
-          <a class="btn ghost" href="/clients/import/template">Télécharger le modèle Excel</a>
-          <p class="form-hint">Colonnes minimales : Nom entreprise et Nom client. Colonnes optionnelles prises en charge : Email, Téléphone, Adresse de facturation, Dépannage, Astreinte, Tags, Statut, ainsi que des colonnes <code>contact_2_*</code>, <code>contact_3_*</code>… pour importer des contacts supplémentaires.</p>
-        </div>
-      </form>
-    </div>
-  </section>
+      <p class="mt-4 rounded-2xl border border-white/10 bg-midnight-800/60 p-4 text-xs text-slate-300">
+        Colonnes minimales : Nom entreprise et Nom client. Colonnes optionnelles prises en charge : Email, Téléphone, Adresse de facturation, Dépannage, Astreinte, Tags, Statut, ainsi que des colonnes <code class="font-mono text-indigo-200">contact_2_*</code>, <code class="font-mono text-indigo-200">contact_3_*</code>… pour importer des contacts supplémentaires.
+      </p>
+    </form>
+  </div>
 
-  <section class="panel">
-    <div class="panel-header">
-      <div class="panel-title">
-        <h2>Nouveau client</h2>
-        <p class="panel-subtitle">Ajoutez un dossier client en quelques informations clés.</p>
+  <div class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+    <div class="space-y-2">
+      <h2 class="font-display text-2xl text-white">Nouveau client</h2>
+      <p class="text-sm text-slate-300">Ajoutez un dossier client en quelques informations clés.</p>
+    </div>
+    <form action="/clients/new" method="post" class="mt-6 grid gap-4 md:grid-cols-2">
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <span>Nom entreprise *</span>
+        <input name="company_name" required placeholder="Ex: Dupont SARL" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+      </label>
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <span>Contact principal *</span>
+        <input name="name" required placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+      </label>
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <span>Email du contact</span>
+        <input name="email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+      </label>
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <span>Téléphone du contact</span>
+        <input name="phone" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+      </label>
+      <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <span>Adresse de facturation</span>
+        <textarea name="billing_address" rows="3" placeholder="Rue, code postal, ville…" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"></textarea>
+      </label>
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <span>Dépannage</span>
+        <select name="depannage" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
+          {% for value, label in depannage_options.items() %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <span>Astreinte</span>
+        <select name="astreinte" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
+          {% for value, label in astreinte_options.items() %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <span>Tags</span>
+        <input name="tags" placeholder="Ex: premium, 2024" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+      </label>
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <span>Statut</span>
+        <select name="status" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
+          {% for value, label in status_options.items() %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="md:col-span-2 mt-2 flex justify-end">
+        <button class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" type="submit">Ajouter</button>
       </div>
-    </div>
-    <div class="panel-body">
-      <form action="/clients/new" method="post" class="form-grid">
-        <label>
-          <span>Nom entreprise *</span>
-          <input name="company_name" required placeholder="Ex: Dupont SARL" />
-        </label>
-        <label>
-          <span>Contact principal *</span>
-          <input name="name" required placeholder="Ex: Jeanne Martin" />
-        </label>
-        <label>
-          <span>Email du contact</span>
-          <input name="email" type="email" placeholder="contact@exemple.fr" />
-        </label>
-        <label>
-          <span>Téléphone du contact</span>
-          <input name="phone" placeholder="06 12 34 56 78" />
-        </label>
-        <label class="full">
-          <span>Adresse de facturation</span>
-          <textarea name="billing_address" rows="3" placeholder="Rue, code postal, ville…"></textarea>
-        </label>
-        <label>
-          <span>Dépannage</span>
-          <select name="depannage">
-            {% for value, label in depannage_options.items() %}
-            <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <label>
-          <span>Astreinte</span>
-          <select name="astreinte">
-            {% for value, label in astreinte_options.items() %}
-            <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <label>
-          <span>Tags</span>
-          <input name="tags" placeholder="Ex: premium, 2024" />
-        </label>
-        <label>
-          <span>Statut</span>
-          <select name="status">
-            {% for value, label in status_options.items() %}
-            <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <div class="form-actions full">
-          <button class="btn primary" type="submit">Ajouter</button>
-        </div>
-      </form>
-    </div>
-  </section>
-</div>
+    </form>
+  </div>
+</section>
+
 <script>
   (function() {
     const initForm = (form) => {
@@ -444,7 +461,7 @@
       const toggleWeekField = () => {
         if (!frequencySelect || !weekField || !weekInput) return;
         const isPonctual = frequencySelect.value === 'prestation_ponctuelle';
-        weekField.classList.toggle('is-hidden', !isPonctual);
+        weekField.classList.toggle('hidden', !isPonctual);
         weekInput.disabled = !isPonctual;
         if (!isPonctual) {
           weekInput.value = '';
