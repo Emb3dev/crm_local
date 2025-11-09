@@ -12,12 +12,33 @@
         <h2 class="font-display text-2xl text-white">Toutes les prestations</h2>
         <p class="text-sm text-slate-300">Vue consolidée des prestations sous-traitées et locations.</p>
       </div>
-      <form class="flex w-full flex-col gap-3 rounded-2xl border border-white/10 bg-midnight-800/60 p-4 shadow-inner shadow-indigo-500/10 sm:flex-row sm:items-center sm:gap-4 sm:px-5" role="search" method="get">
-        <label class="flex-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
-          <span class="sr-only">Rechercher une prestation</span>
-          <input type="text" name="q" placeholder="Rechercher (client, libellé, code budget…)" value="{{ q }}" aria-label="Rechercher une prestation" class="mt-1 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
-        </label>
-        <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">Filtrer</button>
+      <form class="flex w-full flex-col gap-4 rounded-2xl border border-white/10 bg-midnight-800/60 p-5 shadow-inner shadow-indigo-500/10" role="search" method="get">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <label class="flex-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+            <span class="sr-only">Rechercher une prestation</span>
+            <input type="text" name="q" placeholder="Rechercher (client, libellé, code budget…)" value="{{ q }}" aria-label="Rechercher une prestation" class="mt-1 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+          </label>
+          <div class="flex items-center gap-3 sm:w-auto">
+            <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">Filtrer</button>
+            <a href="/prestations" class="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40">Réinitialiser</a>
+          </div>
+        </div>
+        {% set active = active_filters or {} %}
+        {% if filters_definition %}
+          <div class="grid gap-3 sm:grid-cols-2">
+            {% for field in filters_definition %}
+              <label class="space-y-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                <span>{{ field.label }}</span>
+                <select name="{{ field.name }}" class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
+                  <option value="">{{ field.placeholder }}</option>
+                  {% for value, label in field.options %}
+                    <option value="{{ value }}" {% if active.get(field.name) == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+            {% endfor %}
+          </div>
+        {% endif %}
       </form>
     </div>
 

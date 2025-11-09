@@ -35,6 +35,32 @@ STATUS_OPTIONS = {
     "inactif": "Inactif",
 }
 
+CLIENT_FILTER_DEFINITIONS = [
+    {
+        "name": "status",
+        "label": "Statut",
+        "placeholder": "Tous les statuts",
+        "options": list(STATUS_OPTIONS.items()),
+    },
+    {
+        "name": "depannage",
+        "label": "Dépannage",
+        "placeholder": "Tous les dépannages",
+        "options": list(DEPANNAGE_OPTIONS.items()),
+    },
+    {
+        "name": "astreinte",
+        "label": "Astreinte",
+        "placeholder": "Toutes les astreintes",
+        "options": [
+            (key, label)
+            for key, label in ASTREINTE_OPTIONS.items()
+            if key != "pas_d_astreinte"
+        ]
+        + [("pas_d_astreinte", ASTREINTE_OPTIONS["pas_d_astreinte"])],
+    },
+]
+
 SUBCONTRACTED_GROUPS = [
     {
         "key": "sous_traitance",
@@ -177,6 +203,21 @@ FREQUENCY_OPTIONS = {
     "prestation_ponctuelle": "Prestation ponctuelle",
 }
 
+SUBCONTRACTING_FILTER_DEFINITIONS = [
+    {
+        "name": "category",
+        "label": "Catégorie",
+        "placeholder": "Toutes les catégories",
+        "options": [(group["title"], group["title"]) for group in SUBCONTRACTED_GROUPS],
+    },
+    {
+        "name": "frequency",
+        "label": "Fréquence",
+        "placeholder": "Toutes les fréquences",
+        "options": list(FREQUENCY_OPTIONS.items()),
+    },
+]
+
 
 def _parse_budget(value: Optional[str]) -> Optional[float]:
     if value is None:
@@ -190,7 +231,7 @@ def _parse_budget(value: Optional[str]) -> Optional[float]:
         raise HTTPException(400, "Budget invalide") from exc
 
 
-def _clients_context(request: Request, clients, q: Optional[str]):
+def _clients_context(request: Request, clients, q: Optional[str], filters: Dict[str, str]):
     report_token = request.query_params.get("report")
     report = None
     if report_token:
@@ -210,9 +251,13 @@ def _clients_context(request: Request, clients, q: Optional[str]):
         "frequency_options": FREQUENCY_OPTIONS,
         "import_report": report,
         "focus_id": request.query_params.get("focus"),
+        "active_filters": filters,
+        "filters_definition": CLIENT_FILTER_DEFINITIONS,
     }
 
-def _subcontractings_context(request: Request, services, q: Optional[str]):
+def _subcontractings_context(
+    request: Request, services, q: Optional[str], filters: Dict[str, str]
+):
     category_totals: Dict[str, int] = {}
     frequency_totals: Dict[str, int] = {}
     total_budget = 0.0
@@ -236,7 +281,34 @@ def _subcontractings_context(request: Request, services, q: Optional[str]):
         "total_budget": total_budget,
         "total_services": len(services),
         "distinct_clients": len(client_ids),
+        "active_filters": filters,
+        "filters_definition": SUBCONTRACTING_FILTER_DEFINITIONS,
     }
+
+
+def _extract_client_filters(
+    status: Optional[str], depannage: Optional[str], astreinte: Optional[str]
+) -> Dict[str, str]:
+    filters: Dict[str, str] = {}
+    if status in STATUS_OPTIONS:
+        filters["status"] = status
+    if depannage in DEPANNAGE_OPTIONS:
+        filters["depannage"] = depannage
+    if astreinte in ASTREINTE_OPTIONS:
+        filters["astreinte"] = astreinte
+    return filters
+
+
+def _extract_subcontracting_filters(
+    category: Optional[str], frequency: Optional[str]
+) -> Dict[str, str]:
+    filters: Dict[str, str] = {}
+    valid_categories = {group["title"] for group in SUBCONTRACTED_GROUPS}
+    if category in valid_categories:
+        filters["category"] = category
+    if frequency in FREQUENCY_OPTIONS:
+        filters["frequency"] = frequency
+    return filters
 
 
 @app.on_event("startup")
@@ -246,26 +318,50 @@ def on_startup():
 
 # Page liste
 @app.get("/", response_class=HTMLResponse)
-def clients_page(request: Request, q: Optional[str] = None, session: Session = Depends(get_session)):
-    clients = crud.list_clients(session, q=q)
-    return templates.TemplateResponse("clients_list.html", _clients_context(request, clients, q))
+def clients_page(
+    request: Request,
+    q: Optional[str] = None,
+    status: Optional[str] = None,
+    depannage: Optional[str] = None,
+    astreinte: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
+    filters = _extract_client_filters(status, depannage, astreinte)
+    clients = crud.list_clients(session, q=q, filters=filters)
+    return templates.TemplateResponse(
+        "clients_list.html", _clients_context(request, clients, q, filters)
+    )
 
 # Fragment liste (HTMX)
 @app.get("/_clients", response_class=HTMLResponse)
-def clients_fragment(request: Request, q: Optional[str] = None, session: Session = Depends(get_session)):
-    clients = crud.list_clients(session, q=q)
-    return templates.TemplateResponse("clients_list.html", _clients_context(request, clients, q))
+def clients_fragment(
+    request: Request,
+    q: Optional[str] = None,
+    status: Optional[str] = None,
+    depannage: Optional[str] = None,
+    astreinte: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
+    filters = _extract_client_filters(status, depannage, astreinte)
+    clients = crud.list_clients(session, q=q, filters=filters)
+    return templates.TemplateResponse(
+        "clients_list.html", _clients_context(request, clients, q, filters)
+    )
 
 
 @app.get("/prestations", response_class=HTMLResponse)
 def subcontracted_services_page(
     request: Request,
     q: Optional[str] = None,
+    category: Optional[str] = None,
+    frequency: Optional[str] = None,
     session: Session = Depends(get_session),
 ):
-    services = crud.list_subcontracted_services(session, q=q)
+    filters = _extract_subcontracting_filters(category, frequency)
+    services = crud.list_subcontracted_services(session, q=q, filters=filters)
     return templates.TemplateResponse(
-        "subcontractings_list.html", _subcontractings_context(request, services, q)
+        "subcontractings_list.html",
+        _subcontractings_context(request, services, q, filters),
     )
 
 # Form création
