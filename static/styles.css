@@ -8,30 +8,30 @@
   --font-base: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: "Space Grotesk", "Manrope", system-ui, sans-serif;
 
-  --bg-primary: #eef2ff;
-  --bg-secondary: #e0e7ff;
-  --surface: rgba(255, 255, 255, 0.97);
-  --surface-strong: #ffffff;
-  --surface-muted: rgba(248, 249, 255, 0.9);
-  --ink: #0b1f3a;
-  --ink-muted: #324564;
-  --ink-subtle: rgba(50, 69, 100, 0.72);
-  --line: rgba(82, 97, 132, 0.32);
-  --brand: #6366f1;
-  --brand-strong: #4338ca;
-  --brand-soft: rgba(99, 102, 241, 0.15);
-  --accent: #f472b6;
-  --accent-soft: rgba(244, 114, 182, 0.18);
-  --success: #16a34a;
-  --warning: #f59e0b;
-  --danger: #dc2626;
+  --bg-primary: #f8fafc;
+  --bg-secondary: #e2e8f0;
+  --surface: #ffffff;
+  --surface-strong: #f8fafc;
+  --surface-muted: #f1f5f9;
+  --ink: #111827;
+  --ink-muted: #334155;
+  --ink-subtle: #475569;
+  --line: #cbd5f5;
+  --brand: #4f46e5;
+  --brand-strong: #3730a3;
+  --brand-soft: rgba(79, 70, 229, 0.14);
+  --accent: #db2777;
+  --accent-soft: rgba(219, 39, 119, 0.18);
+  --success: #15803d;
+  --warning: #d97706;
+  --danger: #b91c1c;
   --radius-sm: 14px;
   --radius-md: 20px;
   --radius-lg: 28px;
-  --shadow-lg: 0 32px 80px rgba(99, 102, 241, 0.16);
-  --shadow-md: 0 18px 48px rgba(15, 23, 42, 0.16);
-  --shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.12);
-  --ring: 0 0 0 4px rgba(99, 102, 241, 0.2);
+  --shadow-lg: 0 24px 70px rgba(15, 23, 42, 0.12);
+  --shadow-md: 0 16px 44px rgba(15, 23, 42, 0.1);
+  --shadow-soft: 0 10px 28px rgba(15, 23, 42, 0.08);
+  --ring: 0 0 0 4px rgba(79, 70, 229, 0.2);
   color-scheme: light;
 }
 
@@ -85,11 +85,11 @@ body::after {
   content: "";
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at 30% 10%, rgba(244, 114, 182, 0.15), transparent 55%),
-              radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.18), transparent 60%);
+  background: radial-gradient(circle at 30% 10%, rgba(219, 39, 119, 0.12), transparent 55%),
+              radial-gradient(circle at 80% 20%, rgba(79, 70, 229, 0.14), transparent 60%);
   pointer-events: none;
-  mix-blend-mode: screen;
-  opacity: 0.45;
+  mix-blend-mode: normal;
+  opacity: 0.2;
   z-index: 0;
 }
 
@@ -113,18 +113,18 @@ a:hover {
 }
 
 .aurora {
-  background: radial-gradient(circle at 10% 20%, rgba(244, 114, 182, 0.28), transparent 60%),
-              radial-gradient(circle at 90% 35%, rgba(56, 189, 248, 0.25), transparent 58%);
-  filter: blur(120px);
-  opacity: 0.8;
-  transform: scale(1.1);
+  background: radial-gradient(circle at 10% 20%, rgba(219, 39, 119, 0.18), transparent 60%),
+              radial-gradient(circle at 90% 35%, rgba(56, 189, 248, 0.18), transparent 58%);
+  filter: blur(110px);
+  opacity: 0.55;
+  transform: scale(1.05);
 }
 
 .aurora--secondary {
-  background: radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.25), transparent 65%),
-              radial-gradient(circle at 20% 80%, rgba(244, 114, 182, 0.18), transparent 70%);
-  mix-blend-mode: screen;
-  opacity: 0.65;
+  background: radial-gradient(circle at 80% 80%, rgba(79, 70, 229, 0.18), transparent 65%),
+              radial-gradient(circle at 20% 80%, rgba(219, 39, 119, 0.14), transparent 70%);
+  mix-blend-mode: normal;
+  opacity: 0.45;
 }
 
 .aurora-grid {
@@ -379,16 +379,14 @@ html[data-theme="light"] .text-indigo-200 {
 /* ---------- SURFACE ---------- */
 .app-shell__surface {
   position: relative;
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  background: var(--surface);
   border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border: 1px solid var(--line);
   box-shadow: var(--shadow-md);
   padding: clamp(2.6rem, 4vw, 3.6rem);
   display: flex;
   flex-direction: column;
   gap: clamp(2rem, 4vw, 3rem);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
 }
 
 .app-shell__surface::before {
@@ -396,8 +394,8 @@ html[data-theme="light"] .text-indigo-200 {
   position: absolute;
   inset: 16px;
   border-radius: calc(var(--radius-lg) - 12px);
-  border: 1px solid color-mix(in srgb, var(--brand-soft) 35%, transparent);
-  opacity: 0.5;
+  border: 1px solid color-mix(in srgb, var(--brand) 18%, var(--line));
+  opacity: 0.35;
   pointer-events: none;
 }
 
@@ -411,7 +409,11 @@ html[data-theme="light"] .text-indigo-200 {
   position: relative;
   padding: 2.2rem 2.4rem;
   border-radius: var(--radius-md);
-  background: linear-gradient(130deg, color-mix(in srgb, var(--brand-soft) 90%, transparent) 0%, color-mix(in srgb, var(--accent-soft) 60%, transparent) 100%);
+  background: linear-gradient(
+    130deg,
+    color-mix(in srgb, var(--surface-muted) 88%, var(--brand-soft)) 0%,
+    color-mix(in srgb, var(--surface-muted) 85%, var(--accent-soft)) 100%
+  );
   overflow: hidden;
   display: grid;
   gap: 0.55rem;
@@ -435,7 +437,7 @@ html[data-theme="light"] .text-indigo-200 {
   width: fit-content;
   padding: 0.4rem 0.85rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 65%, transparent);
+  background: color-mix(in srgb, var(--surface-muted) 92%, var(--brand-soft));
   color: var(--brand-strong);
   font-size: 0.78rem;
   font-weight: 700;
@@ -475,8 +477,12 @@ html[data-theme="light"] .text-indigo-200 {
   gap: clamp(1.6rem, 4vw, 2.4rem);
   padding: clamp(1.8rem, 4vw, 2.6rem);
   border-radius: var(--radius-md);
-  background: linear-gradient(120deg, color-mix(in srgb, var(--surface) 88%, transparent) 0%, color-mix(in srgb, var(--brand-soft) 72%, transparent) 45%, color-mix(in srgb, var(--accent-soft) 70%, transparent) 100%);
-  border: 1px solid color-mix(in srgb, var(--brand-soft) 45%, transparent);
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--surface-muted) 92%, var(--brand-soft)) 0%,
+    color-mix(in srgb, var(--surface-muted) 90%, var(--accent-soft)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--brand) 22%, var(--line));
   box-shadow: var(--shadow-soft);
   overflow: hidden;
 }
@@ -488,9 +494,9 @@ html[data-theme="light"] .text-indigo-200 {
   right: -20%;
   width: 60%;
   height: 160%;
-  background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.25), transparent 65%);
-  filter: blur(40px);
-  opacity: 0.8;
+  background: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.18), transparent 65%);
+  filter: blur(36px);
+  opacity: 0.55;
   pointer-events: none;
 }
 
@@ -529,9 +535,9 @@ html[data-theme="light"] .text-indigo-200 {
 .metric-card {
   padding: 1.4rem;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--surface-strong) 82%, transparent);
-  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
   display: grid;
   gap: 0.45rem;
 }
@@ -559,9 +565,9 @@ html[data-theme="light"] .text-indigo-200 {
 
 /* ---------- PANELS ---------- */
 .panel {
-  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  background: var(--surface);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  border: 1px solid var(--line);
   box-shadow: var(--shadow-soft);
   overflow: hidden;
   display: flex;
@@ -574,8 +580,8 @@ html[data-theme="light"] .text-indigo-200 {
   justify-content: space-between;
   gap: 1.5rem;
   padding: 2rem 2.2rem 1.6rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
-  background: linear-gradient(120deg, color-mix(in srgb, var(--surface) 85%, transparent) 0%, color-mix(in srgb, var(--surface-muted) 80%, transparent) 100%);
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--surface-muted) 92%, var(--surface)) 0%, color-mix(in srgb, var(--surface-muted) 88%, var(--surface)) 100%);
 }
 
 .panel-title {
@@ -614,8 +620,8 @@ html[data-theme="light"] .text-indigo-200 {
 .search input {
   padding: 0.75rem 1.4rem;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
-  background: color-mix(in srgb, var(--surface-strong) 86%, transparent);
+  border: 1px solid var(--line);
+  background: var(--surface);
   font: inherit;
   min-width: 260px;
   color: var(--ink);
@@ -624,7 +630,7 @@ html[data-theme="light"] .text-indigo-200 {
 
 .search input:focus {
   outline: none;
-  border-color: color-mix(in srgb, var(--brand) 65%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 55%, var(--line));
   box-shadow: var(--ring);
 }
 
@@ -661,7 +667,7 @@ html[data-theme="light"] .text-indigo-200 {
   background: linear-gradient(135deg, var(--brand) 0%, var(--brand-strong) 100%);
   color: #fff;
   border: none;
-  box-shadow: 0 18px 45px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 18px 45px rgba(79, 70, 229, 0.28);
 }
 
 .btn.ghost {
@@ -706,9 +712,9 @@ html[data-theme="light"] .text-indigo-200 {
 .summary-card {
   padding: 1.35rem 1.5rem;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--surface-strong) 86%, transparent);
-  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -786,8 +792,8 @@ html[data-theme="light"] .text-indigo-200 {
   width: 100%;
   overflow-x: auto;
   border-radius: calc(var(--radius-md) - 6px);
-  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
-  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  border: 1px solid var(--line);
+  background: var(--surface);
 }
 
 .table {
@@ -803,8 +809,8 @@ html[data-theme="light"] .text-indigo-200 {
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  background: color-mix(in srgb, var(--surface-muted) 92%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -815,12 +821,12 @@ html[data-theme="light"] .text-indigo-200 {
 }
 
 .table tbody tr:hover {
-  background: color-mix(in srgb, var(--brand-soft) 55%, transparent);
+  background: color-mix(in srgb, var(--surface-muted) 80%, var(--brand-soft));
 }
 
 .table td {
   padding: 1rem 1.4rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 85%, transparent);
   vertical-align: top;
   color: var(--ink-muted);
   font-size: 0.95rem;
