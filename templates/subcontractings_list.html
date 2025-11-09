@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block main_classes %}app-shell__surface app-shell__surface--wide{% endblock %}
+{% block page_eyebrow %}Pilotage opérations{% endblock %}
+{% block page_title %}Prestations sous-traitées & locations{% endblock %}
+{% block page_subtitle %}Visualisez toutes les prestations enregistrées, filtrez par mots-clés et identifiez rapidement les clients et budgets associés.{% endblock %}
+{% block title %}Prestations — CRM Local{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-header">
+    <div class="panel-title">
+      <h2>Toutes les prestations</h2>
+      <p class="panel-subtitle">Vue consolidée des prestations sous-traitées et locations.</p>
+    </div>
+    <form class="search" role="search" method="get">
+      <input type="text" name="q" placeholder="Rechercher (client, libellé, code budget…)" value="{{ q }}" aria-label="Rechercher une prestation" />
+      <button class="btn ghost" type="submit">Filtrer</button>
+    </form>
+  </div>
+  <div class="panel-body">
+    <div class="summary-cards">
+      <article class="summary-card">
+        <p class="summary-card__label">Prestations actives</p>
+        <p class="summary-card__value">{{ total_services }}</p>
+        <p class="summary-card__hint">{{ distinct_clients }} client{{ 's' if distinct_clients > 1 else '' }} impliqué{{ 's' if distinct_clients > 1 else '' }}</p>
+      </article>
+      <article class="summary-card">
+        <p class="summary-card__label">Budget cumulé</p>
+        {% set budget_formatted = "{:.2f}".format(total_budget).replace(",", " ").replace(".", ",") %}
+        <p class="summary-card__value">{{ budget_formatted }} €</p>
+        <p class="summary-card__hint">Somme des budgets renseignés</p>
+      </article>
+      <article class="summary-card">
+        <p class="summary-card__label">Répartition par fréquence</p>
+        <ul class="summary-card__list">
+          {% for frequency, count in frequency_totals|dictsort %}
+            <li>
+              <strong>{{ frequency_options.get(frequency, frequency) }}</strong>
+              <span>{{ count }} prestation{{ 's' if count > 1 else '' }}</span>
+            </li>
+          {% else %}
+            <li>Aucune fréquence renseignée</li>
+          {% endfor %}
+        </ul>
+      </article>
+      <article class="summary-card">
+        <p class="summary-card__label">Répartition par catégorie</p>
+        <ul class="summary-card__list">
+          {% for category, count in category_totals|dictsort %}
+            <li>
+              <strong>{{ category }}</strong>
+              <span>{{ count }} prestation{{ 's' if count > 1 else '' }}</span>
+            </li>
+          {% else %}
+            <li>Aucune catégorie disponible</li>
+          {% endfor %}
+        </ul>
+      </article>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Prestation</th>
+            <th>Client</th>
+            <th>Catégorie</th>
+            <th>Fréquence</th>
+            <th>Code budget</th>
+            <th>Budget</th>
+            <th>Semaines</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if services %}
+            {% for service in services %}
+              <tr>
+                <td data-label="Prestation">
+                  <strong>{{ service.prestation_label }}</strong>
+                  <div class="table-subtext">Créée le {{ service.created_at.strftime('%d/%m/%Y') }}</div>
+                </td>
+                <td data-label="Client">
+                  {% if service.client %}
+                    <div class="table-strong">{{ service.client.company_name }}</div>
+                    <div class="table-subtext">{{ service.client.name }}</div>
+                  {% else %}
+                    <span>—</span>
+                  {% endif %}
+                </td>
+                <td data-label="Catégorie">{{ service.category }}</td>
+                <td data-label="Fréquence">{{ frequency_options.get(service.frequency, service.frequency) }}</td>
+                <td data-label="Code budget">{{ service.budget_code }}</td>
+                <td data-label="Budget">
+                  {% if service.budget is not none %}
+                    {{ "{:.2f}".format(service.budget).replace(",", " ").replace(".", ",") }} €
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td data-label="Semaines">
+                  {% if service.order_week or service.realization_week %}
+                    <span class="table-subtext">
+                      {% if service.order_week %}Commande&nbsp;: {{ service.order_week }}{% endif %}
+                      {% if service.order_week and service.realization_week %} · {% endif %}
+                      {% if service.realization_week %}Réalisation&nbsp;: {{ service.realization_week }}{% endif %}
+                    </span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td class="empty" colspan="7">Aucune prestation enregistrée pour le moment.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
