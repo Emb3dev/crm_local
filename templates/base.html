@@ -40,29 +40,51 @@
     summary::-webkit-details-marker { display: none; }
 
     .filter-select {
-      --filter-select-bg: rgba(15, 23, 42, 0.92);
-      background-color: var(--filter-select-bg);
+      --filter-select-bg: linear-gradient(145deg, rgba(30, 41, 59, 0.82) 0%, rgba(15, 23, 42, 0.94) 55%, rgba(12, 19, 35, 0.98) 100%);
+      --filter-select-border: rgba(129, 140, 248, 0.35);
+      background-image: var(--filter-select-bg);
       color: #f8fafc;
-      border-color: rgba(148, 163, 184, 0.45);
+      border: 1px solid var(--filter-select-border);
+      border-radius: 1.75rem;
       font-size: 0.95rem;
       font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: none !important;
-      line-height: 1.45;
+      letter-spacing: 0.05em;
+      text-transform: none;
+      line-height: 1.5;
+      padding: 0.65rem 1.1rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 35px -25px rgba(59, 130, 246, 0.55);
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.35s ease;
       color-scheme: dark;
     }
 
+    .filter-select:hover {
+      border-color: rgba(165, 180, 252, 0.55);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 22px 38px -24px rgba(99, 102, 241, 0.55);
+    }
+
     .filter-select:focus {
-      border-color: rgba(129, 140, 248, 0.7);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.28);
+      border-color: rgba(165, 180, 252, 0.8);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      outline: none;
     }
 
     .filter-select option,
     .filter-select optgroup {
-      background-color: #0f172a;
-      color: #f8fafc;
+      background: linear-gradient(160deg, rgba(17, 24, 39, 0.95) 0%, rgba(8, 47, 73, 0.92) 100%);
+      color: #e2e8f0;
       letter-spacing: normal;
       text-transform: none;
+      font-size: 0.95rem;
+    }
+
+    .filter-select option {
+      padding: 0.55rem 0.75rem;
+    }
+
+    .filter-select option:checked,
+    .filter-select option:hover {
+      background-color: rgba(99, 102, 241, 0.45);
+      color: #eef2ff;
     }
 
     .filter-select optgroup {
