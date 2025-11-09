@@ -17,15 +17,44 @@
       <span aria-hidden="true">🌙</span>
     </button>
 
-    <main id="main" class="{% block main_classes %}app-shell__surface{% endblock %}" tabindex="-1">
-      <div class="page-heading">
-        <span class="page-heading__badge">CRM Local</span>
-        <div class="page-heading__eyebrow">{% block page_eyebrow %}Portail équipes service client{% endblock %}</div>
-        <h1 class="page-heading__title">{% block page_title %}Votre environnement opérationnel{% endblock %}</h1>
-        <p class="page-heading__subtitle">{% block page_subtitle %}Visualisez, importez et mettez à jour votre portefeuille client avec une interface intuitive et performante.{% endblock %}</p>
-      </div>
-      {% block content %}{% endblock %}
-    </main>
+    <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-controls="primarySidebar" aria-expanded="true">
+      <span aria-hidden="true">📋</span>
+      <span class="sidebar-toggle__label">Masquer le menu</span>
+    </button>
+
+    {% set current_path = request.url.path %}
+    <div class="app-shell__layout" data-sidebar-collapsed="false">
+      <aside id="primarySidebar" class="sidebar" aria-label="Navigation principale">
+        <div class="sidebar__header">
+          <span class="sidebar__logo">CRM Local</span>
+          <p class="sidebar__caption">Portail équipes service client</p>
+        </div>
+        <nav class="sidebar__nav">
+          {% block sidebar %}
+          {% set clients_active = current_path == '/' %}
+          {% set prestations_active = current_path.startswith('/prestations') %}
+          <a href="/" class="sidebar__link {{ 'is-active' if clients_active else '' }}" {% if clients_active %}aria-current="page"{% endif %}>
+            <span aria-hidden="true">👥</span>
+            Clients
+          </a>
+          <a href="/prestations" class="sidebar__link {{ 'is-active' if prestations_active else '' }}" {% if prestations_active %}aria-current="page"{% endif %}>
+            <span aria-hidden="true">🛠️</span>
+            Prestations sous-traitées
+          </a>
+          {% endblock %}
+        </nav>
+      </aside>
+
+      <main id="main" class="{% block main_classes %}app-shell__surface{% endblock %}" tabindex="-1">
+        <div class="page-heading">
+          <span class="page-heading__badge">CRM Local</span>
+          <div class="page-heading__eyebrow">{% block page_eyebrow %}Portail équipes service client{% endblock %}</div>
+          <h1 class="page-heading__title">{% block page_title %}Votre environnement opérationnel{% endblock %}</h1>
+          <p class="page-heading__subtitle">{% block page_subtitle %}Visualisez, importez et mettez à jour votre portefeuille client avec une interface intuitive et performante.{% endblock %}</p>
+        </div>
+        {% block content %}{% endblock %}
+      </main>
+    </div>
   </div>
 
   <script>
@@ -47,6 +76,71 @@
     function updateToggleIcon(theme) {
       if (!btn) return;
       btn.innerHTML = theme === 'dark' ? '<span aria-hidden="true">🌞</span>' : '<span aria-hidden="true">🌙</span>';
+    }
+
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarLabel = sidebarToggle?.querySelector('.sidebar-toggle__label');
+    const layout = document.querySelector('.app-shell__layout');
+    const sidebar = document.getElementById('primarySidebar');
+    const sidebarMediaQuery = window.matchMedia ? window.matchMedia('(max-width: 720px)') : null;
+    const SIDEBAR_STORAGE_KEY = 'crm-local:sidebar-collapsed';
+
+    const readStoredSidebarState = () => {
+      try {
+        const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+        return stored === null ? null : stored === 'true';
+      } catch (error) {
+        return null;
+      }
+    };
+
+    const writeStoredSidebarState = (collapsed) => {
+      try {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(collapsed));
+      } catch (error) {
+        /* ignore storage errors */
+      }
+    };
+
+    const applySidebarState = (collapsed) => {
+      if (!layout || !sidebarToggle || !sidebar) return;
+      layout.setAttribute('data-sidebar-collapsed', collapsed ? 'true' : 'false');
+      if (collapsed) {
+        sidebar.setAttribute('hidden', 'true');
+      } else {
+        sidebar.removeAttribute('hidden');
+      }
+      sidebarToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      sidebarToggle.setAttribute('aria-label', collapsed ? 'Afficher la navigation' : 'Masquer la navigation');
+      if (sidebarLabel) {
+        sidebarLabel.textContent = collapsed ? 'Afficher le menu' : 'Masquer le menu';
+      }
+    };
+
+    if (sidebarToggle && layout && sidebar) {
+      const storedCollapsed = readStoredSidebarState();
+      const initialCollapsed = storedCollapsed !== null ? storedCollapsed : Boolean(sidebarMediaQuery?.matches);
+      applySidebarState(initialCollapsed);
+
+      sidebarToggle.addEventListener('click', () => {
+        const isCollapsed = layout.getAttribute('data-sidebar-collapsed') === 'true';
+        const next = !isCollapsed;
+        applySidebarState(next);
+        writeStoredSidebarState(next);
+      });
+
+      const handleSidebarMediaChange = (event) => {
+        if (readStoredSidebarState() !== null) return;
+        applySidebarState(event.matches);
+      };
+
+      if (sidebarMediaQuery) {
+        if (typeof sidebarMediaQuery.addEventListener === 'function') {
+          sidebarMediaQuery.addEventListener('change', handleSidebarMediaChange);
+        } else if (typeof sidebarMediaQuery.addListener === 'function') {
+          sidebarMediaQuery.addListener(handleSidebarMediaChange);
+        }
+      }
     }
   </script>
 </body>
