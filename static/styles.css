@@ -665,6 +665,146 @@ html[data-theme="dark"] .badge.neutral { color: #cbd5f5; }
   padding-top: 1.25rem;
 }
 
+.client-card__section--subcontractings {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.subcontract-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.subcontract-list__item {
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  display: grid;
+  gap: 1rem;
+}
+
+.subcontract-list__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.subcontract-list__identity {
+  display: grid;
+  gap: .35rem;
+}
+
+.subcontract-list__title {
+  font-weight: 600;
+}
+
+.subcontract-list__category {
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: color-mix(in srgb, var(--muted) 75%, transparent 25%);
+}
+
+.subcontract-list__actions {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+}
+
+.subcontract-list__badge {
+  text-transform: none;
+  font-size: .78rem;
+  padding: .25rem .75rem;
+}
+
+.subcontract-list__dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.subcontract-list__dl div {
+  display: grid;
+  gap: .3rem;
+}
+
+.subcontract-list__dl dt {
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: color-mix(in srgb, var(--muted) 80%, transparent 20%);
+}
+
+.subcontract-list__dl dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.subcontract-list__empty {
+  margin: 0;
+  font-size: .9rem;
+  color: color-mix(in srgb, var(--muted) 80%, transparent 20%);
+}
+
+.subcontract-form {
+  margin-top: .5rem;
+  padding: 1rem 1.15rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  display: grid;
+  gap: 1.1rem;
+}
+
+.subcontract-form__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.subcontract-form__grid label {
+  display: grid;
+  gap: .35rem;
+  font-size: .9rem;
+}
+
+.subcontract-form__grid label.full {
+  grid-column: 1 / -1;
+}
+
+.subcontract-form__grid input,
+.subcontract-form__grid select {
+  padding: .65rem .75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  font: inherit;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.subcontract-form__grid input:focus,
+.subcontract-form__grid select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--ring);
+}
+
+.subcontract-form .form-actions {
+  justify-content: flex-start;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
 .contact-list {
   list-style: none;
   margin: 0;
@@ -762,6 +902,14 @@ html[data-theme="dark"] .badge.neutral { color: #cbd5f5; }
   .contact-form__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .subcontract-list__dl {
+    grid-template-columns: 1fr;
+  }
+
+  .subcontract-form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -779,6 +927,10 @@ html[data-theme="dark"] .badge.neutral { color: #cbd5f5; }
   }
 
   .contact-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .subcontract-form__grid {
     grid-template-columns: 1fr;
   }
 }

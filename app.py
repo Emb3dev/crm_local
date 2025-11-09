@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
 from database import init_db, get_session
-from models import ClientCreate, ClientUpdate, ContactCreate
+from models import ClientCreate, ClientUpdate, ContactCreate, SubcontractedServiceCreate
 import crud
 from importers import parse_clients_excel
 from openpyxl import Workbook
@@ -35,6 +35,160 @@ STATUS_OPTIONS = {
     "inactif": "Inactif",
 }
 
+SUBCONTRACTED_GROUPS = [
+    {
+        "key": "sous_traitance",
+        "title": "Sous-traitance",
+        "options": [
+            {"value": "analyse_eau", "label": "Analyse d'eau", "budget_code": "S1000"},
+            {"value": "analyse_huile", "label": "Analyse d'huile", "budget_code": "S1010"},
+            {
+                "value": "analyse_eau_nappe",
+                "label": "Analyse eau de nappe",
+                "budget_code": "S1020",
+            },
+            {
+                "value": "analyse_legionnelle",
+                "label": "Analyse légionnelle",
+                "budget_code": "S1030",
+            },
+            {
+                "value": "analyse_potabilite",
+                "label": "Analyse potabilité",
+                "budget_code": "S1040",
+            },
+            {"value": "colonnes_seches", "label": "Colonnes sèches", "budget_code": "S1050"},
+            {"value": "controle_acces", "label": "Contrôle d'accès", "budget_code": "S1060"},
+            {"value": "controle_ssi", "label": "Contrôle SSI", "budget_code": "S1070"},
+            {"value": "detection_co", "label": "Détection CO", "budget_code": "S1080"},
+            {"value": "detection_freon", "label": "Détection fréon", "budget_code": "S1090"},
+            {"value": "detection_incendie", "label": "Détection incendie", "budget_code": "S2000"},
+            {"value": "extincteurs", "label": "Extincteurs", "budget_code": "S2010"},
+            {"value": "exutoires", "label": "Exutoires", "budget_code": "S2020"},
+            {"value": "gtc", "label": "GTC", "budget_code": "S2030"},
+            {
+                "value": "inspection_video_puits",
+                "label": "Inspection vidéo puits",
+                "budget_code": "S2040",
+            },
+            {
+                "value": "maintenance_cellule_hta",
+                "label": "Maintenance cellule HTA",
+                "budget_code": "S2050",
+            },
+            {
+                "value": "maintenance_constructeur",
+                "label": "Maintenance constructeur",
+                "budget_code": "S2060",
+            },
+            {
+                "value": "maintenance_groupe_electrogene",
+                "label": "Maintenance groupe électrogène",
+                "budget_code": "S2070",
+            },
+            {
+                "value": "maintenance_groupe_froid",
+                "label": "Maintenance groupe froid",
+                "budget_code": "S2080",
+            },
+            {
+                "value": "nettoyage_gaines",
+                "label": "Nettoyage de gaines",
+                "budget_code": "S3000",
+            },
+            {"value": "onduleurs", "label": "Onduleurs", "budget_code": "S3010"},
+            {
+                "value": "pompe_relevage",
+                "label": "Pompe de relevage",
+                "budget_code": "S3020",
+            },
+            {
+                "value": "portes_automatiques",
+                "label": "Portes automatiques",
+                "budget_code": "S3030",
+            },
+            {
+                "value": "portes_coupe_feu",
+                "label": "Portes coupe-feu",
+                "budget_code": "S3040",
+            },
+            {"value": "ramonage", "label": "Ramonage", "budget_code": "S3050"},
+            {"value": "relamping", "label": "Relamping", "budget_code": "S3060"},
+            {
+                "value": "separateur_hydrocarbures",
+                "label": "Séparateur hydrocarbures",
+                "budget_code": "S3070",
+            },
+            {"value": "sorbonnes", "label": "Sorbonnes", "budget_code": "S4000"},
+            {
+                "value": "table_elevatrice",
+                "label": "Table élévatrice",
+                "budget_code": "S4010",
+            },
+            {
+                "value": "telesurveillance",
+                "label": "Télésurveillance",
+                "budget_code": "S4020",
+            },
+            {"value": "thermographie", "label": "Thermographie", "budget_code": "S4030"},
+            {"value": "traitement_eau", "label": "Traitement d'eau", "budget_code": "S4040"},
+            {
+                "value": "video_interphonie",
+                "label": "Vidéo et interphonie",
+                "budget_code": "S4050",
+            },
+        ],
+    },
+    {
+        "key": "locations",
+        "title": "Locations",
+        "options": [
+            {
+                "value": "location_echafaudage",
+                "label": "Location échafaudage",
+                "budget_code": "L1010",
+            },
+            {
+                "value": "location_groupe_electrogene",
+                "label": "Location groupe électrogène",
+                "budget_code": "L1020",
+            },
+            {
+                "value": "location_nacelle",
+                "label": "Location nacelle",
+                "budget_code": "L1030",
+            },
+        ],
+    },
+]
+
+SUBCONTRACTED_LOOKUP = {
+    option["value"]: {
+        "label": option["label"],
+        "budget_code": option["budget_code"],
+        "category": group["title"],
+    }
+    for group in SUBCONTRACTED_GROUPS
+    for option in group["options"]
+}
+
+FREQUENCY_OPTIONS = {
+    "contrat_annuel": "Contrat de maintenance annuel",
+    "prestation_ponctuelle": "Prestation ponctuelle",
+}
+
+
+def _parse_budget(value: Optional[str]) -> Optional[float]:
+    if value is None:
+        return None
+    normalized = value.strip().replace(" ", "").replace(",", ".")
+    if not normalized:
+        return None
+    try:
+        return float(normalized)
+    except ValueError as exc:
+        raise HTTPException(400, "Budget invalide") from exc
+
 
 def _clients_context(request: Request, clients, q: Optional[str]):
     report_token = request.query_params.get("report")
@@ -52,6 +206,8 @@ def _clients_context(request: Request, clients, q: Optional[str]):
         "depannage_options": DEPANNAGE_OPTIONS,
         "astreinte_options": ASTREINTE_OPTIONS,
         "status_options": STATUS_OPTIONS,
+        "subcontracted_groups": SUBCONTRACTED_GROUPS,
+        "frequency_options": FREQUENCY_OPTIONS,
         "import_report": report,
         "focus_id": request.query_params.get("focus"),
     }
@@ -179,6 +335,63 @@ def remove_contact(
     ok = crud.delete_contact(session, client_id, contact_id)
     if not ok:
         raise HTTPException(404, "Contact introuvable")
+    return RedirectResponse(
+        url=f"/?focus={client_id}#client-{client_id}", status_code=303
+    )
+
+
+@app.post("/clients/{client_id}/subcontractings")
+def add_subcontracted_service(
+    client_id: int,
+    prestation: str = Form(...),
+    budget: Optional[str] = Form(None),
+    frequency: str = Form(...),
+    realization_week: Optional[str] = Form(None),
+    order_week: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    details = SUBCONTRACTED_LOOKUP.get(prestation)
+    if not details:
+        raise HTTPException(400, "Prestation inconnue")
+    if frequency not in FREQUENCY_OPTIONS:
+        raise HTTPException(400, "Fréquence inconnue")
+
+    parsed_budget = _parse_budget(budget)
+    realization_value = (
+        realization_week.strip().upper() if realization_week and frequency == "prestation_ponctuelle" else None
+    )
+    order_value = order_week.strip().upper() if order_week else None
+
+    created = crud.create_subcontracted_service(
+        session,
+        client_id,
+        SubcontractedServiceCreate(
+            prestation_key=prestation,
+            prestation_label=details["label"],
+            category=details["category"],
+            budget_code=details["budget_code"],
+            budget=parsed_budget,
+            frequency=frequency,
+            realization_week=realization_value,
+            order_week=order_value,
+        ),
+    )
+    if not created:
+        raise HTTPException(404, "Client introuvable")
+    return RedirectResponse(
+        url=f"/?focus={client_id}#client-{client_id}", status_code=303
+    )
+
+
+@app.post("/clients/{client_id}/subcontractings/{service_id}/delete")
+def remove_subcontracted_service(
+    client_id: int,
+    service_id: int,
+    session: Session = Depends(get_session),
+):
+    ok = crud.delete_subcontracted_service(session, client_id, service_id)
+    if not ok:
+        raise HTTPException(404, "Prestation introuvable")
     return RedirectResponse(
         url=f"/?focus={client_id}#client-{client_id}", status_code=303
     )
