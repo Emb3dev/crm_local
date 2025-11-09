@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from io import BytesIO
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 import unicodedata
+import re
 
 from openpyxl import load_workbook
 
@@ -39,6 +40,22 @@ COLUMN_ALIASES: Dict[str, str] = {
     "status": "status",
     "statut": "status",
 }
+
+CONTACT_FIELD_ALIASES = {
+    "name": "name",
+    "nom": "name",
+    "prenom": "name",
+    "nom_complet": "name",
+    "email": "email",
+    "mail": "email",
+    "courriel": "email",
+    "phone": "phone",
+    "telephone": "phone",
+    "tel": "phone",
+    "mobile": "phone",
+}
+
+HeaderType = Union[str, Tuple[str, int, str]]
 
 STATUS_ALIASES = {
     "actif": "actif",
@@ -91,6 +108,22 @@ def _coerce_value(value):
     return str(value).strip() or None
 
 
+CONTACT_HEADER_RE = re.compile(r"contact_?(\d+)_([a-z0-9_]+)")
+
+
+def _resolve_header(header: str) -> HeaderType:
+    if header in COLUMN_ALIASES:
+        return COLUMN_ALIASES[header]
+    match = CONTACT_HEADER_RE.match(header)
+    if match:
+        index = int(match.group(1))
+        field_key = match.group(2)
+        field = CONTACT_FIELD_ALIASES.get(field_key)
+        if field:
+            return ("contact", index, field)
+    return ""
+
+
 def parse_clients_excel(content: bytes) -> List[Dict[str, str]]:
     try:
         workbook = load_workbook(BytesIO(content), data_only=True)
@@ -103,12 +136,16 @@ def parse_clients_excel(content: bytes) -> List[Dict[str, str]]:
     except StopIteration:
         raise ValueError("Le fichier ne contient aucune donnée.")
 
-    headers = [COLUMN_ALIASES.get(_normalize_header(cell.value), "") for cell in header_row]
+    headers: List[HeaderType] = [
+        _resolve_header(_normalize_header(cell.value)) for cell in header_row
+    ]
 
     if not any(headers):
         raise ValueError("Le fichier ne contient pas d'en-têtes valides.")
 
-    missing = EXPECTED_FIELDS - set(filter(None, headers))
+    missing = EXPECTED_FIELDS - {
+        header for header in headers if isinstance(header, str) and header
+    }
     if missing:
         raise ValueError(
             "Colonnes obligatoires manquantes: " + ", ".join(sorted(missing))
@@ -119,13 +156,21 @@ def parse_clients_excel(content: bytes) -> List[Dict[str, str]]:
         record: Dict[str, str] = {"__row__": row_index}
         empty = True
         for idx, raw_value in enumerate(row):
-            key = headers[idx] if idx < len(headers) else ""
-            if not key:
+            header = headers[idx] if idx < len(headers) else ""
+            if not header:
                 continue
             value = _coerce_value(raw_value)
             if value is None:
                 continue
             empty = False
+            if isinstance(header, tuple):
+                _, contact_index, contact_field = header
+                contact_bucket = record.setdefault("__contacts__", {})
+                contact_data = contact_bucket.setdefault(contact_index, {})
+                contact_data[contact_field] = value
+                continue
+
+            key = header
             if key == "status":
                 normalized = _normalize_header(value)
                 record[key] = STATUS_ALIASES.get(normalized, normalized or None)
@@ -161,6 +206,20 @@ def parse_clients_excel(content: bytes) -> List[Dict[str, str]]:
             raise ValueError(
                 f"Ligne {row_index}: statut inconnu '{record['status']}'. Valeurs acceptées: actif, inactif."
             )
+
+        contacts_map = record.pop("__contacts__", {})
+        contacts: List[Dict[str, str]] = []
+        for order, data in sorted(contacts_map.items()):
+            if not data.get("name"):
+                if any(data.get(field) for field in ("email", "phone")):
+                    raise ValueError(
+                        f"Ligne {row_index}: le contact {order} doit avoir un nom."
+                    )
+                continue
+            contacts.append(data)
+
+        if contacts:
+            record["contacts"] = contacts
 
         rows.append(record)
 

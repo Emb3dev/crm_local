@@ -36,51 +36,161 @@
   </div>
 
   <div class="panel-body">
-    <div class="table-wrap" id="list">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Entreprise</th>
-            <th>Client</th>
-            <th>Email</th>
-            <th>Téléphone</th>
-            <th>Adresse de facturation</th>
-            <th>Dépannage</th>
-            <th>Astreinte</th>
-            <th>Tags</th>
-            <th>Statut</th>
-            <th class="th-actions">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for c in clients %}
-          <tr>
-            <td data-label="Entreprise">{{ c.company_name }}</td>
-            <td data-label="Client">{{ c.name }}</td>
-            <td data-label="Email">{{ c.email or "—" }}</td>
-            <td data-label="Téléphone">{{ c.phone or "—" }}</td>
-            <td data-label="Adresse de facturation">{{ c.billing_address or "—" }}</td>
-            <td data-label="Dépannage">{{ depannage_options.get(c.depannage, "—") }}</td>
-            <td data-label="Astreinte">{{ astreinte_options.get(c.astreinte, "—") }}</td>
-            <td data-label="Tags">{{ c.tags or "—" }}</td>
-            <td data-label="Statut">
-              {% set status_key = c.status or "" %}
-              <span class="badge {{ 'success' if status_key == 'actif' else 'neutral' if not status_key else 'danger' }}">
-                {{ status_options.get(status_key, status_key or "—") }}
-              </span>
-            </td>
-            <td class="actions">
-              <form action="/clients/{{ c.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ c.name }} ?')">
-                <button class="btn danger sm" title="Supprimer">🗑️</button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-          {% if not clients %}
-          <tr><td colspan="10" class="empty">Aucun résultat</td></tr>
-          {% endif %}
-        </tbody>
-      </table>
+    <div id="list" class="client-list">
+      {% if clients %}
+        {% for c in clients %}
+          {% set status_key = c.status or "" %}
+          {% set primary_has_data = 1 if c.name or c.email or c.phone else 0 %}
+          {% set contact_list = c.contacts or [] %}
+          {% set contact_total = primary_has_data + (contact_list | length) %}
+          {% set is_target = focus_id and focus_id|int == c.id %}
+          <details class="client-card" id="client-{{ c.id }}" {% if is_target %}open{% endif %}>
+            <summary>
+              <div class="client-card__summary">
+                <div class="client-card__identity">
+                  <h3>{{ c.company_name }}</h3>
+                  <p class="client-card__primary">Contact principal :
+                    {% if c.name %}
+                      <strong>{{ c.name }}</strong>
+                    {% else %}
+                      <span class="client-card__empty">à renseigner</span>
+                    {% endif %}
+                  </p>
+                  {% if c.tags %}
+                    <span class="client-card__tags">{{ c.tags }}</span>
+                  {% endif %}
+                </div>
+                <div class="client-card__meta">
+                  <span class="badge {{ 'success' if status_key == 'actif' else 'neutral' if not status_key else 'danger' }}">
+                    {{ status_options.get(status_key, status_key or "—") }}
+                  </span>
+                  <span class="client-card__count">{{ contact_total }} contact{{ 's' if contact_total > 1 else '' }}</span>
+                  <span class="client-card__toggle" aria-hidden="true">▼</span>
+                </div>
+              </div>
+            </summary>
+            <div class="client-card__body">
+              <div class="client-card__grid">
+                <section class="client-card__section">
+                  <h4>Informations client</h4>
+                  <dl class="client-card__dl">
+                    <div>
+                      <dt>Entreprise</dt>
+                      <dd>{{ c.company_name }}</dd>
+                    </div>
+                    <div>
+                      <dt>Adresse de facturation</dt>
+                      <dd>{{ c.billing_address or "—" }}</dd>
+                    </div>
+                    <div>
+                      <dt>Tags</dt>
+                      <dd>{{ c.tags or "—" }}</dd>
+                    </div>
+                  </dl>
+                </section>
+                <section class="client-card__section">
+                  <h4>Prestations</h4>
+                  <dl class="client-card__dl">
+                    <div>
+                      <dt>Dépannage</dt>
+                      <dd>{{ depannage_options.get(c.depannage, "—") }}</dd>
+                    </div>
+                    <div>
+                      <dt>Astreinte</dt>
+                      <dd>{{ astreinte_options.get(c.astreinte, "—") }}</dd>
+                    </div>
+                    <div>
+                      <dt>Statut</dt>
+                      <dd>
+                        <span class="badge {{ 'success' if status_key == 'actif' else 'neutral' if not status_key else 'danger' }}">
+                          {{ status_options.get(status_key, status_key or "—") }}
+                        </span>
+                      </dd>
+                    </div>
+                  </dl>
+                </section>
+              </div>
+
+              <section class="client-card__section client-card__section--contacts">
+                <h4>Contacts</h4>
+                <ul class="contact-list">
+                  {% if c.name or c.email or c.phone %}
+                    <li class="contact-list__item">
+                      <div class="contact-list__header">
+                        <span class="contact-list__name">{{ c.name or 'Contact principal' }}</span>
+                        <span class="contact-list__badge">Principal</span>
+                      </div>
+                      <div class="contact-list__meta">
+                        {% if c.email %}
+                          <a href="mailto:{{ c.email }}">{{ c.email }}</a>
+                        {% endif %}
+                        {% if c.phone %}
+                          <a href="tel:{{ c.phone }}">{{ c.phone }}</a>
+                        {% endif %}
+                        {% if not c.email and not c.phone %}
+                          <span>Coordonnées à renseigner</span>
+                        {% endif %}
+                      </div>
+                    </li>
+                  {% endif %}
+                  {% for contact in contact_list | sort(attribute='name') %}
+                    <li class="contact-list__item">
+                      <div class="contact-list__header">
+                        <span class="contact-list__name">{{ contact.name }}</span>
+                        <form action="/clients/{{ c.id }}/contacts/{{ contact.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ contact.name }} ?')">
+                          <button class="btn danger xs" type="submit" title="Supprimer le contact">🗑️</button>
+                        </form>
+                      </div>
+                      <div class="contact-list__meta">
+                        {% if contact.email %}
+                          <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+                        {% endif %}
+                        {% if contact.phone %}
+                          <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a>
+                        {% endif %}
+                        {% if not contact.email and not contact.phone %}
+                          <span>Coordonnées à renseigner</span>
+                        {% endif %}
+                      </div>
+                    </li>
+                  {% endfor %}
+                  {% if not (c.name or c.email or c.phone) and not contact_list %}
+                    <li class="contact-list__empty">Aucun contact pour le moment.</li>
+                  {% endif %}
+                </ul>
+
+                <form class="contact-form" action="/clients/{{ c.id }}/contacts" method="post">
+                  <div class="contact-form__grid">
+                    <label>
+                      <span>Nom *</span>
+                      <input name="contact_name" required placeholder="Prénom Nom" />
+                    </label>
+                    <label>
+                      <span>Email</span>
+                      <input name="contact_email" type="email" placeholder="contact@exemple.fr" />
+                    </label>
+                    <label>
+                      <span>Téléphone</span>
+                      <input name="contact_phone" placeholder="06 00 00 00 00" />
+                    </label>
+                  </div>
+                  <div class="form-actions">
+                    <button class="btn ghost sm" type="submit">Ajouter un contact</button>
+                  </div>
+                </form>
+              </section>
+
+              <div class="client-card__footer">
+                <form action="/clients/{{ c.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ c.company_name }} ?')">
+                  <button class="btn danger sm" type="submit">Supprimer le client</button>
+                </form>
+              </div>
+            </div>
+          </details>
+        {% endfor %}
+      {% else %}
+        <p class="client-list__empty">Aucun résultat</p>
+      {% endif %}
     </div>
   </div>
 </section>
@@ -102,7 +212,7 @@
         <div class="form-actions full">
           <button class="btn primary" type="submit">Importer</button>
           <a class="btn ghost" href="/clients/import/template">Télécharger le modèle Excel</a>
-          <p class="form-hint">Colonnes minimales : Nom entreprise et Nom client. Colonnes optionnelles prises en charge : Email, Téléphone, Adresse de facturation, Dépannage, Astreinte, Tags, Statut.</p>
+          <p class="form-hint">Colonnes minimales : Nom entreprise et Nom client. Colonnes optionnelles prises en charge : Email, Téléphone, Adresse de facturation, Dépannage, Astreinte, Tags, Statut, ainsi que des colonnes <code>contact_2_*</code>, <code>contact_3_*</code>… pour importer des contacts supplémentaires.</p>
         </div>
       </form>
     </div>
@@ -122,15 +232,15 @@
           <input name="company_name" required placeholder="Ex: Dupont SARL" />
         </label>
         <label>
-          <span>Nom client *</span>
+          <span>Contact principal *</span>
           <input name="name" required placeholder="Ex: Jeanne Martin" />
         </label>
         <label>
-          <span>Email</span>
+          <span>Email du contact</span>
           <input name="email" type="email" placeholder="contact@exemple.fr" />
         </label>
         <label>
-          <span>Téléphone</span>
+          <span>Téléphone du contact</span>
           <input name="phone" placeholder="06 12 34 56 78" />
         </label>
         <label class="full">

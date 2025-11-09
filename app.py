@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 from io import BytesIO
 
@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
 from database import init_db, get_session
-from models import ClientCreate, ClientUpdate
+from models import ClientCreate, ClientUpdate, ContactCreate
 import crud
 from importers import parse_clients_excel
 from openpyxl import Workbook
@@ -53,6 +53,7 @@ def _clients_context(request: Request, clients, q: Optional[str]):
         "astreinte_options": ASTREINTE_OPTIONS,
         "status_options": STATUS_OPTIONS,
         "import_report": report,
+        "focus_id": request.query_params.get("focus"),
     }
 
 @app.on_event("startup")
@@ -86,7 +87,11 @@ def create_client(
     status: Optional[str] = Form("actif"),
     session: Session = Depends(get_session)
 ):
-    crud.create_client(
+    contacts_payload: List[ContactCreate] = []
+    if name or email or phone:
+        contacts_payload.append(ContactCreate(name=name, email=email, phone=phone))
+
+    client = crud.create_client(
         session,
         ClientCreate(
             company_name=company_name,
@@ -99,8 +104,11 @@ def create_client(
             tags=tags,
             status=status,
         ),
+        contacts=contacts_payload,
     )
-    return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(
+        url=f"/?focus={client.id}#client-{client.id}", status_code=303
+    )
 
 # Maj
 @app.post("/clients/{client_id}/edit")
@@ -142,6 +150,40 @@ def remove_client(client_id: int, session: Session = Depends(get_session)):
     return RedirectResponse(url="/", status_code=303)
 
 
+@app.post("/clients/{client_id}/contacts")
+def add_contact(
+    client_id: int,
+    name: str = Form(..., alias="contact_name"),
+    email: Optional[str] = Form(None, alias="contact_email"),
+    phone: Optional[str] = Form(None, alias="contact_phone"),
+    session: Session = Depends(get_session),
+):
+    created = crud.create_contact(
+        session,
+        client_id,
+        ContactCreate(name=name, email=email, phone=phone),
+    )
+    if not created:
+        raise HTTPException(404, "Client introuvable")
+    return RedirectResponse(
+        url=f"/?focus={client_id}#client-{client_id}", status_code=303
+    )
+
+
+@app.post("/clients/{client_id}/contacts/{contact_id}/delete")
+def remove_contact(
+    client_id: int,
+    contact_id: int,
+    session: Session = Depends(get_session),
+):
+    ok = crud.delete_contact(session, client_id, contact_id)
+    if not ok:
+        raise HTTPException(404, "Contact introuvable")
+    return RedirectResponse(
+        url=f"/?focus={client_id}#client-{client_id}", status_code=303
+    )
+
+
 @app.post("/clients/import")
 async def import_clients(
     file: UploadFile = File(...),
@@ -177,10 +219,16 @@ async def import_clients(
     created = 0
     errors: list[str] = []
     for idx, row in enumerate(rows, start=1):
-        payload = {k: v for k, v in row.items() if not k.startswith("__")}
+        contacts_raw = row.get("contacts", [])
+        contacts_payload = [ContactCreate(**contact) for contact in contacts_raw]
+        payload = {
+            k: v
+            for k, v in row.items()
+            if not k.startswith("__") and k != "contacts"
+        }
         row_number = row.get("__row__", idx)
         try:
-            crud.create_client(session, ClientCreate(**payload))
+            crud.create_client(session, ClientCreate(**payload), contacts=contacts_payload)
             created += 1
         except Exception as exc:
             session.rollback()
@@ -205,6 +253,12 @@ def _build_client_import_template() -> BytesIO:
         "astreinte",
         "tags",
         "status",
+        "contact_2_name",
+        "contact_2_email",
+        "contact_2_phone",
+        "contact_3_name",
+        "contact_3_email",
+        "contact_3_phone",
     ]
     sheet.append(headers)
 
@@ -219,6 +273,9 @@ def _build_client_import_template() -> BytesIO:
             "astreinte": "incluse_refacturable",
             "tags": "premium, 2024",
             "status": "actif",
+            "contact_2_name": "Paul Martin",
+            "contact_2_email": "paul@example.fr",
+            "contact_2_phone": "0188776655",
         },
         {
             "company_name": "Solutions BTP",
@@ -230,6 +287,10 @@ def _build_client_import_template() -> BytesIO:
             "astreinte": "incluse_non_refacturable",
             "tags": "chantier",
             "status": "actif",
+            "contact_2_name": "Sophie Lemaitre",
+            "contact_2_email": "sophie@solutionsbtp.fr",
+            "contact_3_name": "Service Achat",
+            "contact_3_phone": "0245789650",
         },
         {
             "company_name": "Collectif Horizon",
@@ -278,6 +339,11 @@ def _build_client_import_template() -> BytesIO:
         "status",
         _format_options(STATUS_OPTIONS),
         "Etat du client dans votre CRM.",
+    ])
+    options_sheet.append([
+        "contacts supplémentaires",
+        "contact_2_name, contact_2_email, contact_2_phone, contact_3_name…",
+        "Dupliquez le numéro (contact_4_*, contact_5_* …) pour ajouter des contacts additionnels. Seul le nom est obligatoire.",
     ])
 
     for column_cells in options_sheet.columns:
