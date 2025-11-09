@@ -325,11 +325,80 @@ body {
   gap: 1.5rem;
 }
 
+.summary-cards {
+  display: grid;
+  gap: 1.1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.summary-card {
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+}
+
+.summary-card__label {
+  font-size: .85rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: color-mix(in srgb, var(--muted) 80%, transparent 20%);
+  margin: 0;
+}
+
+.summary-card__value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.summary-card__hint {
+  margin: 0;
+  font-size: .9rem;
+  color: color-mix(in srgb, var(--muted) 85%, transparent 15%);
+}
+
+.summary-card__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  font-size: .9rem;
+  color: color-mix(in srgb, var(--muted) 85%, transparent 15%);
+}
+
+.summary-card__list li {
+  display: flex;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.summary-card__list strong {
+  font-weight: 600;
+  color: inherit;
+}
+
 .panels-grid {
   display: grid;
   gap: 1.5rem;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   margin-top: 1.5rem;
+}
+
+.table-strong {
+  font-weight: 600;
+}
+
+.table-subtext {
+  display: block;
+  margin-top: .2rem;
+  font-size: .85rem;
+  color: color-mix(in srgb, var(--muted) 85%, transparent 15%);
 }
 
 /* ---------- TABLES ---------- */
