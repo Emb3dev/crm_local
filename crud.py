@@ -1,9 +1,15 @@
 from typing import List, Optional
+from sqlalchemy import delete
+from sqlalchemy.orm import selectinload
 from sqlmodel import select, Session
-from models import Client, ClientCreate, ClientUpdate
+from models import Client, ClientCreate, ClientUpdate, Contact, ContactCreate
 
 def list_clients(session: Session, q: Optional[str] = None, limit: int = 50) -> List[Client]:
-    stmt = select(Client).order_by(Client.created_at.desc())
+    stmt = (
+        select(Client)
+        .options(selectinload(Client.contacts))
+        .order_by(Client.created_at.desc())
+    )
     if q:
         like = f"%{q}%"
         stmt = stmt.where(
@@ -23,9 +29,19 @@ def list_clients(session: Session, q: Optional[str] = None, limit: int = 50) -> 
 def get_client(session: Session, client_id: int) -> Optional[Client]:
     return session.get(Client, client_id)
 
-def create_client(session: Session, data: ClientCreate) -> Client:
+def create_client(
+    session: Session,
+    data: ClientCreate,
+    contacts: Optional[List[ContactCreate]] = None,
+) -> Client:
     c = Client.model_validate(data)
     session.add(c)
+    session.flush()
+
+    for contact_data in contacts or []:
+        contact = Contact(client_id=c.id, **contact_data.model_dump())
+        session.add(contact)
+
     session.commit()
     session.refresh(c)
     return c
@@ -44,6 +60,27 @@ def update_client(session: Session, client_id: int, data: ClientUpdate) -> Optio
 def delete_client(session: Session, client_id: int) -> bool:
     c = session.get(Client, client_id)
     if not c: return False
+    session.exec(delete(Contact).where(Contact.client_id == client_id))
     session.delete(c)
+    session.commit()
+    return True
+
+
+def create_contact(session: Session, client_id: int, data: ContactCreate) -> Optional[Contact]:
+    client = session.get(Client, client_id)
+    if not client:
+        return None
+    contact = Contact(client_id=client_id, **data.model_dump())
+    session.add(contact)
+    session.commit()
+    session.refresh(contact)
+    return contact
+
+
+def delete_contact(session: Session, client_id: int, contact_id: int) -> bool:
+    contact = session.get(Contact, contact_id)
+    if not contact or contact.client_id != client_id:
+        return False
+    session.delete(contact)
     session.commit()
     return True
