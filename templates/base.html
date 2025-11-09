@@ -12,43 +12,21 @@
 </head>
 <body>
   <a class="skip-link" href="#main">Aller au contenu</a>
-  <header class="topbar" role="banner">
-    <div class="topbar__inner container-wide">
-      <div class="topbar__brand" aria-label="CRM Local">
-        <span class="topbar__logo" aria-hidden="true">💼</span>
-        <div class="topbar__titles">
-          <span class="topbar__name">CRM Local</span>
-          <span class="topbar__subtitle">Pilotage des relations clients</span>
-        </div>
+  <div class="app-shell">
+    <button id="themeToggle" class="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">
+      <span aria-hidden="true">🌙</span>
+    </button>
+
+    <main id="main" class="{% block main_classes %}app-shell__surface{% endblock %}" tabindex="-1">
+      <div class="page-heading">
+        <span class="page-heading__badge">CRM Local</span>
+        <div class="page-heading__eyebrow">{% block page_eyebrow %}Portail équipes service client{% endblock %}</div>
+        <h1 class="page-heading__title">{% block page_title %}Votre environnement opérationnel{% endblock %}</h1>
+        <p class="page-heading__subtitle">{% block page_subtitle %}Visualisez, importez et mettez à jour votre portefeuille client avec une interface intuitive et performante.{% endblock %}</p>
       </div>
-      <nav class="topbar__actions" aria-label="Navigation principale">
-        <a class="btn ghost" href="/">Tableau de bord</a>
-        <button id="themeToggle" class="btn icon" title="Basculer thème" aria-label="Basculer le thème">
-          <span class="icon-moon" aria-hidden="true">🌙</span>
-        </button>
-      </nav>
-    </div>
-  </header>
-
-  <main id="main" class="{% block main_classes %}container{% endblock %}" tabindex="-1">
-    <div class="page-heading container-wide">
-      <div class="page-heading__eyebrow">{% block page_eyebrow %}Portail équipes service client{% endblock %}</div>
-      <h1 class="page-heading__title">{% block page_title %}Votre environnement opérationnel{% endblock %}</h1>
-      <p class="page-heading__subtitle">{% block page_subtitle %}Visualisez, importez et mettez à jour votre portefeuille client avec une interface intuitive et performante.{% endblock %}</p>
-    </div>
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer class="site-footer container-wide" role="contentinfo">
-    <div class="site-footer__left">
-      <div class="site-footer__brand">CRM Local</div>
-      <small>© {{ 2024 }} CRM Local — Données stockées localement (SQLite).</small>
-    </div>
-    <div class="site-footer__right">
-      <a href="mailto:support@crm.local">Support</a>
-      <a href="/">Politique de confidentialité</a>
-    </div>
-  </footer>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
 
   <script>
     const root = document.documentElement;
