@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block main_classes %}space-y-10{% endblock %}
+{% block page_eyebrow %}Pilotage opérations{% endblock %}
+{% block page_title %}Modifier une prestation{% endblock %}
+{% block page_subtitle %}Ajustez les informations de la prestation sélectionnée et mettez à jour les données budgétaires associées.{% endblock %}
+{% block title %}Modifier {{ service.prestation_label }} — CRM Local{% endblock %}
+{% block content %}
+<section class="space-y-10">
+  <div class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="space-y-2">
+        <h2 class="font-display text-2xl text-white">{{ service.prestation_label }}</h2>
+        <p class="text-sm text-slate-300">Client : <strong class="font-semibold text-white">{{ service.client.company_name if service.client else '—' }}</strong></p>
+      </div>
+      <a
+        href="{{ return_url }}"
+        class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+      >
+        ← Retour aux prestations
+      </a>
+    </div>
+
+    <form class="mt-8 space-y-6 rounded-2xl border border-white/10 bg-midnight-800/60 p-6 shadow-inner shadow-indigo-500/10 subcontract-form" method="post">
+      <div class="grid gap-4 md:grid-cols-2">
+        <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+          <span>Prestation *</span>
+          <div class="relative mt-2">
+            <select
+              name="prestation"
+              required
+              data-prestation-select
+              class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+            >
+              <option value="" disabled>Choisir une prestation…</option>
+              {% if service.prestation_key and service.prestation_key not in available_prestations %}
+                <option value="{{ service.prestation_key }}" selected data-budget-code="{{ service.budget_code }}">{{ service.prestation_label }} (existante)</option>
+              {% endif %}
+              {% for group in subcontracted_groups %}
+                <optgroup label="{{ group.title }}">
+                  {% for option in group.options %}
+                    <option value="{{ option.value }}" data-budget-code="{{ option.budget_code }}" {% if option.value == service.prestation_key %}selected{% endif %}>{{ option.label }}</option>
+                  {% endfor %}
+                </optgroup>
+              {% endfor %}
+            </select>
+            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+              </svg>
+            </span>
+          </div>
+        </label>
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+          <span>Code budget</span>
+          <input
+            type="text"
+            readonly
+            value="{{ service.budget_code }}"
+            data-budget-output
+            class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+          />
+        </label>
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+          <span>Budget</span>
+          <input
+            type="number"
+            name="budget"
+            step="0.01"
+            min="0"
+            value="{% if service.budget is not none %}{{ '{:.2f}'.format(service.budget) }}{% endif %}"
+            placeholder="0,00"
+            class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+          />
+        </label>
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+          <span>Fréquence</span>
+          <div class="relative mt-2">
+            <select
+              name="frequency"
+              required
+              data-frequency-select
+              class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+            >
+              {% for value, label in frequency_options.items() %}
+                <option value="{{ value }}" {% if value == service.frequency %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+              </svg>
+            </span>
+          </div>
+        </label>
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300 subcontract-form__week {% if service.frequency != 'prestation_ponctuelle' %}hidden{% endif %}" data-week-field>
+          <span>Semaine de réalisation</span>
+          <input
+            type="text"
+            name="realization_week"
+            placeholder="S01"
+            pattern="S\d{2}"
+            value="{{ service.realization_week or '' }}"
+            {% if service.frequency != 'prestation_ponctuelle' %}disabled{% endif %}
+            class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 disabled:opacity-60"
+          />
+        </label>
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+          <span>Semaine de commande</span>
+          <input
+            type="text"
+            name="order_week"
+            placeholder="S01"
+            pattern="S\d{2}"
+            value="{{ service.order_week or '' }}"
+            class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+          />
+        </label>
+      </div>
+      <div class="flex justify-end gap-3">
+        <a
+          href="{{ return_url }}"
+          class="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+        >
+          Annuler
+        </a>
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+        >
+          Enregistrer les modifications
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+{% include "_subcontract_form_script.html" %}
+{% endblock %}
