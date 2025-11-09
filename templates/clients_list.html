@@ -23,6 +23,52 @@
 </div>
 {% endif %}
 
+{% set metrics = namespace(contacts=0, services=0, active=0, astreinte=0) %}
+{% for client in clients %}
+  {% if client.status == 'actif' %}
+    {% set metrics.active = metrics.active + 1 %}
+  {% endif %}
+  {% if client.astreinte and client.astreinte != 'pas_d_astreinte' %}
+    {% set metrics.astreinte = metrics.astreinte + 1 %}
+  {% endif %}
+  {% set primary_contact = 1 if client.name or client.email or client.phone else 0 %}
+  {% set metrics.contacts = metrics.contacts + primary_contact + ((client.contacts or []) | length) %}
+  {% set metrics.services = metrics.services + ((client.subcontractings or []) | length) %}
+{% endfor %}
+
+<section class="dashboard-intro">
+  <div class="dashboard-intro__headline">
+    <span class="dashboard-intro__eyebrow">Synthèse en temps réel</span>
+    <h2>Une vue stratégique de votre portefeuille</h2>
+    <p>
+      Surveillez d'un coup d'œil {{ clients|length }} comptes clés et pilotez {{ metrics.services }} prestation{{ 's' if metrics.services > 1 else '' }}.
+      Les équipes disposent en permanence de la bonne information pour agir vite.
+    </p>
+  </div>
+  <div class="dashboard-intro__metrics">
+    <article class="metric-card">
+      <p class="metric-card__label">Total clients</p>
+      <p class="metric-card__value">{{ clients|length }}</p>
+      <p class="metric-card__hint">Portefeuille complet suivi dans l'outil</p>
+    </article>
+    <article class="metric-card">
+      <p class="metric-card__label">Clients actifs</p>
+      <p class="metric-card__value">{{ metrics.active }}</p>
+      <p class="metric-card__hint">{{ '{:.0f}'.format((metrics.active / clients|length * 100) if clients else 0) }} % du portefeuille</p>
+    </article>
+    <article class="metric-card">
+      <p class="metric-card__label">Sous astreinte</p>
+      <p class="metric-card__value">{{ metrics.astreinte }}</p>
+      <p class="metric-card__hint">{{ astreinte_options.get('incluse_refacturable') }} & {{ astreinte_options.get('incluse_non_refacturable') }}</p>
+    </article>
+    <article class="metric-card">
+      <p class="metric-card__label">Contacts référencés</p>
+      <p class="metric-card__value">{{ metrics.contacts }}</p>
+      <p class="metric-card__hint">Coordonnées centralisées pour chaque client</p>
+    </article>
+  </div>
+</section>
+
 <section class="panel">
   <div class="panel-header">
     <div class="panel-title">
