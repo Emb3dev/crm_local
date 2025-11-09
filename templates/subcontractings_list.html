@@ -110,12 +110,17 @@
               <th scope="col" class="px-6 py-4 text-left">Code budget</th>
               <th scope="col" class="px-6 py-4 text-left">Budget</th>
               <th scope="col" class="px-6 py-4 text-left">Semaines</th>
+              <th scope="col" class="px-6 py-4 text-left">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-white/10">
             {% if services %}
               {% for service in services %}
-                <tr class="bg-midnight-800/60 hover:bg-midnight-700/60">
+                {% set is_focused = focus_id and focus_id|int == service.id %}
+                <tr
+                  id="service-{{ service.id }}"
+                  class="bg-midnight-800/60 hover:bg-midnight-700/60 {% if is_focused %}ring-2 ring-indigo-400/70{% endif %}"
+                >
                   <td class="px-6 py-5 align-top">
                     <div class="text-base font-semibold text-white">{{ service.prestation_label }}</div>
                     <div class="mt-1 text-xs uppercase tracking-[0.3em] text-slate-400">Créée le {{ service.created_at.strftime('%d/%m/%Y') }}</div>
@@ -149,11 +154,17 @@
                       —
                     {% endif %}
                   </td>
+                  <td class="px-6 py-5 align-top">
+                    <a
+                      href="/prestations/{{ service.id }}/edit"
+                      class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                    >Modifier</a>
+                  </td>
                 </tr>
               {% endfor %}
             {% else %}
               <tr>
-                <td class="px-6 py-10 text-center text-sm text-slate-300" colspan="7">Aucune prestation enregistrée pour le moment.</td>
+                <td class="px-6 py-10 text-center text-sm text-slate-300" colspan="8">Aucune prestation enregistrée pour le moment.</td>
               </tr>
             {% endif %}
           </tbody>

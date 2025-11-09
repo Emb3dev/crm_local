@@ -12,6 +12,7 @@ from models import (
     ContactCreate,
     SubcontractedService,
     SubcontractedServiceCreate,
+    SubcontractedServiceUpdate,
 )
 
 def list_clients(
@@ -184,3 +185,31 @@ def list_subcontracted_services(
         stmt = stmt.where(SubcontractedService.frequency == frequency)
 
     return session.exec(stmt.limit(limit)).all()
+
+
+def get_subcontracted_service(
+    session: Session, service_id: int
+) -> Optional[SubcontractedService]:
+    stmt = (
+        select(SubcontractedService)
+        .where(SubcontractedService.id == service_id)
+        .options(selectinload(SubcontractedService.client))
+    )
+    return session.exec(stmt).one_or_none()
+
+
+def update_subcontracted_service(
+    session: Session, service_id: int, data: SubcontractedServiceUpdate
+) -> Optional[SubcontractedService]:
+    record = session.get(SubcontractedService, service_id)
+    if not record:
+        return None
+
+    updates = data.model_dump(exclude_unset=True)
+    for key, value in updates.items():
+        setattr(record, key, value)
+
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record

@@ -8,7 +8,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
 from database import init_db, get_session
-from models import ClientCreate, ClientUpdate, ContactCreate, SubcontractedServiceCreate
+from models import (
+    ClientCreate,
+    ClientUpdate,
+    ContactCreate,
+    SubcontractedServiceCreate,
+    SubcontractedServiceUpdate,
+)
 import crud
 from importers import parse_clients_excel
 from openpyxl import Workbook
@@ -283,6 +289,7 @@ def _subcontractings_context(
         "distinct_clients": len(client_ids),
         "active_filters": filters,
         "filters_definition": SUBCONTRACTING_FILTER_DEFINITIONS,
+        "focus_id": request.query_params.get("focus"),
     }
 
 
@@ -362,6 +369,82 @@ def subcontracted_services_page(
     return templates.TemplateResponse(
         "subcontractings_list.html",
         _subcontractings_context(request, services, q, filters),
+    )
+
+
+@app.get("/prestations/{service_id}/edit", response_class=HTMLResponse)
+def subcontracted_service_edit_page(
+    request: Request,
+    service_id: int,
+    session: Session = Depends(get_session),
+):
+    service = crud.get_subcontracted_service(session, service_id)
+    if not service:
+        raise HTTPException(404, "Prestation introuvable")
+
+    available_keys = set(SUBCONTRACTED_LOOKUP.keys())
+    return templates.TemplateResponse(
+        "subcontracting_edit.html",
+        {
+            "request": request,
+            "service": service,
+            "subcontracted_groups": SUBCONTRACTED_GROUPS,
+            "frequency_options": FREQUENCY_OPTIONS,
+            "available_prestations": available_keys,
+            "return_url": f"/prestations?focus={service.id}#service-{service.id}",
+        },
+    )
+
+
+@app.post("/prestations/{service_id}/edit")
+def update_subcontracted_service(
+    service_id: int,
+    prestation: str = Form(...),
+    budget: Optional[str] = Form(None),
+    frequency: str = Form(...),
+    realization_week: Optional[str] = Form(None),
+    order_week: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    service = crud.get_subcontracted_service(session, service_id)
+    if not service:
+        raise HTTPException(404, "Prestation introuvable")
+
+    if frequency not in FREQUENCY_OPTIONS:
+        raise HTTPException(400, "Fréquence inconnue")
+
+    details = SUBCONTRACTED_LOOKUP.get(prestation)
+    if not details and prestation != service.prestation_key:
+        raise HTTPException(400, "Prestation inconnue")
+
+    parsed_budget = _parse_budget(budget)
+
+    realization_value: Optional[str] = None
+    if frequency == "prestation_ponctuelle" and realization_week:
+        realization_value = realization_week.strip().upper()
+
+    order_value = order_week.strip().upper() if order_week else None
+
+    update_payload = SubcontractedServiceUpdate(
+        prestation_key=prestation,
+        prestation_label=(
+            details["label"] if details else service.prestation_label
+        ),
+        category=(details["category"] if details else service.category),
+        budget_code=(details["budget_code"] if details else service.budget_code),
+        budget=parsed_budget,
+        frequency=frequency,
+        realization_week=realization_value,
+        order_week=order_value,
+    )
+
+    updated = crud.update_subcontracted_service(session, service_id, update_payload)
+    if not updated:
+        raise HTTPException(404, "Prestation introuvable")
+
+    return RedirectResponse(
+        url=f"/prestations?focus={service_id}#service-{service_id}",
+        status_code=303,
     )
 
 # Form création
