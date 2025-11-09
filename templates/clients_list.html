@@ -7,7 +7,7 @@
 {% block content %}
 {% if import_report %}
   {% set is_success = not import_report.errors %}
-  {% set alert_classes = 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100' if is_success else 'border-amber-400/40 bg-amber-500/10 text-amber-100' %}
+  {% set alert_classes = 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100' if is_success else 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100' %}
   <div class="rounded-3xl border {{ alert_classes }} p-6 shadow-xl shadow-indigo-500/20 backdrop-blur">
     <p class="text-sm font-semibold uppercase tracking-[0.35em]">Import terminé</p>
     <p class="mt-2 text-base">
@@ -15,7 +15,7 @@
       sur {{ import_report.total }} depuis <strong>{{ import_report.filename }}</strong>.
     </p>
     {% if import_report.errors %}
-      <p class="mt-3 text-sm font-medium text-amber-200/80">Certaines lignes n'ont pas pu être importées :</p>
+      <p class="mt-3 text-sm font-medium text-amber-700 dark:text-amber-200/80">Certaines lignes n'ont pas pu être importées :</p>
       <ul class="mt-2 space-y-1 text-sm">
         {% for err in import_report.errors %}
           <li class="flex items-start gap-2">
@@ -42,79 +42,79 @@
 {% endfor %}
 
 <section class="space-y-10">
-  <div class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+  <div class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
     <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
       <div class="space-y-4">
-        <span class="inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-200">Synthèse en temps réel</span>
-        <h2 class="font-display text-2xl font-semibold text-white sm:text-3xl">Une vue stratégique de votre portefeuille</h2>
-        <p class="max-w-2xl text-base text-slate-300">
+        <span class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-200">Synthèse en temps réel</span>
+        <h2 class="font-display text-2xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white sm:text-3xl">Une vue stratégique de votre portefeuille</h2>
+        <p class="max-w-2xl text-base text-slate-600 transition-colors duration-300 dark:text-slate-300">
           Surveillez d'un coup d'œil {{ clients|length }} comptes clés et pilotez {{ metrics.services }} prestation{{ 's' if metrics.services > 1 else '' }}.
           Les équipes disposent en permanence de la bonne information pour agir vite.
         </p>
       </div>
-      <div class="rounded-3xl border border-white/10 bg-midnight-800/60 p-6 text-sm text-slate-300 shadow shadow-indigo-500/20 lg:max-w-xs">
-        <p class="font-semibold text-white">Pilotage maîtrisé</p>
+      <div class="rounded-3xl border border-slate-200 bg-white/80 p-6 text-sm text-slate-600 shadow shadow-indigo-500/10 transition-colors duration-300 lg:max-w-xs dark:border-white/10 dark:bg-midnight-800/60 dark:text-slate-300 dark:shadow-indigo-500/20">
+        <p class="font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Pilotage maîtrisé</p>
         <p class="mt-2">Suivez vos clients, opérations et partenaires au même endroit pour gagner en réactivité.</p>
       </div>
     </div>
     <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <article class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-indigo-500/15 backdrop-blur">
-        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">Total clients</p>
-        <p class="mt-3 text-3xl font-semibold text-white">{{ clients|length }}</p>
-        <p class="mt-3 text-sm text-slate-400">Portefeuille complet suivi dans l'outil</p>
+      <article class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg shadow-indigo-500/10 transition-colors duration-300 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">Total clients</p>
+        <p class="mt-3 text-3xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ clients|length }}</p>
+        <p class="mt-3 text-sm text-slate-500 transition-colors duration-300 dark:text-slate-400">Portefeuille complet suivi dans l'outil</p>
       </article>
-      <article class="rounded-3xl border border-emerald-400/30 bg-emerald-500/10 p-6 text-emerald-100 shadow-lg shadow-emerald-500/20 backdrop-blur">
+      <article class="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-700 shadow-lg shadow-emerald-200/60 transition-colors duration-300 backdrop-blur dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100 dark:shadow-emerald-500/20">
         <p class="text-xs font-semibold uppercase tracking-[0.3em]">Clients actifs</p>
         <p class="mt-3 text-3xl font-semibold">{{ metrics.active }}</p>
         <p class="mt-3 text-sm">{{ '{:.0f}'.format((metrics.active / clients|length * 100) if clients else 0) }} % du portefeuille</p>
       </article>
-      <article class="rounded-3xl border border-sky-400/30 bg-sky-500/10 p-6 text-sky-100 shadow-lg shadow-sky-500/20 backdrop-blur">
+      <article class="rounded-3xl border border-sky-200 bg-sky-50 p-6 text-sky-700 shadow-lg shadow-sky-200/60 transition-colors duration-300 backdrop-blur dark:border-sky-400/40 dark:bg-sky-500/10 dark:text-sky-100 dark:shadow-sky-500/20">
         <p class="text-xs font-semibold uppercase tracking-[0.3em]">Sous astreinte</p>
         <p class="mt-3 text-3xl font-semibold">{{ metrics.astreinte }}</p>
         <p class="mt-3 text-sm">{{ astreinte_options.get('incluse_refacturable') }} & {{ astreinte_options.get('incluse_non_refacturable') }}</p>
       </article>
-      <article class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-indigo-500/15 backdrop-blur">
-        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">Contacts référencés</p>
-        <p class="mt-3 text-3xl font-semibold text-white">{{ metrics.contacts }}</p>
-        <p class="mt-3 text-sm text-slate-400">Coordonnées centralisées pour chaque client</p>
+      <article class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg shadow-indigo-500/10 transition-colors duration-300 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">Contacts référencés</p>
+        <p class="mt-3 text-3xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ metrics.contacts }}</p>
+        <p class="mt-3 text-sm text-slate-500 transition-colors duration-300 dark:text-slate-400">Coordonnées centralisées pour chaque client</p>
       </article>
     </div>
   </div>
 
-  <section class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+  <section class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
       <div class="space-y-2">
-        <h2 class="font-display text-2xl text-white">Clients</h2>
-        <p class="text-sm text-slate-300">Consultez et filtrez votre portefeuille client.</p>
+        <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Clients</h2>
+        <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Consultez et filtrez votre portefeuille client.</p>
       </div>
-      <form class="flex w-full flex-col gap-4 rounded-2xl border border-white/10 bg-midnight-800/60 p-5 shadow-inner shadow-indigo-500/10" role="search" hx-get="/_clients" hx-target="#list" hx-trigger="keyup changed delay:300ms">
+      <form class="flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10" role="search" hx-get="/_clients" hx-target="#list" hx-trigger="keyup changed delay:300ms">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <label class="flex-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+          <label class="flex-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
             <span class="sr-only">Rechercher un client</span>
-            <input type="text" name="q" placeholder="Rechercher (entreprise, client, contact…)" value="{{ q }}" aria-label="Rechercher un client" class="mt-1 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+            <input type="text" name="q" placeholder="Rechercher (entreprise, client, contact…)" value="{{ q }}" aria-label="Rechercher un client" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70" />
           </label>
           <div class="flex items-center gap-3 sm:w-auto">
-            <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">Filtrer</button>
-            <a href="/" class="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40">Réinitialiser</a>
+            <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400">Filtrer</button>
+            <a href="/" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:focus-visible:ring-white/40">Réinitialiser</a>
           </div>
         </div>
         {% set active = active_filters or {} %}
         {% if filters_definition %}
           <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {% for field in filters_definition %}
-              <label class="space-y-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+              <label class="space-y-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
                 <span>{{ field.label }}</span>
                 <div class="relative">
                   <select
                     name="{{ field.name }}"
-                    class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+                    class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
                   >
                     <option value="">{{ field.placeholder }}</option>
                     {% for value, label in field.options %}
                       <option value="{{ value }}" {% if active.get(field.name) == value %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                   </select>
-                  <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+                  <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                       <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                     </svg>
@@ -135,64 +135,64 @@
           {% set contact_list = c.contacts or [] %}
           {% set contact_total = primary_has_data + (contact_list | length) %}
           {% set is_target = focus_id and focus_id|int == c.id %}
-          {% set status_classes = 'border-emerald-400/40 bg-emerald-500/15 text-emerald-100' if status_key == 'actif' else 'border-white/20 bg-white/10 text-slate-200' if not status_key else 'border-rose-400/40 bg-rose-500/20 text-rose-100' %}
-          <details class="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-xl shadow-indigo-500/15 transition-all focus-within:ring-2 focus-within:ring-indigo-400" id="client-{{ c.id }}" {% if is_target %}open{% endif %}>
-            <summary class="flex cursor-pointer flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          {% set status_classes = 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-500/15 dark:text-emerald-100' if status_key == 'actif' else 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/20 dark:bg-white/10 dark:text-slate-200' if not status_key else 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/40 dark:bg-rose-500/20 dark:text-rose-100' %}
+          <details class="group overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-xl shadow-indigo-500/10 transition-all focus-within:ring-2 focus-within:ring-indigo-200 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15 dark:focus-within:ring-indigo-400" id="client-{{ c.id }}" {% if is_target %}open{% endif %}>
+            <summary class="flex cursor-pointer flex-col gap-4 px-6 py-5 transition-colors duration-300 sm:flex-row sm:items-center sm:justify-between">
               <div class="space-y-2">
-                <h3 class="font-display text-xl text-white">{{ c.company_name }}</h3>
-                <p class="text-sm text-slate-300">Contact principal :
+                <h3 class="font-display text-xl text-slate-900 transition-colors duration-300 dark:text-white">{{ c.company_name }}</h3>
+                <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Contact principal :
                   {% if c.name %}
-                    <strong class="text-white">{{ c.name }}</strong>
+                    <strong class="text-slate-900 transition-colors duration-300 dark:text-white">{{ c.name }}</strong>
                   {% else %}
                     <span class="text-slate-400">à renseigner</span>
                   {% endif %}
                 </p>
                 {% if c.tags %}
-                  <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.3em] text-slate-200">{{ c.tags }}</span>
+                  <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ c.tags }}</span>
                 {% endif %}
               </div>
-              <div class="flex flex-col items-start gap-3 sm:items-end">
+              <div class="flex flex-col items-start gap-3 transition-colors duration-300 sm:items-end">
                 <span class="inline-flex items-center gap-2 rounded-full border {{ status_classes }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ status_options.get(status_key, status_key or "—") }}</span>
-                <span class="text-sm text-slate-300">{{ contact_total }} contact{{ 's' if contact_total > 1 else '' }}</span>
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/10 text-sm text-slate-200 transition group-open:rotate-180">
+                <span class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ contact_total }} contact{{ 's' if contact_total > 1 else '' }}</span>
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sm text-slate-500 transition group-open:rotate-180 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
                   </svg>
                 </span>
               </div>
             </summary>
-            <div class="space-y-8 border-t border-white/10 bg-midnight-800/40 px-6 py-6">
+            <div class="space-y-8 border-t border-slate-200 bg-slate-50 px-6 py-6 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/40">
               <div class="grid gap-6 lg:grid-cols-2">
                 <section class="space-y-4">
-                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-200">Informations client</h4>
-                  <dl class="grid gap-4 text-sm text-slate-300 sm:grid-cols-2">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Informations client</h4>
+                  <dl class="grid gap-4 text-sm text-slate-600 transition-colors duration-300 sm:grid-cols-2 dark:text-slate-300">
                     <div>
-                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Entreprise</dt>
-                      <dd class="mt-1 text-base text-white">{{ c.company_name }}</dd>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Entreprise</dt>
+                      <dd class="mt-1 text-base text-slate-900 transition-colors duration-300 dark:text-white">{{ c.company_name }}</dd>
                     </div>
                     <div>
-                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Adresse de facturation</dt>
-                      <dd class="mt-1 text-base text-white/90">{{ c.billing_address or "—" }}</dd>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Adresse de facturation</dt>
+                      <dd class="mt-1 text-base text-slate-700 transition-colors duration-300 dark:text-white/90">{{ c.billing_address or "—" }}</dd>
                     </div>
                     <div>
-                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Tags</dt>
-                      <dd class="mt-1 text-base text-white/90">{{ c.tags or "—" }}</dd>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Tags</dt>
+                      <dd class="mt-1 text-base text-slate-700 transition-colors duration-300 dark:text-white/90">{{ c.tags or "—" }}</dd>
                     </div>
                   </dl>
                 </section>
                 <section class="space-y-4">
-                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-200">Prestations</h4>
-                  <dl class="grid gap-4 text-sm text-slate-300 sm:grid-cols-2">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Prestations</h4>
+                  <dl class="grid gap-4 text-sm text-slate-600 transition-colors duration-300 sm:grid-cols-2 dark:text-slate-300">
                     <div>
-                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Dépannage</dt>
-                      <dd class="mt-1 text-base text-white/90">{{ depannage_options.get(c.depannage, "—") }}</dd>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Dépannage</dt>
+                      <dd class="mt-1 text-base text-slate-700 transition-colors duration-300 dark:text-white/90">{{ depannage_options.get(c.depannage, "—") }}</dd>
                     </div>
                     <div>
-                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Astreinte</dt>
-                      <dd class="mt-1 text-base text-white/90">{{ astreinte_options.get(c.astreinte, "—") }}</dd>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Astreinte</dt>
+                      <dd class="mt-1 text-base text-slate-700 transition-colors duration-300 dark:text-white/90">{{ astreinte_options.get(c.astreinte, "—") }}</dd>
                     </div>
                     <div>
-                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Statut</dt>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Statut</dt>
                       <dd class="mt-1 inline-flex items-center gap-2 rounded-full border {{ status_classes }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ status_options.get(status_key, status_key or "—") }}</dd>
                     </div>
                   </dl>
@@ -201,111 +201,111 @@
 
               <section class="space-y-6">
                 <div class="flex flex-wrap items-center justify-between gap-4">
-                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-200">Contacts</h4>
-                  <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">{{ contact_total }} contact{{ 's' if contact_total > 1 else '' }}</span>
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Contacts</h4>
+                  <span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">{{ contact_total }} contact{{ 's' if contact_total > 1 else '' }}</span>
                 </div>
                 <ul class="space-y-4">
                   {% if c.name or c.email or c.phone %}
-                    <li class="rounded-2xl border border-white/10 bg-white/5 p-4 shadow shadow-indigo-500/10">
+                    <li class="rounded-2xl border border-slate-200 bg-white p-4 shadow shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/10">
                       <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p class="text-base font-semibold text-white">{{ c.name or 'Contact principal' }}</p>
-                          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-200">Principal</p>
+                          <p class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ c.name or 'Contact principal' }}</p>
+                          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Principal</p>
                         </div>
-                        <div class="flex flex-wrap items-center gap-3 text-sm text-slate-200">
+                        <div class="flex flex-wrap items-center gap-3 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
                           {% if c.email %}
-                            <a class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 transition hover:border-indigo-300 hover:text-white" href="mailto:{{ c.email }}">{{ c.email }}</a>
+                            <a class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 transition hover:bg-slate-200 dark:border-white/10 dark:bg-white/10 dark:hover:border-indigo-300 dark:hover:text-white" href="mailto:{{ c.email }}">{{ c.email }}</a>
                           {% endif %}
                           {% if c.phone %}
-                            <a class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 transition hover:border-indigo-300 hover:text-white" href="tel:{{ c.phone }}">{{ c.phone }}</a>
+                            <a class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 transition hover:bg-slate-200 dark:border-white/10 dark:bg-white/10 dark:hover:border-indigo-300 dark:hover:text-white" href="tel:{{ c.phone }}">{{ c.phone }}</a>
                           {% endif %}
                           {% if not c.email and not c.phone %}
-                            <span class="text-slate-400">Coordonnées à renseigner</span>
+                            <span class="text-slate-500 dark:text-slate-400">Coordonnées à renseigner</span>
                           {% endif %}
                         </div>
                       </div>
                     </li>
                   {% endif %}
                   {% for contact in contact_list | sort(attribute='name') %}
-                    <li class="rounded-2xl border border-white/10 bg-white/5 p-4 shadow shadow-indigo-500/10">
+                    <li class="rounded-2xl border border-slate-200 bg-white p-4 shadow shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/10">
                       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <p class="text-base font-semibold text-white">{{ contact.name }}</p>
-                          <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-200">
+                          <p class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ contact.name }}</p>
+                          <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
                             {% if contact.email %}
-                              <a class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 transition hover:border-indigo-300 hover:text-white" href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+                              <a class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 transition hover:bg-slate-200 dark:border-white/10 dark:bg-white/10 dark:hover:border-indigo-300 dark:hover:text-white" href="mailto:{{ contact.email }}">{{ contact.email }}</a>
                             {% endif %}
                             {% if contact.phone %}
-                              <a class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 transition hover:border-indigo-300 hover:text-white" href="tel:{{ contact.phone }}">{{ contact.phone }}</a>
+                              <a class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 transition hover:bg-slate-200 dark:border-white/10 dark:bg-white/10 dark:hover:border-indigo-300 dark:hover:text-white" href="tel:{{ contact.phone }}">{{ contact.phone }}</a>
                             {% endif %}
                             {% if not contact.email and not contact.phone %}
-                              <span class="text-slate-400">Coordonnées à renseigner</span>
+                              <span class="text-slate-500 dark:text-slate-400">Coordonnées à renseigner</span>
                             {% endif %}
                           </div>
                         </div>
                         <form action="/clients/{{ c.id }}/contacts/{{ contact.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ contact.name }} ?')" class="flex justify-end">
-                          <button class="inline-flex items-center justify-center rounded-full border border-rose-400/40 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-100 transition hover:bg-rose-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" type="submit" title="Supprimer le contact">🗑️</button>
+                          <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" type="submit" title="Supprimer le contact">🗑️</button>
                         </form>
                       </div>
                     </li>
                   {% endfor %}
                   {% if not (c.name or c.email or c.phone) and not contact_list %}
-                    <li class="rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-6 text-center text-sm text-slate-400">Aucun contact pour le moment.</li>
+                    <li class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 transition-colors duration-300 dark:border-white/20 dark:bg-white/5 dark:text-slate-300">Aucun contact pour le moment.</li>
                   {% endif %}
                 </ul>
 
-                <form class="rounded-2xl border border-white/10 bg-midnight-800/60 p-4 shadow-inner shadow-indigo-500/10" action="/clients/{{ c.id }}/contacts" method="post">
+                <form class="rounded-2xl border border-slate-200 bg-white p-4 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10" action="/clients/{{ c.id }}/contacts" method="post">
                   <div class="grid gap-4 md:grid-cols-3">
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
                       <span>Nom *</span>
-                      <input name="contact_name" required placeholder="Prénom Nom" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+                      <input name="contact_name" required placeholder="Prénom Nom" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
                       <span>Email</span>
-                      <input name="contact_email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+                      <input name="contact_email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
                       <span>Téléphone</span>
-                      <input name="contact_phone" placeholder="06 00 00 00 00" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+                      <input name="contact_phone" placeholder="06 00 00 00 00" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
                   </div>
                   <div class="mt-4 flex justify-end">
-                    <button class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-5 py-2 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" type="submit">Ajouter un contact</button>
+                    <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Ajouter un contact</button>
                   </div>
                 </form>
               </section>
 
               <section class="space-y-6">
                 <div class="flex flex-wrap items-center justify-between gap-4">
-                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-200">Prestations sous-traitées & locations</h4>
-                  <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">{{ (c.subcontractings or []) | length }} prestation{{ 's' if (c.subcontractings or []) | length > 1 else '' }}</span>
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Prestations sous-traitées & locations</h4>
+                  <span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">{{ (c.subcontractings or []) | length }} prestation{{ 's' if (c.subcontractings or []) | length > 1 else '' }}</span>
                 </div>
                 {% set services = c.subcontractings | sort(attribute='created_at', reverse=True) %}
                 {% if services %}
                   <ul class="space-y-4">
                     {% for service in services %}
                       {% set frequency_label = frequency_options.get(service.frequency, service.frequency) %}
-                      <li class="rounded-2xl border border-white/10 bg-white/5 p-5 shadow shadow-indigo-500/10">
+                      <li class="rounded-2xl border border-slate-200 bg-white p-5 shadow shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/10">
                         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                           <div>
-                            <p class="text-base font-semibold text-white">{{ service.prestation_label }}</p>
-                            <p class="text-sm text-slate-300">{{ service.category }}</p>
+                            <p class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ service.prestation_label }}</p>
+                            <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ service.category }}</p>
                           </div>
                           <div class="flex flex-wrap items-center gap-3">
-                            <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-200">{{ frequency_label }}</span>
+                            <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ frequency_label }}</span>
                             <form action="/clients/{{ c.id }}/subcontractings/{{ service.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ service.prestation_label }} ?')">
-                              <button class="inline-flex items-center justify-center rounded-full border border-rose-400/40 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-100 transition hover:bg-rose-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" type="submit" title="Supprimer la prestation">🗑️</button>
+                              <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" type="submit" title="Supprimer la prestation">🗑️</button>
                             </form>
                           </div>
                         </div>
-                        <dl class="mt-4 grid gap-4 text-sm text-slate-300 sm:grid-cols-2">
+                        <dl class="mt-4 grid gap-4 text-sm text-slate-600 transition-colors duration-300 sm:grid-cols-2 dark:text-slate-300">
                           <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Code budget</dt>
-                            <dd class="mt-1 text-base text-white/90">{{ service.budget_code }}</dd>
+                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Code budget</dt>
+                            <dd class="mt-1 text-base text-slate-900 transition-colors duration-300 dark:text-white/90">{{ service.budget_code }}</dd>
                           </div>
                           <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Budget</dt>
-                            <dd class="mt-1 text-base text-white/90">
+                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Budget</dt>
+                            <dd class="mt-1 text-base text-slate-900 transition-colors duration-300 dark:text-white/90">
                               {% if service.budget is not none %}
                                 {{ '{:,.2f}'.format(service.budget).replace(',', ' ').rstrip('0').rstrip('.') }} €
                               {% else %}
@@ -314,42 +314,40 @@
                             </dd>
                           </div>
                           {% set status_value = service.status or subcontract_status_default %}
-                          {% set status_class = subcontract_status_styles.get(status_value) or 'border-white/10 bg-white/10 text-slate-200' %}
+                          {% set status_class = subcontract_status_styles.get(status_value) or 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200' %}
                           <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Statut</dt>
+                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Statut</dt>
                             <dd class="mt-2">
-                              <span class="inline-flex items-center gap-2 rounded-full border {{ status_class }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
-                                {{ subcontract_status_options.get(status_value, 'Statut inconnu') }}
-                              </span>
+                              <span class="inline-flex items-center gap-2 rounded-full border {{ status_class }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ subcontract_status_options.get(status_value, 'Statut inconnu') }}</span>
                             </dd>
                           </div>
-                          <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Semaine de réalisation</dt>
-                            <dd class="mt-1 text-base text-white/90">{{ service.realization_week or '—' }}</dd>
-                          </div>
-                          <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Semaine de commande</dt>
-                            <dd class="mt-1 text-base text-white/90">{{ service.order_week or '—' }}</dd>
-                          </div>
+                          {% if service.order_week or service.realization_week %}
+                            <div>
+                              <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Semaines</dt>
+                              <dd class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-200">
+                                {% if service.order_week %}<span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">Commande : {{ service.order_week }}</span>{% endif %}
+                                {% if service.realization_week %}<span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">Réalisation : {{ service.realization_week }}</span>{% endif %}
+                              </dd>
+                            </div>
+                          {% endif %}
                         </dl>
-                        <p class="mt-4 text-xs uppercase tracking-[0.3em] text-slate-400">Créée le {{ service.created_at.strftime('%d/%m/%Y') }}</p>
                       </li>
                     {% endfor %}
                   </ul>
                 {% else %}
-                  <p class="rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-6 text-center text-sm text-slate-400">Aucune prestation enregistrée pour le moment.</p>
+                  <p class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 transition-colors duration-300 dark:border-white/20 dark:bg-white/5 dark:text-slate-300">Aucune prestation enregistrée pour le moment.</p>
                 {% endif %}
 
-                <form class="rounded-2xl border border-white/10 bg-midnight-800/60 p-5 shadow-inner shadow-indigo-500/10 subcontract-form" action="/clients/{{ c.id }}/subcontractings" method="post">
+                <form class="rounded-2xl border border-slate-200 bg-white p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10 subcontract-form" action="/clients/{{ c.id }}/subcontractings" method="post">
                   <div class="grid gap-4 md:grid-cols-2">
-                    <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                    <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
                       <span>Prestation *</span>
                       <div class="relative mt-2">
                         <select
                           name="prestation"
                           required
                           data-prestation-select
-                          class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+                          class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
                         >
                           <option value="" selected disabled>Choisir une prestation…</option>
                           {% for group in subcontracted_groups %}
@@ -360,77 +358,77 @@
                             </optgroup>
                           {% endfor %}
                         </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                           </svg>
                         </span>
                       </div>
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
                       <span>Code budget</span>
-                      <input type="text" readonly placeholder="Auto" data-budget-output class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+                      <input type="text" readonly placeholder="Auto" data-budget-output class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
                       <span>Budget</span>
-                      <input type="number" name="budget" step="0.01" min="0" placeholder="0,00" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+                      <input type="number" name="budget" step="0.01" min="0" placeholder="0,00" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
                       <span>Fréquence</span>
                       <div class="relative mt-2">
                         <select
                           name="frequency"
                           required
                           data-frequency-select
-                          class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+                          class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
                         >
                           {% for value, label in frequency_options.items() %}
                             <option value="{{ value }}">{{ label }}</option>
                           {% endfor %}
                         </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                           </svg>
                         </span>
                       </div>
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
                       <span>Statut</span>
                       <div class="relative mt-2">
                         <select
                           name="status"
-                          class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+                          class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
                         >
                           {% for value, label in subcontract_status_options.items() %}
                             <option value="{{ value }}" {% if value == subcontract_status_default %}selected{% endif %}>{{ label }}</option>
                           {% endfor %}
                         </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                           </svg>
                         </span>
                       </div>
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300 subcontract-form__week hidden" data-week-field>
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 subcontract-form__week hidden dark:text-slate-300" data-week-field>
                       <span>Semaine de réalisation</span>
-                      <input type="text" name="realization_week" placeholder="S01" pattern="S\d{2}" disabled class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 disabled:opacity-60" />
+                      <input type="text" name="realization_week" placeholder="S01" pattern="S\d{2}" disabled class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
                       <span>Semaine de commande</span>
-                      <input type="text" name="order_week" placeholder="S01" pattern="S\d{2}" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+                      <input type="text" name="order_week" placeholder="S01" pattern="S\d{2}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
                   </div>
                   <div class="mt-5 flex justify-end gap-3">
-                    <button class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-5 py-2 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" type="submit">Ajouter une prestation</button>
+                    <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Ajouter une prestation</button>
                   </div>
                 </form>
               </section>
 
               <div class="flex justify-end">
                 <form action="/clients/{{ c.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ c.company_name }} ?')">
-                  <button class="inline-flex items-center justify-center rounded-full border border-rose-400/40 bg-rose-500/10 px-5 py-2 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" type="submit">Supprimer le client</button>
+                  <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" type="submit">Supprimer le client</button>
                 </form>
               </div>
             </div>
@@ -444,104 +442,104 @@
 </section>
 
 <section class="grid gap-8 lg:grid-cols-2">
-  <div class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+  <div class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
     <div class="space-y-2">
-      <h2 class="font-display text-2xl text-white">Import Excel</h2>
-      <p class="text-sm text-slate-300">Mettez à jour votre base en important plusieurs clients à la fois.</p>
+      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Import Excel</h2>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Mettez à jour votre base en important plusieurs clients à la fois.</p>
     </div>
     <form action="/clients/import" method="post" enctype="multipart/form-data" class="mt-6 grid gap-4">
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
         <span>Fichier Excel (.xlsx)</span>
-        <input type="file" name="file" accept=".xlsx,.xlsm,.xltx,.xltm" required class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white file:mr-4 file:rounded-full file:border-0 file:bg-indigo-500/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white" />
+        <input type="file" name="file" accept=".xlsx,.xlsm,.xltx,.xltm" required class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:file:bg-indigo-500/20 dark:file:text-white" />
       </label>
       <div class="mt-4 flex flex-wrap items-center gap-3">
-        <button class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-5 py-2 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" type="submit">Importer</button>
-        <a class="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm font-semibold text-slate-200 transition hover:border-indigo-300 hover:bg-indigo-400/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" href="/clients/import/template">Télécharger le modèle Excel</a>
+        <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Importer</button>
+        <a class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:focus-visible:ring-white/40" href="/clients/import/template">Télécharger le modèle Excel</a>
       </div>
-      <p class="mt-4 rounded-2xl border border-white/10 bg-midnight-800/60 p-4 text-xs text-slate-300">
-        Colonnes minimales : Nom entreprise et Nom client. Colonnes optionnelles prises en charge : Email, Téléphone, Adresse de facturation, Dépannage, Astreinte, Tags, Statut, ainsi que des colonnes <code class="font-mono text-indigo-200">contact_2_*</code>, <code class="font-mono text-indigo-200">contact_3_*</code>… pour importer des contacts supplémentaires.
+      <p class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:text-slate-300">
+        Colonnes minimales : Nom entreprise et Nom client. Colonnes optionnelles prises en charge : Email, Téléphone, Adresse de facturation, Dépannage, Astreinte, Tags, Statut, ainsi que des colonnes <code class="font-mono text-indigo-600 dark:text-indigo-200">contact_2_*</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">contact_3_*</code>… pour importer des contacts supplémentaires.
       </p>
     </form>
   </div>
 
-  <div class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+  <div class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
     <div class="space-y-2">
-      <h2 class="font-display text-2xl text-white">Nouveau client</h2>
-      <p class="text-sm text-slate-300">Ajoutez un dossier client en quelques informations clés.</p>
+      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Nouveau client</h2>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Ajoutez un dossier client en quelques informations clés.</p>
     </div>
     <form action="/clients/new" method="post" class="mt-6 grid gap-4 md:grid-cols-2">
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
         <span>Nom entreprise *</span>
-        <input name="company_name" required placeholder="Ex: Dupont SARL" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+        <input name="company_name" required placeholder="Ex: Dupont SARL" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
         <span>Contact principal *</span>
-        <input name="name" required placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+        <input name="name" required placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
         <span>Email du contact</span>
-        <input name="email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+        <input name="email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
         <span>Téléphone du contact</span>
-        <input name="phone" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+        <input name="phone" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+      <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
         <span>Adresse de facturation</span>
-        <textarea name="billing_address" rows="3" placeholder="Rue, code postal, ville…" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"></textarea>
+        <textarea name="billing_address" rows="3" placeholder="Rue, code postal, ville…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"></textarea>
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
         <span>Dépannage</span>
         <div class="relative mt-2">
           <select
             name="depannage"
-            class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+            class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
           >
             {% for value, label in depannage_options.items() %}
               <option value="{{ value }}">{{ label }}</option>
             {% endfor %}
           </select>
-          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
             </svg>
           </span>
         </div>
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
         <span>Astreinte</span>
         <div class="relative mt-2">
           <select
             name="astreinte"
-            class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+            class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
           >
             {% for value, label in astreinte_options.items() %}
               <option value="{{ value }}">{{ label }}</option>
             {% endfor %}
           </select>
-          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
             </svg>
           </span>
         </div>
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
         <span>Tags</span>
-        <input name="tags" placeholder="Ex: premium, 2024" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70" />
+        <input name="tags" placeholder="Ex: premium, 2024" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
         <span>Statut</span>
         <div class="relative mt-2">
           <select
             name="status"
-            class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+            class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
           >
             {% for value, label in status_options.items() %}
               <option value="{{ value }}">{{ label }}</option>
             {% endfor %}
           </select>
-          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
             </svg>
@@ -549,7 +547,7 @@
         </div>
       </label>
       <div class="md:col-span-2 mt-2 flex justify-end">
-        <button class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" type="submit">Ajouter</button>
+        <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Ajouter</button>
       </div>
     </form>
   </div>
