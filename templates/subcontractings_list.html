@@ -29,12 +29,22 @@
             {% for field in filters_definition %}
               <label class="space-y-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                 <span>{{ field.label }}</span>
-                <select name="{{ field.name }}" class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
-                  <option value="">{{ field.placeholder }}</option>
-                  {% for value, label in field.options %}
-                    <option value="{{ value }}" {% if active.get(field.name) == value %}selected{% endif %}>{{ label }}</option>
-                  {% endfor %}
-                </select>
+                <div class="relative">
+                  <select
+                    name="{{ field.name }}"
+                    class="peer w-full appearance-none rounded-2xl border border-white/10 bg-gradient-to-r from-white/15 via-white/10 to-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white shadow-inner shadow-indigo-500/10 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+                  >
+                    <option value="">{{ field.placeholder }}</option>
+                    {% for value, label in field.options %}
+                      <option value="{{ value }}" {% if active.get(field.name) == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                    </svg>
+                  </span>
+                </div>
               </label>
             {% endfor %}
           </div>
