@@ -313,6 +313,16 @@
                               {% endif %}
                             </dd>
                           </div>
+                          {% set status_value = service.status or subcontract_status_default %}
+                          {% set status_class = subcontract_status_styles.get(status_value) or 'border-white/10 bg-white/10 text-slate-200' %}
+                          <div>
+                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Statut</dt>
+                            <dd class="mt-2">
+                              <span class="inline-flex items-center gap-2 rounded-full border {{ status_class }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
+                                {{ subcontract_status_options.get(status_value, 'Statut inconnu') }}
+                              </span>
+                            </dd>
+                          </div>
                           <div>
                             <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Semaine de réalisation</dt>
                             <dd class="mt-1 text-base text-white/90">{{ service.realization_week or '—' }}</dd>
@@ -376,6 +386,24 @@
                         >
                           {% for value, label in frequency_options.items() %}
                             <option value="{{ value }}">{{ label }}</option>
+                          {% endfor %}
+                        </select>
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                      </div>
+                    </label>
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                      <span>Statut</span>
+                      <div class="relative mt-2">
+                        <select
+                          name="status"
+                          class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+                        >
+                          {% for value, label in subcontract_status_options.items() %}
+                            <option value="{{ value }}" {% if value == subcontract_status_default %}selected{% endif %}>{{ label }}</option>
                           {% endfor %}
                         </select>
                         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">

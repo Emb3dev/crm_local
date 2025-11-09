@@ -107,6 +107,7 @@
               <th scope="col" class="px-6 py-4 text-left">Client</th>
               <th scope="col" class="px-6 py-4 text-left">Catégorie</th>
               <th scope="col" class="px-6 py-4 text-left">Fréquence</th>
+              <th scope="col" class="px-6 py-4 text-left">Statut</th>
               <th scope="col" class="px-6 py-4 text-left">Code budget</th>
               <th scope="col" class="px-6 py-4 text-left">Budget</th>
               <th scope="col" class="px-6 py-4 text-left">Semaines</th>
@@ -137,6 +138,13 @@
                   <td class="px-6 py-5 align-top">
                     <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ frequency_options.get(service.frequency, service.frequency) }}</span>
                   </td>
+                  {% set status_value = service.status or subcontract_status_default %}
+                  {% set status_class = subcontract_status_styles.get(status_value) or 'border-white/10 bg-white/10 text-slate-200' %}
+                  <td class="px-6 py-5 align-top">
+                    <span class="inline-flex items-center gap-2 rounded-full border {{ status_class }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
+                      {{ subcontract_status_options.get(status_value, 'Statut inconnu') }}
+                    </span>
+                  </td>
                   <td class="px-6 py-5 align-top">{{ service.budget_code }}</td>
                   <td class="px-6 py-5 align-top">
                     {% if service.budget is not none %}
@@ -164,7 +172,7 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td class="px-6 py-10 text-center text-sm text-slate-300" colspan="8">Aucune prestation enregistrée pour le moment.</td>
+                <td class="px-6 py-10 text-center text-sm text-slate-300" colspan="9">Aucune prestation enregistrée pour le moment.</td>
               </tr>
             {% endif %}
           </tbody>

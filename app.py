@@ -41,6 +41,20 @@ STATUS_OPTIONS = {
     "inactif": "Inactif",
 }
 
+SUBCONTRACT_STATUS_DEFAULT = "non_commence"
+
+SUBCONTRACT_STATUS_OPTIONS = {
+    "non_commence": "Non commencé",
+    "en_cours": "En cours",
+    "fait": "Fait",
+}
+
+SUBCONTRACT_STATUS_STYLES = {
+    "fait": "border-emerald-400/40 bg-emerald-500/10 text-emerald-100",
+    "en_cours": "border-amber-400/40 bg-amber-500/10 text-amber-100",
+    "non_commence": "border-rose-400/40 bg-rose-500/10 text-rose-100",
+}
+
 CLIENT_FILTER_DEFINITIONS = [
     {
         "name": "status",
@@ -253,6 +267,9 @@ def _clients_context(request: Request, clients, q: Optional[str], filters: Dict[
         "depannage_options": DEPANNAGE_OPTIONS,
         "astreinte_options": ASTREINTE_OPTIONS,
         "status_options": STATUS_OPTIONS,
+        "subcontract_status_options": SUBCONTRACT_STATUS_OPTIONS,
+        "subcontract_status_styles": SUBCONTRACT_STATUS_STYLES,
+        "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
         "subcontracted_groups": SUBCONTRACTED_GROUPS,
         "frequency_options": FREQUENCY_OPTIONS,
         "import_report": report,
@@ -290,6 +307,9 @@ def _subcontractings_context(
         "active_filters": filters,
         "filters_definition": SUBCONTRACTING_FILTER_DEFINITIONS,
         "focus_id": request.query_params.get("focus"),
+        "subcontract_status_options": SUBCONTRACT_STATUS_OPTIONS,
+        "subcontract_status_styles": SUBCONTRACT_STATUS_STYLES,
+        "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
     }
 
 
@@ -390,6 +410,8 @@ def subcontracted_service_edit_page(
             "service": service,
             "subcontracted_groups": SUBCONTRACTED_GROUPS,
             "frequency_options": FREQUENCY_OPTIONS,
+            "subcontract_status_options": SUBCONTRACT_STATUS_OPTIONS,
+            "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
             "available_prestations": available_keys,
             "return_url": f"/prestations?focus={service.id}#service-{service.id}",
         },
@@ -402,6 +424,7 @@ def update_subcontracted_service(
     prestation: str = Form(...),
     budget: Optional[str] = Form(None),
     frequency: str = Form(...),
+    status: str = Form(SUBCONTRACT_STATUS_DEFAULT),
     realization_week: Optional[str] = Form(None),
     order_week: Optional[str] = Form(None),
     session: Session = Depends(get_session),
@@ -416,6 +439,9 @@ def update_subcontracted_service(
     details = SUBCONTRACTED_LOOKUP.get(prestation)
     if not details and prestation != service.prestation_key:
         raise HTTPException(400, "Prestation inconnue")
+
+    if status not in SUBCONTRACT_STATUS_OPTIONS:
+        raise HTTPException(400, "Statut inconnu")
 
     parsed_budget = _parse_budget(budget)
 
@@ -434,6 +460,7 @@ def update_subcontracted_service(
         budget_code=(details["budget_code"] if details else service.budget_code),
         budget=parsed_budget,
         frequency=frequency,
+        status=status,
         realization_week=realization_value,
         order_week=order_value,
     )
@@ -564,6 +591,7 @@ def add_subcontracted_service(
     prestation: str = Form(...),
     budget: Optional[str] = Form(None),
     frequency: str = Form(...),
+    status: str = Form(SUBCONTRACT_STATUS_DEFAULT),
     realization_week: Optional[str] = Form(None),
     order_week: Optional[str] = Form(None),
     session: Session = Depends(get_session),
@@ -573,6 +601,9 @@ def add_subcontracted_service(
         raise HTTPException(400, "Prestation inconnue")
     if frequency not in FREQUENCY_OPTIONS:
         raise HTTPException(400, "Fréquence inconnue")
+
+    if status not in SUBCONTRACT_STATUS_OPTIONS:
+        raise HTTPException(400, "Statut inconnu")
 
     parsed_budget = _parse_budget(budget)
     realization_value = (
@@ -590,6 +621,7 @@ def add_subcontracted_service(
             budget_code=details["budget_code"],
             budget=parsed_budget,
             frequency=frequency,
+            status=status,
             realization_week=realization_value,
             order_week=order_value,
         ),
