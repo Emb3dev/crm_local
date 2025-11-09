@@ -8,15 +8,15 @@
   --font-base: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: "Space Grotesk", "Manrope", system-ui, sans-serif;
 
-  --bg-primary: #f5f6ff;
-  --bg-secondary: #eef3ff;
-  --surface: rgba(255, 255, 255, 0.86);
+  --bg-primary: #eef2ff;
+  --bg-secondary: #e0e7ff;
+  --surface: rgba(255, 255, 255, 0.97);
   --surface-strong: #ffffff;
-  --surface-muted: rgba(255, 255, 255, 0.5);
-  --ink: #0f172a;
-  --ink-muted: #51607a;
-  --ink-subtle: rgba(15, 23, 42, 0.55);
-  --line: rgba(82, 97, 132, 0.2);
+  --surface-muted: rgba(248, 249, 255, 0.9);
+  --ink: #0b1f3a;
+  --ink-muted: #324564;
+  --ink-subtle: rgba(50, 69, 100, 0.72);
+  --line: rgba(82, 97, 132, 0.32);
   --brand: #6366f1;
   --brand-strong: #4338ca;
   --brand-soft: rgba(99, 102, 241, 0.15);
@@ -89,7 +89,7 @@ body::after {
               radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.18), transparent 60%);
   pointer-events: none;
   mix-blend-mode: screen;
-  opacity: 0.7;
+  opacity: 0.45;
   z-index: 0;
 }
 
@@ -341,7 +341,7 @@ a:hover {
 /* ---------- SURFACE ---------- */
 .app-shell__surface {
   position: relative;
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
   border-radius: var(--radius-lg);
   border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
   box-shadow: var(--shadow-md);
