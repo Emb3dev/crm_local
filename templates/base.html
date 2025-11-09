@@ -6,12 +6,18 @@
   <title>{% block title %}CRM Local{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  >
   <link rel="stylesheet" href="/static/styles.css" />
   <script src="https://unpkg.com/htmx.org@2.0.2"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Aller au contenu</a>
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="aurora aurora--secondary" aria-hidden="true"></div>
+  <div class="aurora-grid" aria-hidden="true"></div>
   <div class="app-shell">
     <button id="themeToggle" class="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">
       <span aria-hidden="true">🌙</span>
@@ -28,6 +34,7 @@
         <div class="sidebar__header">
           <span class="sidebar__logo">CRM Local</span>
           <p class="sidebar__caption">Portail équipes service client</p>
+          <span class="sidebar__edition">Édition Nova 2024</span>
         </div>
         <nav class="sidebar__nav">
           {% block sidebar %}
@@ -43,6 +50,9 @@
           </a>
           {% endblock %}
         </nav>
+        <div class="sidebar__footer">
+          <p>Optimisez vos opérations, coordonnez vos partenaires et pilotez vos engagements en temps réel.</p>
+        </div>
       </aside>
 
       <main id="main" class="{% block main_classes %}app-shell__surface{% endblock %}" tabindex="-1">
