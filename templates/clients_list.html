@@ -104,12 +104,22 @@
             {% for field in filters_definition %}
               <label class="space-y-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                 <span>{{ field.label }}</span>
-                <select name="{{ field.name }}" class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
-                  <option value="">{{ field.placeholder }}</option>
-                  {% for value, label in field.options %}
-                    <option value="{{ value }}" {% if active.get(field.name) == value %}selected{% endif %}>{{ label }}</option>
-                  {% endfor %}
-                </select>
+                <div class="relative">
+                  <select
+                    name="{{ field.name }}"
+                    class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+                  >
+                    <option value="">{{ field.placeholder }}</option>
+                    {% for value, label in field.options %}
+                      <option value="{{ value }}" {% if active.get(field.name) == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                    </svg>
+                  </span>
+                </div>
               </label>
             {% endfor %}
           </div>
@@ -324,16 +334,28 @@
                   <div class="grid gap-4 md:grid-cols-2">
                     <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                       <span>Prestation *</span>
-                      <select name="prestation" required data-prestation-select class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
-                        <option value="" selected disabled>Choisir une prestation…</option>
-                        {% for group in subcontracted_groups %}
-                          <optgroup label="{{ group.title }}">
-                            {% for option in group.options %}
-                              <option value="{{ option.value }}" data-budget-code="{{ option.budget_code }}">{{ option.label }}</option>
-                            {% endfor %}
-                          </optgroup>
-                        {% endfor %}
-                      </select>
+                      <div class="relative mt-2">
+                        <select
+                          name="prestation"
+                          required
+                          data-prestation-select
+                          class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+                        >
+                          <option value="" selected disabled>Choisir une prestation…</option>
+                          {% for group in subcontracted_groups %}
+                            <optgroup label="{{ group.title }}">
+                              {% for option in group.options %}
+                                <option value="{{ option.value }}" data-budget-code="{{ option.budget_code }}">{{ option.label }}</option>
+                              {% endfor %}
+                            </optgroup>
+                          {% endfor %}
+                        </select>
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                      </div>
                     </label>
                     <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                       <span>Code budget</span>
@@ -345,11 +367,23 @@
                     </label>
                     <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
                       <span>Fréquence</span>
-                      <select name="frequency" required data-frequency-select class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
-                        {% for value, label in frequency_options.items() %}
-                          <option value="{{ value }}">{{ label }}</option>
-                        {% endfor %}
-                      </select>
+                      <div class="relative mt-2">
+                        <select
+                          name="frequency"
+                          required
+                          data-frequency-select
+                          class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+                        >
+                          {% for value, label in frequency_options.items() %}
+                            <option value="{{ value }}">{{ label }}</option>
+                          {% endfor %}
+                        </select>
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                      </div>
                     </label>
                     <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300 subcontract-form__week hidden" data-week-field>
                       <span>Semaine de réalisation</span>
@@ -430,19 +464,39 @@
       </label>
       <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
         <span>Dépannage</span>
-        <select name="depannage" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
-          {% for value, label in depannage_options.items() %}
-            <option value="{{ value }}">{{ label }}</option>
-          {% endfor %}
-        </select>
+        <div class="relative mt-2">
+          <select
+            name="depannage"
+            class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+          >
+            {% for value, label in depannage_options.items() %}
+              <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+            </svg>
+          </span>
+        </div>
       </label>
       <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
         <span>Astreinte</span>
-        <select name="astreinte" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
-          {% for value, label in astreinte_options.items() %}
-            <option value="{{ value }}">{{ label }}</option>
-          {% endfor %}
-        </select>
+        <div class="relative mt-2">
+          <select
+            name="astreinte"
+            class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+          >
+            {% for value, label in astreinte_options.items() %}
+              <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+            </svg>
+          </span>
+        </div>
       </label>
       <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
         <span>Tags</span>
@@ -450,11 +504,21 @@
       </label>
       <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
         <span>Statut</span>
-        <select name="status" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70">
-          {% for value, label in status_options.items() %}
-            <option value="{{ value }}">{{ label }}</option>
-          {% endfor %}
-        </select>
+        <div class="relative mt-2">
+          <select
+            name="status"
+            class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+          >
+            {% for value, label in status_options.items() %}
+              <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+            </svg>
+          </span>
+        </div>
       </label>
       <div class="md:col-span-2 mt-2 flex justify-end">
         <button class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" type="submit">Ajouter</button>
