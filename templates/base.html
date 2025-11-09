@@ -1,59 +1,75 @@
 <!doctype html>
 <html lang="fr" data-theme="light">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>{% block title %}CRM Local{% endblock %}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css" />
-<script src="https://unpkg.com/htmx.org@2.0.2"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}CRM Local{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css" />
+  <script src="https://unpkg.com/htmx.org@2.0.2"></script>
 </head>
 <body>
-<header class="site-header">
-  <div class="site-header__inner">
-    <div class="brand">
-      <div class="logo">💼</div>
-      <div class="titles">
-        <h1>CRM Local</h1>
-        <p class="subtitle">Gérez vos clients en toute simplicité</p>
+  <a class="skip-link" href="#main">Aller au contenu</a>
+  <header class="topbar" role="banner">
+    <div class="topbar__inner container-wide">
+      <div class="topbar__brand" aria-label="CRM Local">
+        <span class="topbar__logo" aria-hidden="true">💼</span>
+        <div class="topbar__titles">
+          <span class="topbar__name">CRM Local</span>
+          <span class="topbar__subtitle">Pilotage des relations clients</span>
+        </div>
       </div>
+      <nav class="topbar__actions" aria-label="Navigation principale">
+        <a class="btn ghost" href="/">Tableau de bord</a>
+        <button id="themeToggle" class="btn icon" title="Basculer thème" aria-label="Basculer le thème">
+          <span class="icon-moon" aria-hidden="true">🌙</span>
+        </button>
+      </nav>
     </div>
-    <nav class="actions">
-      <a class="btn primary" href="/">Tableau de bord</a>
-      <button id="themeToggle" class="btn ghost" title="Basculer thème" aria-label="Basculer le thème">🌞</button>
-    </nav>
-  </div>
-</header>
+  </header>
 
+  <main id="main" class="{% block main_classes %}container{% endblock %}" tabindex="-1">
+    <div class="page-heading container-wide">
+      <div class="page-heading__eyebrow">{% block page_eyebrow %}Portail équipes service client{% endblock %}</div>
+      <h1 class="page-heading__title">{% block page_title %}Votre environnement opérationnel{% endblock %}</h1>
+      <p class="page-heading__subtitle">{% block page_subtitle %}Visualisez, importez et mettez à jour votre portefeuille client avec une interface intuitive et performante.{% endblock %}</p>
+    </div>
+    {% block content %}{% endblock %}
+  </main>
 
-<main class="{% block main_classes %}container{% endblock %}">
-{% block content %}{% endblock %}
-</main>
+  <footer class="site-footer container-wide" role="contentinfo">
+    <div class="site-footer__left">
+      <div class="site-footer__brand">CRM Local</div>
+      <small>© {{ 2024 }} CRM Local — Données stockées localement (SQLite).</small>
+    </div>
+    <div class="site-footer__right">
+      <a href="mailto:support@crm.local">Support</a>
+      <a href="/">Politique de confidentialité</a>
+    </div>
+  </footer>
 
+  <script>
+    const root = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = saved || (prefersDark ? 'dark' : 'light');
+    root.setAttribute('data-theme', initialTheme);
+    updateToggleIcon(initialTheme);
 
-<footer class="site-footer container">
-<small>© CRM Local — Stockage SQLite</small>
-</footer>
+    btn?.addEventListener('click', () => {
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateToggleIcon(next);
+    });
 
-
-<script>
-// Init theme from saved preference or OS
-const root = document.documentElement;
-const btn = document.getElementById('themeToggle');
-const saved = localStorage.getItem('theme');
-const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-root.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
-btn.textContent = root.getAttribute('data-theme') === 'dark' ? '🌙' : '🌞';
-
-
-btn?.addEventListener('click', () => {
-const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-root.setAttribute('data-theme', next);
-localStorage.setItem('theme', next);
-btn.textContent = next === 'dark' ? '🌙' : '🌞';
-});
-</script>
+    function updateToggleIcon(theme) {
+      if (!btn) return;
+      btn.innerHTML = theme === 'dark' ? '<span aria-hidden="true">🌞</span>' : '<span aria-hidden="true">🌙</span>';
+    }
+  </script>
 </body>
 </html>
