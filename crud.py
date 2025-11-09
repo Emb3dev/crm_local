@@ -2,12 +2,23 @@ from typing import List, Optional
 from sqlalchemy import delete
 from sqlalchemy.orm import selectinload
 from sqlmodel import select, Session
-from models import Client, ClientCreate, ClientUpdate, Contact, ContactCreate
+from models import (
+    Client,
+    ClientCreate,
+    ClientUpdate,
+    Contact,
+    ContactCreate,
+    SubcontractedService,
+    SubcontractedServiceCreate,
+)
 
 def list_clients(session: Session, q: Optional[str] = None, limit: int = 50) -> List[Client]:
     stmt = (
         select(Client)
-        .options(selectinload(Client.contacts))
+        .options(
+            selectinload(Client.contacts),
+            selectinload(Client.subcontractings),
+        )
         .order_by(Client.created_at.desc())
     )
     if q:
@@ -82,5 +93,29 @@ def delete_contact(session: Session, client_id: int, contact_id: int) -> bool:
     if not contact or contact.client_id != client_id:
         return False
     session.delete(contact)
+    session.commit()
+    return True
+
+
+def create_subcontracted_service(
+    session: Session, client_id: int, data: SubcontractedServiceCreate
+) -> Optional[SubcontractedService]:
+    client = session.get(Client, client_id)
+    if not client:
+        return None
+    record = SubcontractedService(client_id=client_id, **data.model_dump())
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
+def delete_subcontracted_service(
+    session: Session, client_id: int, service_id: int
+) -> bool:
+    record = session.get(SubcontractedService, service_id)
+    if not record or record.client_id != client_id:
+        return False
+    session.delete(record)
     session.commit()
     return True

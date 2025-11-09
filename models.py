@@ -62,6 +62,10 @@ class Client(ClientBase, table=True):
         back_populates="client",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
+    subcontractings: List["SubcontractedService"] = Relationship(
+        back_populates="client",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
 
 
 class ClientCreate(ClientBase):
@@ -104,3 +108,45 @@ class ContactUpdate(SQLModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+
+
+# =======================
+# TABLE PRESTATIONS SOUS-TRAITÉES / LOCATIONS (rattachée à un client)
+# =======================
+
+
+class SubcontractedServiceBase(SQLModel):
+    prestation_key: str = Field(index=True, description="Identifiant de la prestation")
+    prestation_label: str = Field(description="Libellé de la prestation")
+    category: str = Field(description="Famille de prestation (sous-traitance, location…)")
+    budget_code: str = Field(description="Code budget associé")
+    budget: Optional[float] = Field(default=None, description="Montant budgété")
+    frequency: str = Field(description="Fréquence de la prestation")
+    realization_week: Optional[str] = Field(
+        default=None, description="Semaine de réalisation (format S01, S02…)"
+    )
+    order_week: Optional[str] = Field(
+        default=None, description="Semaine de commande (format S01, S02…)"
+    )
+
+
+class SubcontractedService(SubcontractedServiceBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    client_id: int = Field(foreign_key="client.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    client: Optional[Client] = Relationship(back_populates="subcontractings")
+
+
+class SubcontractedServiceCreate(SubcontractedServiceBase):
+    pass
+
+
+class SubcontractedServiceUpdate(SQLModel):
+    prestation_key: Optional[str] = None
+    prestation_label: Optional[str] = None
+    category: Optional[str] = None
+    budget_code: Optional[str] = None
+    budget: Optional[float] = None
+    frequency: Optional[str] = None
+    realization_week: Optional[str] = None
+    order_week: Optional[str] = None

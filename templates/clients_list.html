@@ -180,6 +180,103 @@
                 </form>
               </section>
 
+              <section class="client-card__section client-card__section--subcontractings">
+                <h4>Prestations sous-traitées & locations</h4>
+                {% set services = c.subcontractings | sort(attribute='created_at', reverse=True) %}
+                {% if services %}
+                <ul class="subcontract-list">
+                  {% for service in services %}
+                    {% set frequency_label = frequency_options.get(service.frequency, service.frequency) %}
+                    <li class="subcontract-list__item">
+                      <div class="subcontract-list__header">
+                        <div class="subcontract-list__identity">
+                          <span class="subcontract-list__title">{{ service.prestation_label }}</span>
+                          <span class="subcontract-list__category">{{ service.category }}</span>
+                        </div>
+                        <div class="subcontract-list__actions">
+                          <span class="badge neutral subcontract-list__badge">{{ frequency_label }}</span>
+                          <form action="/clients/{{ c.id }}/subcontractings/{{ service.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ service.prestation_label }} ?')">
+                            <button class="btn danger xs" type="submit" title="Supprimer la prestation">🗑️</button>
+                          </form>
+                        </div>
+                      </div>
+                      <dl class="subcontract-list__dl">
+                        <div>
+                          <dt>Code budget</dt>
+                          <dd>{{ service.budget_code }}</dd>
+                        </div>
+                        <div>
+                          <dt>Budget</dt>
+                          <dd>
+                            {% if service.budget is not none %}
+                              {{ '{:,.2f}'.format(service.budget).replace(',', ' ').rstrip('0').rstrip('.') }} €
+                            {% else %}
+                              —
+                            {% endif %}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Semaine de réalisation</dt>
+                          <dd>{{ service.realization_week or '—' }}</dd>
+                        </div>
+                        <div>
+                          <dt>Semaine de commande</dt>
+                          <dd>{{ service.order_week or '—' }}</dd>
+                        </div>
+                      </dl>
+                    </li>
+                  {% endfor %}
+                </ul>
+                {% else %}
+                  <p class="subcontract-list__empty">Aucune prestation enregistrée pour le moment.</p>
+                {% endif %}
+
+                <form class="subcontract-form" action="/clients/{{ c.id }}/subcontractings" method="post">
+                  <div class="subcontract-form__grid">
+                    <label class="full">
+                      <span>Prestation *</span>
+                      <select name="prestation" required data-prestation-select>
+                        <option value="" selected disabled>Choisir une prestation…</option>
+                        {% for group in subcontracted_groups %}
+                        <optgroup label="{{ group.title }}">
+                          {% for option in group.options %}
+                          <option value="{{ option.value }}" data-budget-code="{{ option.budget_code }}">{{ option.label }}</option>
+                          {% endfor %}
+                        </optgroup>
+                        {% endfor %}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Code budget</span>
+                      <input type="text" readonly placeholder="Auto" data-budget-output />
+                    </label>
+                    <label>
+                      <span>Budget</span>
+                      <input type="number" name="budget" step="0.01" min="0" placeholder="0,00" />
+                    </label>
+                    <label>
+                      <span>Fréquence</span>
+                      <select name="frequency" required data-frequency-select>
+                        {% for value, label in frequency_options.items() %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                    </label>
+                    <label class="subcontract-form__week is-hidden" data-week-field>
+                      <span>Semaine de réalisation</span>
+                      <input type="text" name="realization_week" placeholder="S01" pattern="S\d{2}" disabled />
+                    </label>
+                    <label>
+                      <span>Semaine de commande</span>
+                      <input type="text" name="order_week" placeholder="S01" pattern="S\d{2}" />
+                    </label>
+                  </div>
+                  <div class="form-actions">
+                    <button class="btn ghost sm" type="submit">Ajouter une prestation</button>
+                  </div>
+                </form>
+              </section>
+
               <div class="client-card__footer">
                 <form action="/clients/{{ c.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ c.company_name }} ?')">
                   <button class="btn danger sm" type="submit">Supprimer le client</button>
@@ -192,7 +289,7 @@
         <p class="client-list__empty">Aucun résultat</p>
       {% endif %}
     </div>
-  </div>
+</div>
 </section>
 
 <div class="panels-grid">
@@ -282,4 +379,51 @@
     </div>
   </section>
 </div>
+<script>
+  (function() {
+    const initForm = (form) => {
+      if (!form || form.dataset.enhanced === 'true') return;
+      const prestationSelect = form.querySelector('[data-prestation-select]');
+      const budgetOutput = form.querySelector('[data-budget-output]');
+      const frequencySelect = form.querySelector('[data-frequency-select]');
+      const weekField = form.querySelector('[data-week-field]');
+      const weekInput = weekField?.querySelector('input');
+
+      const updateBudget = () => {
+        if (!prestationSelect || !budgetOutput) return;
+        const selected = prestationSelect.options[prestationSelect.selectedIndex];
+        budgetOutput.value = selected?.dataset?.budgetCode || '';
+      };
+
+      const toggleWeekField = () => {
+        if (!frequencySelect || !weekField || !weekInput) return;
+        const isPonctual = frequencySelect.value === 'prestation_ponctuelle';
+        weekField.classList.toggle('is-hidden', !isPonctual);
+        weekInput.disabled = !isPonctual;
+        if (!isPonctual) {
+          weekInput.value = '';
+        }
+      };
+
+      prestationSelect?.addEventListener('change', updateBudget);
+      frequencySelect?.addEventListener('change', toggleWeekField);
+
+      updateBudget();
+      toggleWeekField();
+      form.dataset.enhanced = 'true';
+    };
+
+    const enhanceAll = () => {
+      document.querySelectorAll('.subcontract-form').forEach(initForm);
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', enhanceAll, { once: true });
+    } else {
+      enhanceAll();
+    }
+
+    document.body?.addEventListener('htmx:afterSwap', enhanceAll);
+  })();
+</script>
 {% endblock %}
