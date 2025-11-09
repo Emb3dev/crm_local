@@ -107,8 +107,7 @@
                 <div class="relative">
                   <select
                     name="{{ field.name }}"
-                    class="filter-select peer w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
-                    style="color-scheme: dark;"
+                    class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
                   >
                     <option value="">{{ field.placeholder }}</option>
                     {% for value, label in field.options %}
@@ -340,8 +339,7 @@
                           name="prestation"
                           required
                           data-prestation-select
-                          class="filter-select peer w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
-                          style="color-scheme: dark;"
+                          class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
                         >
                           <option value="" selected disabled>Choisir une prestation…</option>
                           {% for group in subcontracted_groups %}
@@ -374,8 +372,7 @@
                           name="frequency"
                           required
                           data-frequency-select
-                          class="filter-select peer w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
-                          style="color-scheme: dark;"
+                          class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
                         >
                           {% for value, label in frequency_options.items() %}
                             <option value="{{ value }}">{{ label }}</option>
@@ -470,8 +467,7 @@
         <div class="relative mt-2">
           <select
             name="depannage"
-            class="filter-select peer w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
-            style="color-scheme: dark;"
+            class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
           >
             {% for value, label in depannage_options.items() %}
               <option value="{{ value }}">{{ label }}</option>
@@ -489,8 +485,7 @@
         <div class="relative mt-2">
           <select
             name="astreinte"
-            class="filter-select peer w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
-            style="color-scheme: dark;"
+            class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
           >
             {% for value, label in astreinte_options.items() %}
               <option value="{{ value }}">{{ label }}</option>
@@ -512,8 +507,7 @@
         <div class="relative mt-2">
           <select
             name="status"
-            class="filter-select peer w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
-            style="color-scheme: dark;"
+            class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
           >
             {% for value, label in status_options.items() %}
               <option value="{{ value }}">{{ label }}</option>
