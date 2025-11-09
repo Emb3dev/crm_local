@@ -122,6 +122,16 @@ class SubcontractedServiceBase(SQLModel):
     budget_code: str = Field(description="Code budget associé")
     budget: Optional[float] = Field(default=None, description="Montant budgété")
     frequency: str = Field(description="Fréquence de la prestation")
+    status: str = Field(
+        default="non_commence",
+        description="Statut d'avancement de la prestation",
+        sa_column=Column(
+            "status",
+            String,
+            nullable=False,
+            server_default="non_commence",
+        ),
+    )
     realization_week: Optional[str] = Field(
         default=None, description="Semaine de réalisation (format S01, S02…)"
     )
@@ -148,5 +158,6 @@ class SubcontractedServiceUpdate(SQLModel):
     budget_code: Optional[str] = None
     budget: Optional[float] = None
     frequency: Optional[str] = None
+    status: Optional[str] = None
     realization_week: Optional[str] = None
     order_week: Optional[str] = None
