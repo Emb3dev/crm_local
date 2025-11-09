@@ -319,6 +319,44 @@ a:hover {
   box-shadow: var(--ring);
 }
 
+/* ---------- LIGHT THEME LEGACY UTILITY OVERRIDES ---------- */
+html[data-theme="light"] .bg-white\/5,
+html[data-theme="light"] .bg-white\/10,
+html[data-theme="light"] .bg-white\/15,
+html[data-theme="light"] .bg-white\/20 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--ink);
+}
+
+html[data-theme="light"] .bg-midnight-800\/60,
+html[data-theme="light"] .bg-midnight-800\/40,
+html[data-theme="light"] .bg-midnight-800\/80 {
+  background-color: rgba(236, 242, 255, 0.9) !important;
+}
+
+html[data-theme="light"] .border-white\/10,
+html[data-theme="light"] .border-white\/15,
+html[data-theme="light"] .border-white\/20 {
+  border-color: rgba(148, 163, 184, 0.4) !important;
+}
+
+html[data-theme="light"] .text-white {
+  color: var(--ink) !important;
+}
+
+html[data-theme="light"] .text-slate-200,
+html[data-theme="light"] .text-slate-300 {
+  color: #475569 !important;
+}
+
+html[data-theme="light"] .text-slate-400 {
+  color: #64748b !important;
+}
+
+html[data-theme="light"] .text-indigo-200 {
+  color: #4f46e5 !important;
+}
+
 .sidebar-toggle {
   left: clamp(1.2rem, 4vw, 2.25rem);
   padding: 0.65rem 1.4rem;

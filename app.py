@@ -50,9 +50,9 @@ SUBCONTRACT_STATUS_OPTIONS = {
 }
 
 SUBCONTRACT_STATUS_STYLES = {
-    "fait": "border-emerald-400/40 bg-emerald-500/10 text-emerald-100",
-    "en_cours": "border-amber-400/40 bg-amber-500/10 text-amber-100",
-    "non_commence": "border-rose-400/40 bg-rose-500/10 text-rose-100",
+    "fait": "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100",
+    "en_cours": "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100",
+    "non_commence": "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100",
 }
 
 CLIENT_FILTER_DEFINITIONS = [
