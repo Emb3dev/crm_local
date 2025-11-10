@@ -1367,3 +1367,72 @@ html[data-theme="dark"] .badge.neutral {
     width: 100%;
   }
 }
+
+/* ---------- TEMPLATE UTILITIES ---------- */
+summary {
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+.nova-select {
+  appearance: none;
+  background: linear-gradient(130deg, rgba(18, 28, 56, 0.82), rgba(7, 12, 32, 0.92)) !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+  color: #e2e8f0 !important;
+  box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.2), 0 18px 42px -28px rgba(15, 23, 42, 0.6);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+  padding-right: 2.75rem;
+}
+
+.nova-select:hover {
+  border-color: rgba(165, 180, 252, 0.6) !important;
+}
+
+.nova-select:focus {
+  outline: none;
+  border-color: rgba(129, 140, 248, 0.85) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(129, 140, 248, 0.4);
+}
+
+.nova-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.nova-select::-ms-expand {
+  display: none;
+}
+
+html[data-theme='dark'] .nova-select {
+  color-scheme: dark;
+}
+
+html[data-theme='dark'] .nova-select option {
+  background-color: #050816;
+  color: #e2e8f0;
+}
+
+html[data-theme='light'] .nova-select {
+  background: linear-gradient(130deg, rgba(255, 255, 255, 0.92), rgba(226, 232, 240, 0.88)) !important;
+  border-color: rgba(148, 163, 184, 0.4) !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 18px 42px -28px rgba(148, 163, 184, 0.45);
+  color-scheme: light;
+}
+
+html[data-theme='light'] .nova-select:hover {
+  border-color: rgba(99, 102, 241, 0.55) !important;
+}
+
+html[data-theme='light'] .nova-select:focus {
+  border-color: rgba(79, 70, 229, 0.85) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), inset 0 1px 0 rgba(99, 102, 241, 0.35);
+}
+
+html[data-theme='light'] .nova-select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
