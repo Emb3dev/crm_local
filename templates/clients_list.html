@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_ui_macros.html" import card_shell, form_panel, form_label, form_control, form_select %}
 {% block main_classes %}space-y-12{% endblock %}
 {% block page_eyebrow %}Gestion clients{% endblock %}
 {% block page_title %}Portefeuille clients{% endblock %}
@@ -47,7 +48,7 @@
 {% endfor %}
 
 <section class="space-y-10">
-  <div class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+  <div class="{{ card_shell() }}">
     <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
       <div class="space-y-4">
         <span class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-200">Synthèse en temps réel</span>
@@ -64,7 +65,7 @@
     </div>
     <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <article class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg shadow-indigo-500/10 transition-colors duration-300 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15">
-        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">Total clients</p>
+        <p class="{{ form_label() }}">Total clients</p>
         <p class="mt-3 text-3xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ clients|length }}</p>
         <p class="mt-3 text-sm text-slate-500 transition-colors duration-300 dark:text-slate-400">Portefeuille complet suivi dans l'outil</p>
       </article>
@@ -79,24 +80,24 @@
         <p class="mt-3 text-sm">{{ astreinte_options.get('incluse_refacturable') }} & {{ astreinte_options.get('incluse_non_refacturable') }}</p>
       </article>
       <article class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg shadow-indigo-500/10 transition-colors duration-300 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15">
-        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">Contacts référencés</p>
+        <p class="{{ form_label() }}">Contacts référencés</p>
         <p class="mt-3 text-3xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ metrics.contacts }}</p>
         <p class="mt-3 text-sm text-slate-500 transition-colors duration-300 dark:text-slate-400">Coordonnées centralisées pour chaque client</p>
       </article>
     </div>
   </div>
 
-  <section class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+  <section class="{{ card_shell() }}">
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
       <div class="space-y-2">
         <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Clients</h2>
         <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Consultez et filtrez votre portefeuille client.</p>
       </div>
-      <form class="flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10" role="search" hx-get="/_clients" hx-target="#list" hx-trigger="keyup changed delay:300ms">
+      <form class="{{ form_panel() }}" role="search" hx-get="/_clients" hx-target="#list" hx-trigger="keyup changed delay:300ms">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <label class="flex-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="flex-1 {{ form_label() }}">
             <span class="sr-only">Rechercher un client</span>
-            <input type="text" name="q" placeholder="Rechercher (entreprise, client, contact…)" value="{{ q }}" aria-label="Rechercher un client" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70" />
+            <input type="text" name="q" placeholder="Rechercher (entreprise, client, contact…)" value="{{ q }}" aria-label="Rechercher un client" class="mt-1 {{ form_control('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70') }}" />
           </label>
           <div class="flex items-center gap-3 sm:w-auto">
             <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400">Filtrer</button>
@@ -107,12 +108,12 @@
         {% if filters_definition %}
           <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {% for field in filters_definition %}
-              <label class="space-y-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+              <label class="space-y-1 {{ form_label() }}">
                 <span>{{ field.label }}</span>
                 <div class="relative">
                   <select
                     name="{{ field.name }}"
-                    class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
+                    class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}"
                   >
                     <option value="">{{ field.placeholder }}</option>
                     {% for value, label in field.options %}
@@ -276,15 +277,15 @@
 
                 <form class="rounded-2xl border border-slate-200 bg-white p-4 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10" action="/clients/{{ c.id }}/contacts" method="post">
                   <div class="grid gap-4 md:grid-cols-3">
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+                    <label class="{{ form_label() }}">
                       <span>Nom *</span>
                       <input name="contact_name" required placeholder="Prénom Nom" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+                    <label class="{{ form_label() }}">
                       <span>Email</span>
                       <input name="contact_email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+                    <label class="{{ form_label() }}">
                       <span>Téléphone</span>
                       <input name="contact_phone" placeholder="06 00 00 00 00" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
@@ -360,7 +361,7 @@
 
                 <form class="rounded-2xl border border-slate-200 bg-white p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10 subcontract-form" action="/clients/{{ c.id }}/subcontractings" method="post">
                   <div class="grid gap-4 md:grid-cols-2">
-                    <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+                    <label class="md:col-span-2 {{ form_label() }}">
                       <span>Prestation *</span>
                       <div class="relative mt-2">
                         <select
@@ -385,15 +386,15 @@
                         </span>
                       </div>
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+                    <label class="{{ form_label() }}">
                       <span>Code budget</span>
                       <input type="text" readonly placeholder="Auto" data-budget-output class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+                    <label class="{{ form_label() }}">
                       <span>Budget</span>
                       <input type="number" name="budget" step="0.01" min="0" placeholder="0,00" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+                    <label class="{{ form_label() }}">
                       <span>Fréquence</span>
                       <div class="relative mt-2">
                         <select
@@ -440,7 +441,7 @@
                       </div>
                       <p class="mt-1 text-[0.65rem] uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">Renseignez un intervalle numérique pour automatiser le suivi.</p>
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+                    <label class="{{ form_label() }}">
                       <span>Statut</span>
                       <div class="relative mt-2">
                         <select
@@ -458,11 +459,11 @@
                         </span>
                       </div>
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 subcontract-form__week hidden dark:text-slate-300" data-week-field>
+                    <label class="subcontract-form__week hidden {{ form_label() }}" data-week-field>
                       <span>Semaine de réalisation</span>
                       <input type="text" name="realization_week" placeholder="S01" pattern="S\d{2}" disabled class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+                    <label class="{{ form_label() }}">
                       <span>Semaine de commande</span>
                       <input type="text" name="order_week" placeholder="S01" pattern="S\d{2}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                     </label>
@@ -489,13 +490,13 @@
 </section>
 
 <section class="grid gap-8 lg:grid-cols-2">
-  <div class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+  <div class="{{ card_shell() }}">
     <div class="space-y-2">
       <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Import Excel</h2>
       <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Mettez à jour votre base en important plusieurs clients à la fois.</p>
     </div>
     <form action="/clients/import" method="post" enctype="multipart/form-data" class="mt-6 grid gap-4">
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+      <label class="{{ form_label() }}">
         <span>Fichier Excel (.xlsx)</span>
         <input type="file" name="file" accept=".xlsx,.xlsm,.xltx,.xltm" required class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:file:bg-indigo-500/20 dark:file:text-white" />
       </label>
@@ -509,37 +510,37 @@
     </form>
   </div>
 
-  <div class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+  <div class="{{ card_shell() }}">
     <div class="space-y-2">
       <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Nouveau client</h2>
       <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Ajoutez un dossier client en quelques informations clés.</p>
     </div>
     <form action="/clients/new" method="post" class="mt-6 grid gap-4 md:grid-cols-2">
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+      <label class="{{ form_label() }}">
         <span>Nom entreprise *</span>
         <input name="company_name" list="entreprise-names" required placeholder="Ex: Dupont SARL" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+      <label class="{{ form_label() }}">
         <span>Contact principal *</span>
         <input name="name" required placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+      <label class="{{ form_label() }}">
         <span>Email du contact</span>
         <input name="email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+      <label class="{{ form_label() }}">
         <span>Téléphone du contact</span>
         <input name="phone" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+      <label class="{{ form_label() }}">
         <span>Technicien référent</span>
         <input name="technician_name" placeholder="Ex: Luc Garnier" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+      <label class="md:col-span-2 {{ form_label() }}">
         <span>Adresse de facturation</span>
         <textarea name="billing_address" rows="3" placeholder="Rue, code postal, ville…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"></textarea>
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+      <label class="{{ form_label() }}">
         <span>Dépannage</span>
         <div class="relative mt-2">
           <select
@@ -557,7 +558,7 @@
           </span>
         </div>
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+      <label class="{{ form_label() }}">
         <span>Astreinte</span>
         <div class="relative mt-2">
           <select
@@ -575,11 +576,11 @@
           </span>
         </div>
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+      <label class="{{ form_label() }}">
         <span>Tags</span>
         <input name="tags" placeholder="Ex: premium, 2024" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+      <label class="{{ form_label() }}">
         <span>Statut</span>
         <div class="relative mt-2">
           <select
