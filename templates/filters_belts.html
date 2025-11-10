@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_ui_macros.html" import card_shell, form_panel, form_label, form_control, form_select %}
 {% block title %}Filtres & Courroies — CRM Local{% endblock %}
 {% block page_eyebrow %}Gestion des consommables{% endblock %}
 {% block page_title %}Filtres & courroies{% endblock %}
@@ -32,7 +33,7 @@
   </div>
 {% endif %}
 
-<section class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+<section class="{{ card_shell() }}">
   <div class="grid gap-6 lg:grid-cols-2">
     <div class="space-y-4">
       <span class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-200">Vision synthétique</span>
@@ -53,7 +54,7 @@
 </section>
 
 <section class="grid grid-cols-1 gap-12">
-  <article class="space-y-8 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+  <article class="space-y-8 {{ card_shell() }}">
     <div class="space-y-2">
       <h3 class="font-display text-xl text-slate-900 transition-colors duration-300 dark:text-white">Filtres</h3>
       <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Consignez le format, l'efficacité et les quantités nécessaires par équipement.</p>
@@ -67,19 +68,19 @@
         id="filters-form"
       >
         <div class="grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="space-y-2 {{ form_label() }}">
             Site
             <input name="site" type="text" required value="{{ editing_filter.site if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="space-y-2 {{ form_label() }}">
             Équipement
             <input name="equipment" type="text" required value="{{ editing_filter.equipment if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="space-y-2 {{ form_label() }}">
             Efficacité
             <input name="efficiency" type="text" placeholder="Ex : F7, ISO ePM1 80%" value="{{ editing_filter.efficiency if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="space-y-2 {{ form_label() }}">
             Format
             <div class="relative">
               <select name="format_type" required class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
@@ -95,15 +96,15 @@
               </span>
             </div>
           </label>
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="space-y-2 {{ form_label() }}">
             Quantité
             <input name="quantity" type="number" min="1" step="1" value="{{ editing_filter.quantity if is_editing_filter else 1 }}" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="space-y-2 {{ form_label() }}">
             Semaine commande
             <input name="order_week" type="text" placeholder="Ex : S12" value="{{ editing_filter.order_week if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300 sm:col-span-2">
+          <label class="space-y-2 sm:col-span-2 {{ form_label() }}">
             Dimensions
             <input name="dimensions" type="text" placeholder="Ex : 592 x 592 x 47" value="{{ editing_filter.dimensions if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
@@ -175,7 +176,7 @@
     </div>
   </article>
 
-  <article class="space-y-8 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+  <article class="space-y-8 {{ card_shell() }}">
     <div class="space-y-2">
       <h3 class="font-display text-xl text-slate-900 transition-colors duration-300 dark:text-white">Courroies</h3>
       <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Suivez les références et semaines de commande pour vos consommables critiques.</p>
@@ -189,23 +190,23 @@
         id="belts-form"
       >
         <div class="grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="space-y-2 {{ form_label() }}">
             Site
             <input name="site" type="text" required value="{{ editing_belt.site if is_editing_belt else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="space-y-2 {{ form_label() }}">
             Équipement
             <input name="equipment" type="text" required value="{{ editing_belt.equipment if is_editing_belt else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="space-y-2 {{ form_label() }}">
             Référence
             <input name="reference" type="text" required value="{{ editing_belt.reference if is_editing_belt else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="space-y-2 {{ form_label() }}">
             Quantité
             <input name="quantity" type="number" min="1" step="1" value="{{ editing_belt.quantity if is_editing_belt else 1 }}" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
-          <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300 sm:col-span-2">
+          <label class="space-y-2 sm:col-span-2 {{ form_label() }}">
             Semaine de commande
             <input name="order_week" type="text" placeholder="Ex : S12" value="{{ editing_belt.order_week if is_editing_belt else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>

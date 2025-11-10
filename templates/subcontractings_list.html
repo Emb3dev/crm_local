@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_ui_macros.html" import card_shell, form_panel, form_label, form_control, form_select %}
 {% block main_classes %}space-y-12{% endblock %}
 {% block page_eyebrow %}Pilotage opérations{% endblock %}
 {% block page_title %}Prestations sous-traitées & locations{% endblock %}
@@ -6,17 +7,17 @@
 {% block title %}Prestations — CRM Local{% endblock %}
 {% block content %}
 <section class="space-y-10">
-  <div class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+  <div class="{{ card_shell() }}">
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
       <div class="space-y-2">
         <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Toutes les prestations</h2>
         <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Vue consolidée des prestations sous-traitées et locations.</p>
       </div>
-      <form class="flex w-full flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10" role="search" method="get">
+      <form class="{{ form_panel() }}" role="search" method="get">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <label class="flex-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          <label class="flex-1 {{ form_label() }}">
             <span class="sr-only">Rechercher une prestation</span>
-            <input type="text" name="q" placeholder="Rechercher (client, libellé, code budget…)" value="{{ q }}" aria-label="Rechercher une prestation" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors duration-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 dark:border-white/10 dark:bg-midnight-800/60 dark:text-white dark:placeholder:text-slate-400" />
+            <input type="text" name="q" placeholder="Rechercher (client, libellé, code budget…)" value="{{ q }}" aria-label="Rechercher une prestation" class="mt-1 {{ form_control() }}" />
           </label>
           <div class="flex items-center gap-3 sm:w-auto">
             <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-300 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20">Filtrer</button>
@@ -27,12 +28,12 @@
         {% if filters_definition %}
           <div class="grid gap-3 sm:grid-cols-2">
             {% for field in filters_definition %}
-              <label class="space-y-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+              <label class="space-y-1 {{ form_label() }}">
                 <span>{{ field.label }}</span>
                 <div class="relative">
                   <select
                     name="{{ field.name }}"
-                    class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 shadow-inner shadow-indigo-100/30 transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20"
+                    class="{{ form_select() }}"
                   >
                     <option value="">{{ field.placeholder }}</option>
                     {% for value, label in field.options %}
@@ -93,7 +94,7 @@
     </div>
   </div>
 
-  <div class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+  <div class="{{ card_shell() }}">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Détail des prestations</h2>
       <span class="rounded-full border border-slate-200 bg-white px-4 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">{{ total_services }} ligne{{ 's' if total_services > 1 else '' }}</span>
