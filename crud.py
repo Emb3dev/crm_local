@@ -65,6 +65,11 @@ def list_clients(
 
     return session.exec(stmt.limit(limit)).all()
 
+
+def list_client_choices(session: Session) -> List[Client]:
+    stmt = select(Client).order_by(Client.company_name.asc(), Client.name.asc())
+    return session.exec(stmt).all()
+
 def get_client(session: Session, client_id: int) -> Optional[Client]:
     return session.get(Client, client_id)
 
