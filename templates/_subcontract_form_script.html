@@ -7,6 +7,8 @@
       const frequencySelect = form.querySelector('[data-frequency-select]');
       const weekField = form.querySelector('[data-week-field]');
       const weekInput = weekField?.querySelector('input');
+      const clientSelect = form.querySelector('[data-client-select]');
+      const clientOutput = form.parentElement?.querySelector('[data-client-output]');
 
       const updateBudget = () => {
         if (!prestationSelect || !budgetOutput) return;
@@ -24,11 +26,20 @@
         }
       };
 
+      const updateClientSummary = () => {
+        if (!clientSelect || !clientOutput) return;
+        const selected = clientSelect.options[clientSelect.selectedIndex];
+        const label = selected?.textContent?.replace(/\s+/g, ' ').trim();
+        clientOutput.textContent = label || '—';
+      };
+
       prestationSelect?.addEventListener('change', updateBudget);
       frequencySelect?.addEventListener('change', toggleWeekField);
+      clientSelect?.addEventListener('change', updateClientSummary);
 
       updateBudget();
       toggleWeekField();
+      updateClientSummary();
       form.dataset.enhanced = 'true';
     };
 
