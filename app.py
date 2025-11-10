@@ -403,6 +403,7 @@ def subcontracted_service_edit_page(
         raise HTTPException(404, "Prestation introuvable")
 
     available_keys = set(SUBCONTRACTED_LOOKUP.keys())
+    clients = crud.list_client_choices(session)
     return templates.TemplateResponse(
         "subcontracting_edit.html",
         {
@@ -413,6 +414,7 @@ def subcontracted_service_edit_page(
             "subcontract_status_options": SUBCONTRACT_STATUS_OPTIONS,
             "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
             "available_prestations": available_keys,
+            "clients": clients,
             "return_url": f"/prestations?focus={service.id}#service-{service.id}",
         },
     )
@@ -422,6 +424,7 @@ def subcontracted_service_edit_page(
 def update_subcontracted_service(
     service_id: int,
     prestation: str = Form(...),
+    client_id: int = Form(...),
     budget: Optional[str] = Form(None),
     frequency: str = Form(...),
     status: str = Form(SUBCONTRACT_STATUS_DEFAULT),
@@ -432,6 +435,9 @@ def update_subcontracted_service(
     service = crud.get_subcontracted_service(session, service_id)
     if not service:
         raise HTTPException(404, "Prestation introuvable")
+
+    if not crud.get_client(session, client_id):
+        raise HTTPException(400, "Client inconnu")
 
     if frequency not in FREQUENCY_OPTIONS:
         raise HTTPException(400, "Fréquence inconnue")
@@ -463,6 +469,7 @@ def update_subcontracted_service(
         status=status,
         realization_week=realization_value,
         order_week=order_value,
+        client_id=client_id,
     )
 
     updated = crud.update_subcontracted_service(session, service_id, update_payload)

@@ -161,3 +161,4 @@ class SubcontractedServiceUpdate(SQLModel):
     status: Optional[str] = None
     realization_week: Optional[str] = None
     order_week: Optional[str] = None
+    client_id: Optional[int] = None
