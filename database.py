@@ -1,5 +1,7 @@
 from sqlalchemy.exc import OperationalError
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import SQLModel, create_engine, Session, select
+
+from models import Client, Entreprise
 
 engine = create_engine("sqlite:///./crm.db", connect_args={"check_same_thread": False})
 
@@ -73,6 +75,10 @@ def init_db():
             conn.exec_driver_sql("ALTER TABLE client ADD COLUMN astreinte VARCHAR")
         if "technician_name" not in cols:
             conn.exec_driver_sql("ALTER TABLE client ADD COLUMN technician_name VARCHAR")
+        if "entreprise_id" not in cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE client ADD COLUMN entreprise_id INTEGER REFERENCES entreprise(id)"
+            )
         filter_cols = {
             row[1]
             for row in conn.exec_driver_sql("PRAGMA table_info('filterline')")
@@ -129,6 +135,39 @@ def init_db():
             conn.exec_driver_sql(
                 "ALTER TABLE subcontractedservice ADD COLUMN frequency_unit VARCHAR"
             )
+    with Session(engine) as session:
+        clients_without = session.exec(
+            select(Client).where(Client.entreprise_id.is_(None))
+        ).all()
+        for client in clients_without:
+            company_name = (client.company_name or client.name or "").strip()
+            if not company_name:
+                continue
+            entreprise = session.exec(
+                select(Entreprise).where(Entreprise.nom == company_name)
+            ).first()
+            if not entreprise:
+                statut_value = True
+                if client.status:
+                    statut_value = client.status == "actif"
+                entreprise = Entreprise(
+                    nom=company_name,
+                    adresse_facturation=client.billing_address,
+                    tag=client.tags,
+                    statut=statut_value,
+                )
+                session.add(entreprise)
+                session.flush()
+            else:
+                if client.billing_address and not entreprise.adresse_facturation:
+                    entreprise.adresse_facturation = client.billing_address
+                if client.tags and not entreprise.tag:
+                    entreprise.tag = client.tags
+                if client.status:
+                    entreprise.statut = client.status == "actif"
+            client.entreprise_id = entreprise.id
+            client.company_name = entreprise.nom
+        session.commit()
     SQLModel.metadata.create_all(engine)
 
 def get_session():
