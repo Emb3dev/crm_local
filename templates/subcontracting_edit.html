@@ -10,7 +10,18 @@
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="space-y-2">
         <h2 class="font-display text-2xl text-slate-900 dark:text-white">{{ service.prestation_label }}</h2>
-        <p class="text-sm text-slate-600 dark:text-slate-300">Client : <strong class="font-semibold text-slate-900 dark:text-white">{{ service.client.company_name if service.client else '—' }}</strong></p>
+        <p class="text-sm text-slate-600 dark:text-slate-300">
+          Client :
+          <strong
+            class="font-semibold text-slate-900 dark:text-white"
+            data-client-output
+          >
+            {{ service.client.company_name if service.client else '—' }}
+            {% if service.client and service.client.name %}
+              — {{ service.client.name }}
+            {% endif %}
+          </strong>
+        </p>
       </div>
       <a
         href="{{ return_url }}"
@@ -56,6 +67,7 @@
             <select
               name="client_id"
               required
+              data-client-select
               class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
             >
               {% for client_option in clients %}
