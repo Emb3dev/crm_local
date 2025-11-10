@@ -105,7 +105,7 @@
             class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 dark:border-white/10 dark:bg-white/10 dark:text-white"
           />
         </label>
-        {% set is_custom_frequency = service.frequency not in frequency_options %}
+{% set is_custom_frequency = service.frequency not in predefined_frequency_keys %}
         <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
           <span>Fréquence</span>
           <div class="relative mt-2">
@@ -113,12 +113,12 @@
               name="frequency"
               required
               data-frequency-select
-              data-custom-frequency-value="{{ custom_frequency_value }}"
+              data-custom-interval-value="{{ custom_interval_value }}"
               class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
             >
               {% for value, label in frequency_select_options.items() %}
                 {% if is_custom_frequency %}
-                  <option value="{{ value }}" {% if value == custom_frequency_value %}selected{% endif %}>{{ label }}</option>
+                  <option value="{{ value }}" {% if value == custom_interval_value %}selected{% endif %}>{{ label }}</option>
                 {% else %}
                   <option value="{{ value }}" {% if value == service.frequency %}selected{% endif %}>{{ label }}</option>
                 {% endif %}
@@ -131,19 +131,32 @@
             </span>
           </div>
         </label>
-        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300 {% if not is_custom_frequency %}hidden{% endif %}" data-custom-frequency-field>
-          <span>Fréquence personnalisée</span>
-          <input
-            type="text"
-            name="custom_frequency"
-            maxlength="100"
-            value="{% if is_custom_frequency %}{{ service.frequency }}{% endif %}"
-            placeholder="Ex : Tous les 2 ans"
-            data-custom-frequency-input
-            {% if not is_custom_frequency %}disabled{% endif %}
-            class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
-          />
-          <p class="mt-1 text-[0.65rem] uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">Décrivez la cadence (ex : Tous les 3 ans, 6 interventions/an…)</p>
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300 {% if not is_custom_frequency %}hidden{% endif %}" data-custom-interval-field>
+          <span>Intervalle personnalisé</span>
+          <div class="mt-2 flex items-center gap-3">
+            <input
+              type="number"
+              name="custom_frequency_interval"
+              min="1"
+              max="120"
+              value="{% if is_custom_frequency %}{{ service.frequency_interval }}{% endif %}"
+              placeholder="Intervalle"
+              data-custom-interval-input
+              class="w-32 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
+              {% if not is_custom_frequency %}disabled{% endif %}
+            />
+            <select
+              name="custom_frequency_unit"
+              data-custom-interval-unit
+              class="nova-select w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-60 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
+              {% if not is_custom_frequency %}disabled{% endif %}
+            >
+              {% for unit_value, unit_label in frequency_unit_options %}
+                <option value="{{ unit_value }}" {% if is_custom_frequency and service.frequency_unit == unit_value %}selected{% endif %}>{{ unit_label|capitalize }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <p class="mt-1 text-[0.65rem] uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">Renseignez un intervalle numérique pour automatiser le suivi.</p>
         </label>
         {% set current_status = service.status or subcontract_status_default %}
         <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">

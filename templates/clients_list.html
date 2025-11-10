@@ -380,7 +380,7 @@
                           name="frequency"
                           required
                           data-frequency-select
-                          data-custom-frequency-value="{{ custom_frequency_value }}"
+                          data-custom-interval-value="{{ custom_interval_value }}"
                           class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
                         >
                           {% for value, label in frequency_select_options.items() %}
@@ -394,18 +394,31 @@
                         </span>
                       </div>
                     </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300 hidden" data-custom-frequency-field>
-                      <span>Fréquence personnalisée</span>
-                      <input
-                        type="text"
-                        name="custom_frequency"
-                        maxlength="100"
-                        placeholder="Ex : Tous les 2 ans"
-                        data-custom-frequency-input
-                        disabled
-                        class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
-                      />
-                      <p class="mt-1 text-[0.65rem] uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">Décrivez la cadence (ex : Tous les 3 ans, 6 interventions/an…)</p>
+                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300 hidden" data-custom-interval-field>
+                      <span>Intervalle personnalisé</span>
+                      <div class="mt-2 flex items-center gap-3">
+                        <input
+                          type="number"
+                          name="custom_frequency_interval"
+                          min="1"
+                          max="120"
+                          placeholder="Intervalle"
+                          data-custom-interval-input
+                          disabled
+                          class="w-32 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
+                        />
+                        <select
+                          name="custom_frequency_unit"
+                          data-custom-interval-unit
+                          disabled
+                          class="nova-select w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
+                        >
+                          {% for unit_value, unit_label in frequency_unit_options %}
+                            <option value="{{ unit_value }}">{{ unit_label|capitalize }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <p class="mt-1 text-[0.65rem] uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">Renseignez un intervalle numérique pour automatiser le suivi.</p>
                     </label>
                     <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
                       <span>Statut</span>
