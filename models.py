@@ -17,6 +17,7 @@ class EntrepriseBase(SQLModel):
 class Entreprise(EntrepriseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    clients: List["Client"] = Relationship(back_populates="entreprise")
 
 
 class EntrepriseCreate(EntrepriseBase):
@@ -36,7 +37,6 @@ class EntrepriseUpdate(SQLModel):
 # TABLE CLIENT (rattachée à une entreprise)
 # =======================
 class ClientBase(SQLModel):
-    company_name: str = Field(index=True, description="Nom de l'entreprise")
     name: str = Field(index=True, description="Nom du client")
     email: Optional[str] = None
     phone: Optional[str] = None
@@ -62,6 +62,16 @@ class ClientBase(SQLModel):
 class Client(ClientBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    entreprise_id: Optional[int] = Field(
+        default=None,
+        foreign_key="entreprise.id",
+        description="Entreprise rattachée au client",
+    )
+    entreprise: Optional[Entreprise] = Relationship(back_populates="clients")
+    company_name: Optional[str] = Field(
+        default=None,
+        description="Nom d'entreprise dénormalisé (compatibilité historique)",
+    )
     contacts: List["Contact"] = Relationship(
         back_populates="client",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
@@ -73,11 +83,11 @@ class Client(ClientBase, table=True):
 
 
 class ClientCreate(ClientBase):
-    pass
+    entreprise_id: int
 
 
 class ClientUpdate(SQLModel):
-    company_name: Optional[str] = None
+    entreprise_id: Optional[int] = None
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
