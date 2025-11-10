@@ -218,20 +218,66 @@ SUBCONTRACTED_LOOKUP = {
     for option in group["options"]
 }
 
-PREDEFINED_FREQUENCY_OPTIONS = {
-    "contrat_annuel": "Contrat de maintenance annuel",
-    "contrat_semestriel": "Contrat de maintenance semestriel",
-    "contrat_trimestriel": "Contrat de maintenance trimestriel",
-    "contrat_bimestriel": "Contrat de maintenance bimestriel",
-    "contrat_mensuel": "Contrat de maintenance mensuel",
-    "prestation_ponctuelle": "Prestation ponctuelle",
+FREQUENCY_UNITS = {
+    "months": {
+        "select_label": "mois",
+        "singular_label": "mois",
+        "plural_label": "mois",
+        "use_plural_for_one": False,
+    },
+    "years": {
+        "select_label": "années",
+        "singular_label": "an",
+        "plural_label": "ans",
+        "use_plural_for_one": True,
+    },
 }
 
-CUSTOM_FREQUENCY_VALUE = "custom"
-CUSTOM_FREQUENCY_LABEL = "Fréquence personnalisée"
+FREQUENCY_UNIT_OPTIONS = [(key, data["select_label"]) for key, data in FREQUENCY_UNITS.items()]
 
-FREQUENCY_SELECT_OPTIONS = dict(PREDEFINED_FREQUENCY_OPTIONS)
-FREQUENCY_SELECT_OPTIONS[CUSTOM_FREQUENCY_VALUE] = CUSTOM_FREQUENCY_LABEL
+PREDEFINED_FREQUENCIES = {
+    "contrat_annuel": {
+        "label": "Contrat de maintenance annuel",
+        "interval": 1,
+        "unit": "years",
+    },
+    "contrat_semestriel": {
+        "label": "Contrat de maintenance semestriel",
+        "interval": 6,
+        "unit": "months",
+    },
+    "contrat_trimestriel": {
+        "label": "Contrat de maintenance trimestriel",
+        "interval": 3,
+        "unit": "months",
+    },
+    "contrat_bimestriel": {
+        "label": "Contrat de maintenance bimestriel",
+        "interval": 2,
+        "unit": "months",
+    },
+    "contrat_mensuel": {
+        "label": "Contrat de maintenance mensuel",
+        "interval": 1,
+        "unit": "months",
+    },
+    "prestation_ponctuelle": {
+        "label": "Prestation ponctuelle",
+        "interval": None,
+        "unit": None,
+    },
+}
+
+CUSTOM_INTERVAL_VALUE = "custom_interval"
+CUSTOM_INTERVAL_LABEL = "Fréquence personnalisée"
+INTERVAL_PREFIX = "interval:"
+
+FREQUENCY_SELECT_OPTIONS = {
+    key: data["label"] for key, data in PREDEFINED_FREQUENCIES.items()
+}
+FREQUENCY_SELECT_OPTIONS[CUSTOM_INTERVAL_VALUE] = CUSTOM_INTERVAL_LABEL
+
+PREDEFINED_FREQUENCY_KEYS = tuple(PREDEFINED_FREQUENCIES.keys())
 
 SUBCONTRACTING_FILTER_DEFINITIONS = [
     {
@@ -244,48 +290,118 @@ SUBCONTRACTING_FILTER_DEFINITIONS = [
         "name": "frequency",
         "label": "Fréquence",
         "placeholder": "Toutes les fréquences",
-        "options": list(PREDEFINED_FREQUENCY_OPTIONS.items()),
+        "options": [(key, data["label"]) for key, data in PREDEFINED_FREQUENCIES.items()],
     },
 ]
 
 
-def _resolve_frequency(selection: str, custom_value: Optional[str]) -> str:
-    if selection == CUSTOM_FREQUENCY_VALUE:
-        if not custom_value or not custom_value.strip():
-            raise HTTPException(400, "Veuillez renseigner une fréquence personnalisée")
-        normalized = custom_value.strip()
-        if len(normalized) > 100:
-            raise HTTPException(400, "La fréquence personnalisée est trop longue (100 caractères max)")
-        return normalized
-    if selection not in PREDEFINED_FREQUENCY_OPTIONS:
+def _parse_interval_frequency(value: str) -> tuple[Optional[int], Optional[str]]:
+    if not value.startswith(INTERVAL_PREFIX):
+        return None, None
+    parts = value.split(":")
+    if len(parts) != 3:
+        return None, None
+    _, unit, interval_str = parts
+    try:
+        return int(interval_str), unit
+    except ValueError:
+        return None, None
+
+
+def _format_interval_label(interval: int, unit: str) -> str:
+    info = FREQUENCY_UNITS.get(unit)
+    if not info:
+        return f"Tous les {interval} {unit}"
+    if interval == 1 and info.get("use_plural_for_one"):
+        unit_label = info["plural_label"]
+    elif interval == 1:
+        unit_label = info["singular_label"]
+    else:
+        unit_label = info["plural_label"]
+    if interval == 1:
+        return f"Tous les {unit_label}"
+    return f"Tous les {interval} {unit_label}"
+
+
+def _frequency_label_from_details(
+    frequency_value: str,
+    interval: Optional[int],
+    unit: Optional[str],
+) -> str:
+    predefined = PREDEFINED_FREQUENCIES.get(frequency_value)
+    if predefined:
+        return predefined["label"]
+    resolved_interval = interval
+    resolved_unit = unit
+    if resolved_interval is None or not resolved_unit:
+        parsed_interval, parsed_unit = _parse_interval_frequency(frequency_value)
+        if resolved_interval is None:
+            resolved_interval = parsed_interval
+        if not resolved_unit:
+            resolved_unit = parsed_unit
+    if resolved_interval and resolved_unit in FREQUENCY_UNITS:
+        return _format_interval_label(resolved_interval, resolved_unit)
+    return frequency_value
+
+
+def _resolve_frequency(
+    selection: str,
+    custom_interval: Optional[str],
+    custom_unit: Optional[str],
+) -> tuple[str, Optional[int], Optional[str]]:
+    if selection == CUSTOM_INTERVAL_VALUE:
+        if not custom_interval:
+            raise HTTPException(400, "Veuillez renseigner l'intervalle de la fréquence")
+        if custom_unit not in FREQUENCY_UNITS:
+            raise HTTPException(400, "Unité de fréquence inconnue")
+        try:
+            interval_value = int(custom_interval)
+        except ValueError as exc:
+            raise HTTPException(400, "L'intervalle doit être un nombre entier") from exc
+        if interval_value < 1:
+            raise HTTPException(400, "L'intervalle doit être supérieur ou égal à 1")
+        if interval_value > 120:
+            raise HTTPException(400, "L'intervalle ne peut pas dépasser 120")
+        frequency_value = f"{INTERVAL_PREFIX}{custom_unit}:{interval_value}"
+        return frequency_value, interval_value, custom_unit
+    if selection not in PREDEFINED_FREQUENCIES:
         raise HTTPException(400, "Fréquence inconnue")
-    return selection
+    predefined = PREDEFINED_FREQUENCIES[selection]
+    return selection, predefined["interval"], predefined["unit"]
 
 
-def _build_frequency_labels(additional_values: Iterable[str] = ()) -> Dict[str, str]:
-    labels = dict(PREDEFINED_FREQUENCY_OPTIONS)
-    for value in additional_values:
-        if (
-            value
-            and value not in labels
-            and value != CUSTOM_FREQUENCY_VALUE
-        ):
-            labels[value] = value
+def _build_frequency_labels(
+    services: Iterable = (), extra_values: Iterable[str] = ()
+) -> Dict[str, str]:
+    labels = {key: data["label"] for key, data in PREDEFINED_FREQUENCIES.items()}
+    for service in services:
+        value = getattr(service, "frequency", None)
+        if not value:
+            continue
+        interval = getattr(service, "frequency_interval", None)
+        unit = getattr(service, "frequency_unit", None)
+        labels[value] = _frequency_label_from_details(value, interval, unit)
+    for value in extra_values:
+        if not value or value == CUSTOM_INTERVAL_VALUE:
+            continue
+        if value not in labels:
+            labels[value] = _frequency_label_from_details(value, None, None)
     return labels
 
 
-def _build_frequency_filter_options(additional_values: Iterable[str] = ()) -> List[tuple[str, str]]:
-    options: List[tuple[str, str]] = list(PREDEFINED_FREQUENCY_OPTIONS.items())
-    extra_values = sorted(
-        {
-            value
-            for value in additional_values
-            if value
-            and value not in PREDEFINED_FREQUENCY_OPTIONS
-            and value != CUSTOM_FREQUENCY_VALUE
-        }
-    )
-    options.extend((value, value) for value in extra_values)
+def _build_frequency_filter_options(
+    services: Iterable = (), extra_values: Iterable[str] = ()
+) -> List[tuple[str, str]]:
+    labels = _build_frequency_labels(services, extra_values)
+    options: List[tuple[str, str]] = [
+        (key, labels[key]) for key in PREDEFINED_FREQUENCY_KEYS if key in labels
+    ]
+    seen = {key for key, _ in options}
+    for value in sorted(labels.keys()):
+        if value in seen or value == CUSTOM_INTERVAL_VALUE:
+            continue
+        options.append((value, labels[value]))
+        seen.add(value)
     return options
 
 
@@ -310,6 +426,12 @@ def _clients_context(request: Request, clients, q: Optional[str], filters: Dict[
             reports = {}
             app.state.import_reports = reports
         report = reports.pop(report_token, None)
+    all_services = [
+        service
+        for client in clients
+        for service in getattr(client, "subcontractings", [])
+    ]
+    frequency_labels = _build_frequency_labels(all_services)
     return {
         "request": request,
         "clients": clients,
@@ -321,9 +443,11 @@ def _clients_context(request: Request, clients, q: Optional[str], filters: Dict[
         "subcontract_status_styles": SUBCONTRACT_STATUS_STYLES,
         "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
         "subcontracted_groups": SUBCONTRACTED_GROUPS,
-        "frequency_options": _build_frequency_labels(),
+        "frequency_options": frequency_labels,
         "frequency_select_options": FREQUENCY_SELECT_OPTIONS,
-        "custom_frequency_value": CUSTOM_FREQUENCY_VALUE,
+        "frequency_unit_options": FREQUENCY_UNIT_OPTIONS,
+        "custom_interval_value": CUSTOM_INTERVAL_VALUE,
+        "predefined_frequency_keys": PREDEFINED_FREQUENCY_KEYS,
         "import_report": report,
         "focus_id": request.query_params.get("focus"),
         "active_filters": filters,
@@ -346,13 +470,9 @@ def _subcontractings_context(
         if service.client_id:
             client_ids.add(service.client_id)
 
-    additional_frequencies = set(frequency_totals.keys())
     active_frequency = filters.get("frequency")
-    if active_frequency:
-        additional_frequencies.add(active_frequency)
-
-    frequency_labels = _build_frequency_labels(additional_frequencies)
-    frequency_filter_options = _build_frequency_filter_options(additional_frequencies)
+    frequency_labels = _build_frequency_labels(services, [active_frequency] if active_frequency else [])
+    frequency_filter_options = _build_frequency_filter_options(services, [active_frequency] if active_frequency else [])
     filters_definition = [
         {**SUBCONTRACTING_FILTER_DEFINITIONS[0]},
         {**SUBCONTRACTING_FILTER_DEFINITIONS[1], "options": frequency_filter_options},
@@ -364,6 +484,9 @@ def _subcontractings_context(
         "q": q or "",
         "frequency_options": frequency_labels,
         "frequency_select_options": FREQUENCY_SELECT_OPTIONS,
+        "frequency_unit_options": FREQUENCY_UNIT_OPTIONS,
+        "custom_interval_value": CUSTOM_INTERVAL_VALUE,
+        "predefined_frequency_keys": PREDEFINED_FREQUENCY_KEYS,
         "category_totals": category_totals,
         "frequency_totals": frequency_totals,
         "total_budget": total_budget,
@@ -398,7 +521,7 @@ def _extract_subcontracting_filters(
     valid_categories = {group["title"] for group in SUBCONTRACTED_GROUPS}
     if category in valid_categories:
         filters["category"] = category
-    if frequency and frequency != CUSTOM_FREQUENCY_VALUE:
+    if frequency and frequency != CUSTOM_INTERVAL_VALUE:
         filters["frequency"] = frequency
     return filters
 
@@ -475,9 +598,11 @@ def subcontracted_service_edit_page(
             "request": request,
             "service": service,
             "subcontracted_groups": SUBCONTRACTED_GROUPS,
-            "frequency_options": _build_frequency_labels([service.frequency]),
+            "frequency_options": _build_frequency_labels([service]),
             "frequency_select_options": FREQUENCY_SELECT_OPTIONS,
-            "custom_frequency_value": CUSTOM_FREQUENCY_VALUE,
+            "frequency_unit_options": FREQUENCY_UNIT_OPTIONS,
+            "custom_interval_value": CUSTOM_INTERVAL_VALUE,
+            "predefined_frequency_keys": PREDEFINED_FREQUENCY_KEYS,
             "subcontract_status_options": SUBCONTRACT_STATUS_OPTIONS,
             "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
             "available_prestations": available_keys,
@@ -494,7 +619,8 @@ def update_subcontracted_service(
     client_id: int = Form(...),
     budget: Optional[str] = Form(None),
     frequency: str = Form(...),
-    custom_frequency: Optional[str] = Form(None),
+    custom_frequency_interval: Optional[str] = Form(None),
+    custom_frequency_unit: Optional[str] = Form(None),
     status: str = Form(SUBCONTRACT_STATUS_DEFAULT),
     realization_week: Optional[str] = Form(None),
     order_week: Optional[str] = Form(None),
@@ -507,7 +633,11 @@ def update_subcontracted_service(
     if not crud.get_client(session, client_id):
         raise HTTPException(400, "Client inconnu")
 
-    resolved_frequency = _resolve_frequency(frequency, custom_frequency)
+    (
+        resolved_frequency,
+        resolved_interval,
+        resolved_unit,
+    ) = _resolve_frequency(frequency, custom_frequency_interval, custom_frequency_unit)
 
     details = SUBCONTRACTED_LOOKUP.get(prestation)
     if not details and prestation != service.prestation_key:
@@ -533,6 +663,8 @@ def update_subcontracted_service(
         budget_code=(details["budget_code"] if details else service.budget_code),
         budget=parsed_budget,
         frequency=resolved_frequency,
+        frequency_interval=resolved_interval,
+        frequency_unit=resolved_unit,
         status=status,
         realization_week=realization_value,
         order_week=order_value,
@@ -665,7 +797,8 @@ def add_subcontracted_service(
     prestation: str = Form(...),
     budget: Optional[str] = Form(None),
     frequency: str = Form(...),
-    custom_frequency: Optional[str] = Form(None),
+    custom_frequency_interval: Optional[str] = Form(None),
+    custom_frequency_unit: Optional[str] = Form(None),
     status: str = Form(SUBCONTRACT_STATUS_DEFAULT),
     realization_week: Optional[str] = Form(None),
     order_week: Optional[str] = Form(None),
@@ -674,7 +807,11 @@ def add_subcontracted_service(
     details = SUBCONTRACTED_LOOKUP.get(prestation)
     if not details:
         raise HTTPException(400, "Prestation inconnue")
-    resolved_frequency = _resolve_frequency(frequency, custom_frequency)
+    (
+        resolved_frequency,
+        resolved_interval,
+        resolved_unit,
+    ) = _resolve_frequency(frequency, custom_frequency_interval, custom_frequency_unit)
 
     if status not in SUBCONTRACT_STATUS_OPTIONS:
         raise HTTPException(400, "Statut inconnu")
@@ -697,6 +834,8 @@ def add_subcontracted_service(
             budget_code=details["budget_code"],
             budget=parsed_budget,
             frequency=resolved_frequency,
+            frequency_interval=resolved_interval,
+            frequency_unit=resolved_unit,
             status=status,
             realization_week=realization_value,
             order_week=order_value,

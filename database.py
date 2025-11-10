@@ -18,6 +18,14 @@ def init_db():
             conn.exec_driver_sql(
                 "ALTER TABLE subcontractedservice ADD COLUMN status VARCHAR DEFAULT 'non_commence'"
             )
+        if "frequency_interval" not in service_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE subcontractedservice ADD COLUMN frequency_interval INTEGER"
+            )
+        if "frequency_unit" not in service_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE subcontractedservice ADD COLUMN frequency_unit VARCHAR"
+            )
 
 def get_session():
     with Session(engine) as session:

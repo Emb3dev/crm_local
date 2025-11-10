@@ -1,6 +1,6 @@
 from typing import List, Optional
 from datetime import datetime
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Integer
 from sqlmodel import SQLModel, Field, Relationship
 
 
@@ -122,6 +122,16 @@ class SubcontractedServiceBase(SQLModel):
     budget_code: str = Field(description="Code budget associé")
     budget: Optional[float] = Field(default=None, description="Montant budgété")
     frequency: str = Field(description="Fréquence de la prestation")
+    frequency_interval: Optional[int] = Field(
+        default=None,
+        description="Intervalle de récurrence (par exemple tous les X mois/années)",
+        sa_column=Column("frequency_interval", Integer, nullable=True),
+    )
+    frequency_unit: Optional[str] = Field(
+        default=None,
+        description="Unité associée à l'intervalle de fréquence",
+        sa_column=Column("frequency_unit", String, nullable=True),
+    )
     status: str = Field(
         default="non_commence",
         description="Statut d'avancement de la prestation",
@@ -158,6 +168,8 @@ class SubcontractedServiceUpdate(SQLModel):
     budget_code: Optional[str] = None
     budget: Optional[float] = None
     frequency: Optional[str] = None
+    frequency_interval: Optional[int] = None
+    frequency_unit: Optional[str] = None
     status: Optional[str] = None
     realization_week: Optional[str] = None
     order_week: Optional[str] = None
