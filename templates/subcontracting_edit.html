@@ -6,30 +6,30 @@
 {% block title %}Modifier {{ service.prestation_label }} — CRM Local{% endblock %}
 {% block content %}
 <section class="space-y-10">
-  <div class="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-xl shadow-indigo-500/20 backdrop-blur">
+  <div class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="space-y-2">
-        <h2 class="font-display text-2xl text-white">{{ service.prestation_label }}</h2>
-        <p class="text-sm text-slate-300">Client : <strong class="font-semibold text-white">{{ service.client.company_name if service.client else '—' }}</strong></p>
+        <h2 class="font-display text-2xl text-slate-900 dark:text-white">{{ service.prestation_label }}</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-300">Client : <strong class="font-semibold text-slate-900 dark:text-white">{{ service.client.company_name if service.client else '—' }}</strong></p>
       </div>
       <a
         href="{{ return_url }}"
-        class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+        class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-white/20 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:ring-white/40"
       >
         ← Retour aux prestations
       </a>
     </div>
 
-    <form class="mt-8 space-y-6 rounded-2xl border border-white/10 bg-midnight-800/60 p-6 shadow-inner shadow-indigo-500/10 subcontract-form" method="post">
+    <form class="mt-8 space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-inner shadow-indigo-100/40 transition-colors duration-300 subcontract-form dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10" method="post">
       <div class="grid gap-4 md:grid-cols-2">
-        <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <label class="md:col-span-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
           <span>Prestation *</span>
           <div class="relative mt-2">
             <select
               name="prestation"
               required
               data-prestation-select
-              class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+              class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
             >
               <option value="" disabled>Choisir une prestation…</option>
               {% if service.prestation_key and service.prestation_key not in available_prestations %}
@@ -43,20 +43,20 @@
                 </optgroup>
               {% endfor %}
             </select>
-            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 peer-hover:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
               </svg>
             </span>
           </div>
         </label>
-        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
           <span>Client *</span>
           <div class="relative mt-2">
             <select
               name="client_id"
               required
-              class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+              class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
             >
               {% for client_option in clients %}
                 <option value="{{ client_option.id }}" {% if client_option.id == service.client_id %}selected{% endif %}>
@@ -64,24 +64,24 @@
                 </option>
               {% endfor %}
             </select>
-            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 peer-hover:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
               </svg>
             </span>
           </div>
         </label>
-        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
           <span>Code budget</span>
           <input
             type="text"
             readonly
             value="{{ service.budget_code }}"
             data-budget-output
-            class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+            class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 dark:border-white/10 dark:bg-white/10 dark:text-white"
           />
         </label>
-        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
           <span>Budget</span>
           <input
             type="number"
@@ -90,23 +90,23 @@
             min="0"
             value="{% if service.budget is not none %}{{ '{:.2f}'.format(service.budget) }}{% endif %}"
             placeholder="0,00"
-            class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+            class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 dark:border-white/10 dark:bg-white/10 dark:text-white"
           />
         </label>
-        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
           <span>Fréquence</span>
           <div class="relative mt-2">
             <select
               name="frequency"
               required
               data-frequency-select
-              class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+              class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
             >
               {% for value, label in frequency_options.items() %}
                 <option value="{{ value }}" {% if value == service.frequency %}selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
-            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 peer-hover:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
               </svg>
@@ -114,25 +114,25 @@
           </div>
         </label>
         {% set current_status = service.status or subcontract_status_default %}
-        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
           <span>Statut</span>
           <div class="relative mt-2">
             <select
               name="status"
-              class="peer nova-select w-full appearance-none rounded-2xl border border-white/15 bg-gradient-to-r from-midnight-800/80 via-midnight-900/80 to-midnight-900 px-4 py-3 text-sm text-indigo-100 shadow-inner shadow-indigo-500/20 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+              class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
             >
               {% for value, label in subcontract_status_options.items() %}
                 <option value="{{ value }}" {% if value == current_status %}selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
-            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-200 transition peer-focus:text-indigo-100 peer-hover:text-indigo-100">
+            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 peer-hover:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
               </svg>
             </span>
           </div>
         </label>
-        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300 subcontract-form__week {% if service.frequency != 'prestation_ponctuelle' %}hidden{% endif %}" data-week-field>
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300 subcontract-form__week {% if service.frequency != 'prestation_ponctuelle' %}hidden{% endif %}" data-week-field>
           <span>Semaine de réalisation</span>
           <input
             type="text"
@@ -141,10 +141,10 @@
             pattern="S\d{2}"
             value="{{ service.realization_week or '' }}"
             {% if service.frequency != 'prestation_ponctuelle' %}disabled{% endif %}
-            class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 disabled:opacity-60"
+            class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-white"
           />
         </label>
-        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">
           <span>Semaine de commande</span>
           <input
             type="text"
@@ -152,20 +152,20 @@
             placeholder="S01"
             pattern="S\d{2}"
             value="{{ service.order_week or '' }}"
-            class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70"
+            class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 dark:border-white/10 dark:bg-white/10 dark:text-white"
           />
         </label>
       </div>
       <div class="flex justify-end gap-3">
         <a
           href="{{ return_url }}"
-          class="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-white/20 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:ring-white/40"
         >
           Annuler
         </a>
         <button
           type="submit"
-          class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-indigo-300 hover:bg-indigo-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+          class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 hover:text-indigo-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:border-indigo-300 dark:hover:bg-indigo-400/20 dark:hover:text-white dark:focus-visible:ring-indigo-400"
         >
           Enregistrer les modifications
         </button>
