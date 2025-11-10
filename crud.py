@@ -1,5 +1,7 @@
 from typing import Dict, List, Optional
 
+import re
+
 from sqlalchemy import delete
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
@@ -7,6 +9,7 @@ from sqlmodel import Session, select
 from models import (
     BeltLine,
     BeltLineCreate,
+    BeltLineUpdate,
     Client,
     ClientCreate,
     ClientUpdate,
@@ -14,6 +17,7 @@ from models import (
     ContactCreate,
     FilterLine,
     FilterLineCreate,
+    FilterLineUpdate,
     SubcontractedService,
     SubcontractedServiceCreate,
     SubcontractedServiceUpdate,
@@ -224,13 +228,44 @@ def update_subcontracted_service(
     return record
 
 
+def _normalize_order_week(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    stripped = value.strip()
+    return stripped.upper() if stripped else None
+
+
+def _normalize_filter_dimensions(
+    dimensions: Optional[str],
+    format_type: str,
+) -> Optional[str]:
+    if not dimensions:
+        return None
+
+    numbers = re.findall(r"\d+(?:[.,]\d+)?", dimensions)
+    if format_type == "cousus_sur_fil":
+        if len(numbers) >= 2:
+            return f"{numbers[0]} x {numbers[1]}"
+    else:
+        if len(numbers) >= 3:
+            return f"{numbers[0]} x {numbers[1]} x {numbers[2]}"
+
+    return dimensions.strip()
+
+
 def list_filter_lines(session: Session) -> List[FilterLine]:
     stmt = select(FilterLine).order_by(FilterLine.created_at.desc())
     return session.exec(stmt).all()
 
 
 def create_filter_line(session: Session, data: FilterLineCreate) -> FilterLine:
-    record = FilterLine(**data.model_dump())
+    payload = data.model_dump()
+    payload["order_week"] = _normalize_order_week(payload.get("order_week"))
+    payload["dimensions"] = _normalize_filter_dimensions(
+        payload.get("dimensions"), payload["format_type"]
+    )
+
+    record = FilterLine(**payload)
     session.add(record)
     session.commit()
     session.refresh(record)
@@ -246,13 +281,72 @@ def delete_filter_line(session: Session, line_id: int) -> bool:
     return True
 
 
+def get_filter_line(session: Session, line_id: int) -> Optional[FilterLine]:
+    return session.get(FilterLine, line_id)
+
+
+def update_filter_line(
+    session: Session, line_id: int, data: FilterLineUpdate
+) -> Optional[FilterLine]:
+    record = session.get(FilterLine, line_id)
+    if not record:
+        return None
+
+    updates = data.model_dump(exclude_unset=True)
+
+    if "order_week" in updates:
+        updates["order_week"] = _normalize_order_week(updates.get("order_week"))
+
+    if "dimensions" in updates:
+        format_type = updates.get("format_type") or record.format_type
+        updates["dimensions"] = _normalize_filter_dimensions(
+            updates.get("dimensions"), format_type
+        )
+
+    for key, value in updates.items():
+        setattr(record, key, value)
+
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
 def list_belt_lines(session: Session) -> List[BeltLine]:
     stmt = select(BeltLine).order_by(BeltLine.created_at.desc())
     return session.exec(stmt).all()
 
 
 def create_belt_line(session: Session, data: BeltLineCreate) -> BeltLine:
-    record = BeltLine(**data.model_dump())
+    payload = data.model_dump()
+    payload["order_week"] = _normalize_order_week(payload.get("order_week"))
+
+    record = BeltLine(**payload)
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
+def get_belt_line(session: Session, line_id: int) -> Optional[BeltLine]:
+    return session.get(BeltLine, line_id)
+
+
+def update_belt_line(
+    session: Session, line_id: int, data: BeltLineUpdate
+) -> Optional[BeltLine]:
+    record = session.get(BeltLine, line_id)
+    if not record:
+        return None
+
+    updates = data.model_dump(exclude_unset=True)
+
+    if "order_week" in updates:
+        updates["order_week"] = _normalize_order_week(updates.get("order_week"))
+
+    for key, value in updates.items():
+        setattr(record, key, value)
+
     session.add(record)
     session.commit()
     session.refresh(record)

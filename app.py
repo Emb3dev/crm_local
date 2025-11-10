@@ -10,10 +10,12 @@ from sqlmodel import Session
 from database import init_db, get_session
 from models import (
     BeltLineCreate,
+    BeltLineUpdate,
     ClientCreate,
     ClientUpdate,
     ContactCreate,
     FilterLineCreate,
+    FilterLineUpdate,
     SubcontractedServiceCreate,
     SubcontractedServiceUpdate,
 )
@@ -919,6 +921,27 @@ def list_filters_and_belts(
 ):
     filters = crud.list_filter_lines(session)
     belts = crud.list_belt_lines(session)
+    editing_filter = None
+    editing_belt = None
+
+    edit_filter_id = request.query_params.get("edit_filter")
+    if edit_filter_id:
+        try:
+            editing_filter = crud.get_filter_line(session, int(edit_filter_id))
+        except ValueError:
+            raise HTTPException(status_code=404, detail="Ligne filtre introuvable")
+        if not editing_filter:
+            raise HTTPException(status_code=404, detail="Ligne filtre introuvable")
+
+    edit_belt_id = request.query_params.get("edit_belt")
+    if edit_belt_id:
+        try:
+            editing_belt = crud.get_belt_line(session, int(edit_belt_id))
+        except ValueError:
+            raise HTTPException(status_code=404, detail="Ligne courroie introuvable")
+        if not editing_belt:
+            raise HTTPException(status_code=404, detail="Ligne courroie introuvable")
+
     return templates.TemplateResponse(
         "filters_belts.html",
         {
@@ -928,6 +951,8 @@ def list_filters_and_belts(
             "filter_format_options": FILTER_FORMAT_OPTIONS,
             "filter_format_labels": FILTER_FORMAT_LABELS,
             "import_report": _consume_import_report(request),
+            "editing_filter": editing_filter,
+            "editing_belt": editing_belt,
         },
     )
 
@@ -959,6 +984,41 @@ async def create_filter_line(
         order_week=(order_week.strip().upper() if order_week else None),
     )
     crud.create_filter_line(session, payload)
+    return RedirectResponse("/filtres-courroies", status_code=303)
+
+
+@app.post("/filtres-courroies/filtres/{line_id}/update")
+async def update_filter_line(
+    line_id: int,
+    site: str = Form(...),
+    equipment: str = Form(...),
+    efficiency: Optional[str] = Form(None),
+    format_type: str = Form(...),
+    dimensions: Optional[str] = Form(None),
+    quantity: int = Form(...),
+    order_week: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    if format_type not in FILTER_FORMAT_LABELS:
+        raise HTTPException(status_code=400, detail="Format de filtre invalide")
+
+    if quantity < 1:
+        raise HTTPException(status_code=400, detail="Quantité invalide")
+
+    payload = FilterLineUpdate(
+        site=site.strip(),
+        equipment=equipment.strip(),
+        efficiency=(efficiency.strip() if efficiency else None),
+        format_type=format_type,
+        dimensions=(dimensions.strip() if dimensions else None),
+        quantity=quantity,
+        order_week=(order_week.strip() if order_week else None),
+    )
+
+    updated = crud.update_filter_line(session, line_id, payload)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Ligne filtre introuvable")
+
     return RedirectResponse("/filtres-courroies", status_code=303)
 
 
@@ -1056,6 +1116,34 @@ async def create_belt_line(
         order_week=(order_week.strip().upper() if order_week else None),
     )
     crud.create_belt_line(session, payload)
+    return RedirectResponse("/filtres-courroies", status_code=303)
+
+
+@app.post("/filtres-courroies/courroies/{line_id}/update")
+async def update_belt_line(
+    line_id: int,
+    site: str = Form(...),
+    equipment: str = Form(...),
+    reference: str = Form(...),
+    quantity: int = Form(...),
+    order_week: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    if quantity < 1:
+        raise HTTPException(status_code=400, detail="Quantité invalide")
+
+    payload = BeltLineUpdate(
+        site=site.strip(),
+        equipment=equipment.strip(),
+        reference=reference.strip(),
+        quantity=quantity,
+        order_week=(order_week.strip() if order_week else None),
+    )
+
+    updated = crud.update_belt_line(session, line_id, payload)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Ligne courroie introuvable")
+
     return RedirectResponse("/filtres-courroies", status_code=303)
 
 

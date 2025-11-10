@@ -59,27 +59,33 @@
       <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Consignez le format, l'efficacité et les quantités nécessaires par équipement.</p>
     </div>
     <div class="grid gap-6 lg:grid-cols-2">
-      <form method="post" action="/filtres-courroies/filtres" class="space-y-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
+      {% set is_editing_filter = editing_filter is not none %}
+      <form
+        method="post"
+        action="{{ '/filtres-courroies/filtres/' ~ editing_filter.id ~ '/update' if is_editing_filter else '/filtres-courroies/filtres' }}"
+        class="space-y-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10"
+        id="filters-form"
+      >
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
             Site
-            <input name="site" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+            <input name="site" type="text" required value="{{ editing_filter.site if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
             Équipement
-            <input name="equipment" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+            <input name="equipment" type="text" required value="{{ editing_filter.equipment if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
             Efficacité
-            <input name="efficiency" type="text" placeholder="Ex : F7, ISO ePM1 80%" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+            <input name="efficiency" type="text" placeholder="Ex : F7, ISO ePM1 80%" value="{{ editing_filter.efficiency if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
             Format
             <div class="relative">
               <select name="format_type" required class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
-                <option value="" disabled selected>Choisir un format</option>
+                <option value="" disabled {% if not is_editing_filter %}selected{% endif %}>Choisir un format</option>
                 {% for value, label in filter_format_options %}
-                  <option value="{{ value }}">{{ label }}</option>
+                  <option value="{{ value }}" {% if is_editing_filter and editing_filter.format_type == value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
               </select>
               <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
@@ -91,20 +97,23 @@
           </label>
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
             Quantité
-            <input name="quantity" type="number" min="1" step="1" value="1" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+            <input name="quantity" type="number" min="1" step="1" value="{{ editing_filter.quantity if is_editing_filter else 1 }}" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
             Semaine commande
-            <input name="order_week" type="text" placeholder="Ex : S12" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+            <input name="order_week" type="text" placeholder="Ex : S12" value="{{ editing_filter.order_week if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300 sm:col-span-2">
             Dimensions
-            <input name="dimensions" type="text" placeholder="Ex : 592 x 592 x 47" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+            <input name="dimensions" type="text" placeholder="Ex : 592 x 592 x 47" value="{{ editing_filter.dimensions if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
         </div>
-        <div class="flex justify-end">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          {% if is_editing_filter %}
+            <a href="/filtres-courroies#filters-form" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:border-white/15 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/20">Annuler</a>
+          {% endif %}
           <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-500 px-5 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/60 dark:bg-indigo-500/90 dark:hover:bg-indigo-400">
-            Ajouter le filtre
+            {{ 'Mettre à jour le filtre' if is_editing_filter else 'Ajouter le filtre' }}
           </button>
         </div>
       </form>
@@ -147,9 +156,12 @@
                 <td class="py-3 pr-4">{{ line.quantity }}</td>
                 <td class="py-3 pr-4">{{ line.order_week or '—' }}</td>
                 <td class="py-3 text-right">
-                  <form method="post" action="/filtres-courroies/filtres/{{ line.id }}/delete">
-                    <button type="submit" class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20">Supprimer</button>
-                  </form>
+                  <div class="flex justify-end gap-2">
+                    <a href="/filtres-courroies?edit_filter={{ line.id }}#filters-form" class="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-white px-3 py-1 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20">Modifier</a>
+                    <form method="post" action="/filtres-courroies/filtres/{{ line.id }}/delete">
+                      <button type="submit" class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20">Supprimer</button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             {% endfor %}
@@ -169,32 +181,41 @@
       <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Suivez les références et semaines de commande pour vos consommables critiques.</p>
     </div>
     <div class="grid gap-6 lg:grid-cols-2">
-      <form method="post" action="/filtres-courroies/courroies" class="space-y-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
+      {% set is_editing_belt = editing_belt is not none %}
+      <form
+        method="post"
+        action="{{ '/filtres-courroies/courroies/' ~ editing_belt.id ~ '/update' if is_editing_belt else '/filtres-courroies/courroies' }}"
+        class="space-y-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10"
+        id="belts-form"
+      >
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
             Site
-            <input name="site" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+            <input name="site" type="text" required value="{{ editing_belt.site if is_editing_belt else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
             Équipement
-            <input name="equipment" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+            <input name="equipment" type="text" required value="{{ editing_belt.equipment if is_editing_belt else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
             Référence
-            <input name="reference" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+            <input name="reference" type="text" required value="{{ editing_belt.reference if is_editing_belt else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
             Quantité
-            <input name="quantity" type="number" min="1" step="1" value="1" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+            <input name="quantity" type="number" min="1" step="1" value="{{ editing_belt.quantity if is_editing_belt else 1 }}" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
           <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300 sm:col-span-2">
             Semaine de commande
-            <input name="order_week" type="text" placeholder="Ex : S12" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+            <input name="order_week" type="text" placeholder="Ex : S12" value="{{ editing_belt.order_week if is_editing_belt else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
         </div>
-        <div class="flex justify-end">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          {% if is_editing_belt %}
+            <a href="/filtres-courroies#belts-form" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:border-white/15 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/20">Annuler</a>
+          {% endif %}
           <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-500 px-5 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/60 dark:bg-indigo-500/90 dark:hover:bg-indigo-400">
-            Ajouter la courroie
+            {{ 'Mettre à jour la courroie' if is_editing_belt else 'Ajouter la courroie' }}
           </button>
         </div>
       </form>
@@ -233,9 +254,12 @@
                 <td class="py-3 pr-4">{{ line.quantity }}</td>
                 <td class="py-3 pr-4">{{ line.order_week or '—' }}</td>
                 <td class="py-3 text-right">
-                  <form method="post" action="/filtres-courroies/courroies/{{ line.id }}/delete">
-                    <button type="submit" class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20">Supprimer</button>
-                  </form>
+                  <div class="flex justify-end gap-2">
+                    <a href="/filtres-courroies?edit_belt={{ line.id }}#belts-form" class="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-white px-3 py-1 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20">Modifier</a>
+                    <form method="post" action="/filtres-courroies/courroies/{{ line.id }}/delete">
+                      <button type="submit" class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20">Supprimer</button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             {% endfor %}
