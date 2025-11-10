@@ -15,6 +15,9 @@ from models import (
     ClientUpdate,
     Contact,
     ContactCreate,
+    Entreprise,
+    EntrepriseCreate,
+    EntrepriseUpdate,
     FilterLine,
     FilterLineCreate,
     FilterLineUpdate,
@@ -22,6 +25,78 @@ from models import (
     SubcontractedServiceCreate,
     SubcontractedServiceUpdate,
 )
+
+def get_entreprise(session: Session, entreprise_id: int) -> Optional[Entreprise]:
+    return session.get(Entreprise, entreprise_id)
+
+
+def get_entreprise_by_name(session: Session, name: str) -> Optional[Entreprise]:
+    stmt = select(Entreprise).where(Entreprise.nom == name)
+    return session.exec(stmt).first()
+
+
+def list_entreprises(session: Session) -> List[Entreprise]:
+    stmt = select(Entreprise).order_by(Entreprise.nom.asc())
+    return session.exec(stmt).all()
+
+
+def create_entreprise(session: Session, data: EntrepriseCreate) -> Entreprise:
+    entreprise = Entreprise.model_validate(data)
+    session.add(entreprise)
+    session.commit()
+    session.refresh(entreprise)
+    return entreprise
+
+
+def update_entreprise(
+    session: Session, entreprise_id: int, data: EntrepriseUpdate
+) -> Optional[Entreprise]:
+    entreprise = session.get(Entreprise, entreprise_id)
+    if not entreprise:
+        return None
+    updates = data.model_dump(exclude_unset=True)
+    for key, value in updates.items():
+        setattr(entreprise, key, value)
+    session.add(entreprise)
+    session.commit()
+    session.refresh(entreprise)
+    return entreprise
+
+
+def ensure_entreprise(
+    session: Session,
+    *,
+    name: str,
+    adresse_facturation: Optional[str] = None,
+    tag: Optional[str] = None,
+    statut: Optional[bool] = None,
+) -> Entreprise:
+    normalized = name.strip()
+    entreprise = get_entreprise_by_name(session, normalized)
+    payload = {}
+    if adresse_facturation is not None:
+        payload["adresse_facturation"] = adresse_facturation or None
+    if tag is not None:
+        payload["tag"] = tag or None
+    if statut is not None:
+        payload["statut"] = statut
+
+    if entreprise:
+        if payload:
+            update = EntrepriseUpdate(**payload)
+            update_entreprise(session, entreprise.id, update)
+            session.refresh(entreprise)
+        return entreprise
+
+    create_payload = EntrepriseCreate(
+        nom=normalized,
+        adresse_facturation=payload.get("adresse_facturation"),
+        tag=payload.get("tag"),
+        statut=payload.get("statut", True),
+    )
+    entreprise = create_entreprise(session, create_payload)
+    return entreprise
+
 
 def list_clients(
     session: Session,
@@ -32,9 +107,11 @@ def list_clients(
 ) -> List[Client]:
     stmt = (
         select(Client)
+        .join(Entreprise)
         .options(
             selectinload(Client.contacts),
             selectinload(Client.subcontractings),
+            selectinload(Client.entreprise),
         )
         .order_by(Client.created_at.desc())
     )
@@ -45,13 +122,14 @@ def list_clients(
         stmt = stmt.where(
             (
                 Client.name.ilike(like)
-                | Client.company_name.ilike(like)
                 | Client.email.ilike(like)
                 | Client.phone.ilike(like)
                 | Client.billing_address.ilike(like)
                 | Client.depannage.ilike(like)
                 | Client.astreinte.ilike(like)
                 | Client.tags.ilike(like)
+                | Entreprise.nom.ilike(like)
+                | Entreprise.tag.ilike(like)
                 | Contact.name.ilike(like)
                 | Contact.email.ilike(like)
                 | Contact.phone.ilike(like)
@@ -61,7 +139,7 @@ def list_clients(
 
     status = effective_filters.get("status")
     if status:
-        stmt = stmt.where(Client.status == status)
+        stmt = stmt.where(Entreprise.statut == (status == "actif"))
 
     depannage = effective_filters.get("depannage")
     if depannage:
@@ -75,7 +153,12 @@ def list_clients(
 
 
 def list_client_choices(session: Session) -> List[Client]:
-    stmt = select(Client).order_by(Client.company_name.asc(), Client.name.asc())
+    stmt = (
+        select(Client)
+        .options(selectinload(Client.entreprise))
+        .join(Entreprise)
+        .order_by(Entreprise.nom.asc(), Client.name.asc())
+    )
     return session.exec(stmt).all()
 
 def get_client(session: Session, client_id: int) -> Optional[Client]:
@@ -87,6 +170,10 @@ def create_client(
     contacts: Optional[List[ContactCreate]] = None,
 ) -> Client:
     c = Client.model_validate(data)
+    if c.entreprise_id:
+        entreprise = session.get(Entreprise, c.entreprise_id)
+        if entreprise:
+            c.company_name = entreprise.nom
     session.add(c)
     session.flush()
 
@@ -102,6 +189,12 @@ def update_client(session: Session, client_id: int, data: ClientUpdate) -> Optio
     c = session.get(Client, client_id)
     if not c: return None
     updates = data.model_dump(exclude_unset=True)
+    entreprise_id = updates.pop("entreprise_id", None)
+    if entreprise_id is not None:
+        entreprise = session.get(Entreprise, entreprise_id)
+        if entreprise:
+            c.entreprise_id = entreprise_id
+            c.company_name = entreprise.nom
     for k, v in updates.items():
         setattr(c, k, v)
     session.add(c)
@@ -171,20 +264,22 @@ def list_subcontracted_services(
 ) -> List[SubcontractedService]:
     stmt = (
         select(SubcontractedService)
-        .options(selectinload(SubcontractedService.client))
+        .options(
+            selectinload(SubcontractedService.client).selectinload(Client.entreprise)
+        )
         .order_by(SubcontractedService.created_at.desc())
     )
     effective_filters = filters or {}
     if q:
         like = f"%{q}%"
-        stmt = stmt.outerjoin(Client)
+        stmt = stmt.outerjoin(Client).outerjoin(Entreprise)
         stmt = stmt.where(
             (
                 SubcontractedService.prestation_label.ilike(like)
                 | SubcontractedService.category.ilike(like)
                 | SubcontractedService.budget_code.ilike(like)
-                | Client.company_name.ilike(like)
                 | Client.name.ilike(like)
+                | Entreprise.nom.ilike(like)
             )
         )
         stmt = stmt.distinct()

@@ -127,7 +127,9 @@
                   </td>
                   <td class="px-6 py-5 align-top">
                     {% if service.client %}
-                      <div class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ service.client.company_name }}</div>
+                      {% set entreprise = service.client.entreprise %}
+                      {% set client_company = entreprise.nom if entreprise else (service.client.company_name or 'Entreprise à identifier') %}
+                      <div class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ client_company }}</div>
                       <div class="mt-1 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ service.client.name }}</div>
                     {% else %}
                       <span class="text-slate-400">—</span>

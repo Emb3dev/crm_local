@@ -16,7 +16,11 @@
             class="font-semibold text-slate-900 dark:text-white"
             data-client-output
           >
-            {{ service.client.company_name if service.client else '—' }}
+            {% if service.client %}
+              {{ service.client.entreprise.nom if service.client.entreprise else service.client.company_name }}
+            {% else %}
+              —
+            {% endif %}
             {% if service.client and service.client.name %}
               — {{ service.client.name }}
             {% endif %}
@@ -72,7 +76,8 @@
             >
               {% for client_option in clients %}
                 <option value="{{ client_option.id }}" {% if client_option.id == service.client_id %}selected{% endif %}>
-                  {{ client_option.company_name }}{% if client_option.name %} — {{ client_option.name }}{% endif %}
+                  {% set option_company = client_option.entreprise.nom if client_option.entreprise else client_option.company_name %}
+                  {{ option_company }}{% if client_option.name %} — {{ client_option.name }}{% endif %}
                 </option>
               {% endfor %}
             </select>

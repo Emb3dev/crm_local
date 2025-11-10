@@ -74,6 +74,20 @@ FILTER_FORMAT_LABELS = {value: label for value, label in FILTER_FORMAT_OPTIONS}
 ALLOWED_IMPORT_EXTENSIONS = (".xlsx", ".xlsm", ".xltx", ".xltm")
 
 
+def _status_to_bool(value: Optional[str]) -> Optional[bool]:
+    if value is None:
+        return None
+    if value not in STATUS_OPTIONS:
+        raise HTTPException(400, "Statut inconnu")
+    return value == "actif"
+
+
+def _status_key_from_bool(value: Optional[bool]) -> str:
+    if value is None:
+        return ""
+    return "actif" if value else "inactif"
+
+
 def _consume_import_report(request: Request):
     report_token = request.query_params.get("report")
     if not report_token:
@@ -472,7 +486,13 @@ def _parse_budget(value: Optional[str]) -> Optional[float]:
         raise HTTPException(400, "Budget invalide") from exc
 
 
-def _clients_context(request: Request, clients, q: Optional[str], filters: Dict[str, str]):
+def _clients_context(
+    request: Request,
+    clients,
+    q: Optional[str],
+    filters: Dict[str, str],
+    entreprises,
+):
     report = _consume_import_report(request)
     all_services = [
         service
@@ -487,6 +507,9 @@ def _clients_context(request: Request, clients, q: Optional[str], filters: Dict[
         "depannage_options": DEPANNAGE_OPTIONS,
         "astreinte_options": ASTREINTE_OPTIONS,
         "status_options": STATUS_OPTIONS,
+        "entreprises": entreprises,
+        "entreprise_name_options": sorted({e.nom for e in entreprises}),
+        "status_key_from_bool": _status_key_from_bool,
         "subcontract_status_options": SUBCONTRACT_STATUS_OPTIONS,
         "subcontract_status_styles": SUBCONTRACT_STATUS_STYLES,
         "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
@@ -591,8 +614,10 @@ def clients_page(
 ):
     filters = _extract_client_filters(status, depannage, astreinte)
     clients = crud.list_clients(session, q=q, filters=filters)
+    entreprises = crud.list_entreprises(session)
     return templates.TemplateResponse(
-        "clients_list.html", _clients_context(request, clients, q, filters)
+        "clients_list.html",
+        _clients_context(request, clients, q, filters, entreprises),
     )
 
 # Fragment liste (HTMX)
@@ -607,8 +632,10 @@ def clients_fragment(
 ):
     filters = _extract_client_filters(status, depannage, astreinte)
     clients = crud.list_clients(session, q=q, filters=filters)
+    entreprises = crud.list_entreprises(session)
     return templates.TemplateResponse(
-        "clients_list.html", _clients_context(request, clients, q, filters)
+        "clients_list.html",
+        _clients_context(request, clients, q, filters, entreprises),
     )
 
 
@@ -747,10 +774,18 @@ def create_client(
     if name or email or phone:
         contacts_payload.append(ContactCreate(name=name, email=email, phone=phone))
 
+    statut_bool = _status_to_bool(status)
+    entreprise = crud.ensure_entreprise(
+        session,
+        name=company_name,
+        adresse_facturation=billing_address,
+        tag=tags,
+        statut=statut_bool,
+    )
     client = crud.create_client(
         session,
         ClientCreate(
-            company_name=company_name,
+            entreprise_id=entreprise.id,
             name=name,
             email=email,
             phone=phone,
@@ -783,11 +818,19 @@ def edit_client(
     status: Optional[str] = Form("actif"),
     session: Session = Depends(get_session)
 ):
+    statut_bool = _status_to_bool(status)
+    entreprise = crud.ensure_entreprise(
+        session,
+        name=company_name,
+        adresse_facturation=billing_address,
+        tag=tags,
+        statut=statut_bool,
+    )
     updated = crud.update_client(
         session,
         client_id,
         ClientUpdate(
-            company_name=company_name,
+            entreprise_id=entreprise.id,
             name=name,
             email=email,
             phone=phone,
@@ -1279,7 +1322,27 @@ async def import_clients(
         }
         row_number = row.get("__row__", idx)
         try:
-            crud.create_client(session, ClientCreate(**payload), contacts=contacts_payload)
+            company_name = payload.pop("company_name", None)
+            if not company_name:
+                raise ValueError("Nom d'entreprise manquant")
+            status_value = payload.get("status")
+            try:
+                statut_bool = _status_to_bool(status_value) if status_value else None
+            except HTTPException as exc:
+                raise ValueError(str(exc.detail))
+            entreprise = crud.ensure_entreprise(
+                session,
+                name=company_name,
+                adresse_facturation=payload.get("billing_address"),
+                tag=payload.get("tags"),
+                statut=statut_bool,
+            )
+            payload["entreprise_id"] = entreprise.id
+            crud.create_client(
+                session,
+                ClientCreate(**payload),
+                contacts=contacts_payload,
+            )
             created += 1
         except Exception as exc:
             session.rollback()
