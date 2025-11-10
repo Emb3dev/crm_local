@@ -40,6 +40,10 @@ class ClientBase(SQLModel):
     name: str = Field(index=True, description="Nom du client")
     email: Optional[str] = None
     phone: Optional[str] = None
+    technician_name: Optional[str] = Field(
+        default=None,
+        description="Nom du technicien référent",
+    )
     billing_address: Optional[str] = Field(
         default=None,
         sa_column=Column("address", String, nullable=True),
@@ -77,6 +81,7 @@ class ClientUpdate(SQLModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    technician_name: Optional[str] = None
     billing_address: Optional[str] = None
     depannage: Optional[str] = None
     astreinte: Optional[str] = None
