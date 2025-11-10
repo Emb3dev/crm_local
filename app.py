@@ -9,9 +9,11 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
 from database import init_db, get_session
 from models import (
+    BeltLineCreate,
     ClientCreate,
     ClientUpdate,
     ContactCreate,
+    FilterLineCreate,
     SubcontractedServiceCreate,
     SubcontractedServiceUpdate,
 )
@@ -54,6 +56,14 @@ SUBCONTRACT_STATUS_STYLES = {
     "en_cours": "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100",
     "non_commence": "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100",
 }
+
+FILTER_FORMAT_OPTIONS = [
+    ("cousus_sur_fil", "Cousus sur fil"),
+    ("cadre", "Format cadre"),
+    ("multi_diedre", "Format multi dièdre"),
+    ("poche", "Format poche"),
+]
+FILTER_FORMAT_LABELS = {value: label for value, label in FILTER_FORMAT_OPTIONS}
 
 CLIENT_FILTER_DEFINITIONS = [
     {
@@ -864,6 +874,84 @@ def remove_subcontracted_service(
     return RedirectResponse(
         url=f"/?focus={client_id}#client-{client_id}", status_code=303
     )
+
+
+@app.get("/filtres-courroies", response_class=HTMLResponse)
+def list_filters_and_belts(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    filters = crud.list_filter_lines(session)
+    belts = crud.list_belt_lines(session)
+    return templates.TemplateResponse(
+        "filters_belts.html",
+        {
+            "request": request,
+            "filters": filters,
+            "belts": belts,
+            "filter_format_options": FILTER_FORMAT_OPTIONS,
+            "filter_format_labels": FILTER_FORMAT_LABELS,
+        },
+    )
+
+
+@app.post("/filtres-courroies/filtres")
+async def create_filter_line(
+    site: str = Form(...),
+    equipment: str = Form(...),
+    filter_type: str = Form(...),
+    efficiency: Optional[str] = Form(None),
+    format_type: str = Form(...),
+    dimensions: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    if format_type not in FILTER_FORMAT_LABELS:
+        raise HTTPException(status_code=400, detail="Format de filtre invalide")
+
+    payload = FilterLineCreate(
+        site=site.strip(),
+        equipment=equipment.strip(),
+        filter_type=filter_type.strip(),
+        efficiency=(efficiency.strip() if efficiency else None),
+        format_type=format_type,
+        dimensions=(dimensions.strip() if dimensions else None),
+    )
+    crud.create_filter_line(session, payload)
+    return RedirectResponse("/filtres-courroies", status_code=303)
+
+
+@app.post("/filtres-courroies/filtres/{line_id}/delete")
+def delete_filter_line(line_id: int, session: Session = Depends(get_session)):
+    if not crud.delete_filter_line(session, line_id):
+        raise HTTPException(status_code=404, detail="Ligne filtre introuvable")
+    return RedirectResponse("/filtres-courroies", status_code=303)
+
+
+@app.post("/filtres-courroies/courroies")
+async def create_belt_line(
+    site: str = Form(...),
+    equipment: str = Form(...),
+    reference: str = Form(...),
+    quantity: int = Form(...),
+    order_week: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    payload = BeltLineCreate(
+        site=site.strip(),
+        equipment=equipment.strip(),
+        reference=reference.strip(),
+        quantity=quantity,
+        order_week=(order_week.strip().upper() if order_week else None),
+    )
+    crud.create_belt_line(session, payload)
+    return RedirectResponse("/filtres-courroies", status_code=303)
+
+
+@app.post("/filtres-courroies/courroies/{line_id}/delete")
+def delete_belt_line(line_id: int, session: Session = Depends(get_session)):
+    if not crud.delete_belt_line(session, line_id):
+        raise HTTPException(status_code=404, detail="Ligne courroie introuvable")
+    return RedirectResponse("/filtres-courroies", status_code=303)
 
 
 @app.post("/clients/import")

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Filtres & Courroies — CRM Local{% endblock %}
+{% block page_eyebrow %}Gestion des consommables{% endblock %}
+{% block page_title %}Filtres & courroies{% endblock %}
+{% block page_subtitle %}Centralisez les besoins par site et préparez vos commandes en un clin d'œil.{% endblock %}
+{% block main_classes %}space-y-12{% endblock %}
+
+{% block content %}
+<section class="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+  <div class="grid gap-6 lg:grid-cols-2">
+    <div class="space-y-4">
+      <span class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-200">Vision synthétique</span>
+      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Anticipez vos remplacements</h2>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
+        Renseignez les caractéristiques des filtres et courroies pour chaque équipement. Les informations clés
+        (dimensions, efficacité, références) sont regroupées pour sécuriser la chaîne d'approvisionnement.
+      </p>
+    </div>
+    <div class="rounded-3xl border border-slate-200 bg-white/80 p-6 text-sm text-slate-600 shadow shadow-indigo-500/10 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:text-slate-300 dark:shadow-indigo-500/20">
+      <p class="font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Astuce</p>
+      <p class="mt-2">
+        Utilisez la semaine de commande pour planifier vos achats. Les quantités et dimensions renseignées par site
+        permettent d'éviter les ruptures et de consolider les besoins lors des consultations fournisseurs.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="grid gap-12 lg:grid-cols-2">
+  <article class="space-y-8 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+    <div class="space-y-2">
+      <h3 class="font-display text-xl text-slate-900 transition-colors duration-300 dark:text-white">Filtres</h3>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Consignez le type, l'efficacité et les dimensions nécessaires par équipement.</p>
+    </div>
+    <form method="post" action="/filtres-courroies/filtres" class="space-y-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          Site
+          <input name="site" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+        </label>
+        <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          Équipement
+          <input name="equipment" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+        </label>
+        <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          Type
+          <input name="filter_type" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+        </label>
+        <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          Efficacité
+          <input name="efficiency" type="text" placeholder="Ex : F7, ISO ePM1 80%" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+        </label>
+        <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          Format
+          <div class="relative">
+            <select name="format_type" required class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+              <option value="" disabled selected>Choisir un format</option>
+              {% for value, label in filter_format_options %}
+                <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+              </svg>
+            </span>
+          </div>
+        </label>
+        <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300 sm:col-span-2">
+          Dimensions
+          <input name="dimensions" type="text" placeholder="Ex : 592 x 592 x 47" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+        </label>
+      </div>
+      <div class="flex justify-end">
+        <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-500 px-5 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/60 dark:bg-indigo-500/90 dark:hover:bg-indigo-400">
+          Ajouter le filtre
+        </button>
+      </div>
+    </form>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-left text-sm text-slate-600 dark:divide-white/10 dark:text-slate-300">
+        <thead class="text-xs uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400">
+          <tr>
+            <th class="py-3 pr-4">Site</th>
+            <th class="py-3 pr-4">Équipement</th>
+            <th class="py-3 pr-4">Type</th>
+            <th class="py-3 pr-4">Efficacité</th>
+            <th class="py-3 pr-4">Format</th>
+            <th class="py-3 pr-4">Dimensions</th>
+            <th class="py-3 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-white/10">
+          {% if filters %}
+            {% for line in filters %}
+              <tr class="transition-colors duration-300 hover:bg-indigo-50/40 dark:hover:bg-indigo-500/10">
+                <td class="py-3 pr-4 font-medium text-slate-900 dark:text-white">{{ line.site }}</td>
+                <td class="py-3 pr-4">{{ line.equipment }}</td>
+                <td class="py-3 pr-4">{{ line.filter_type }}</td>
+                <td class="py-3 pr-4">{{ line.efficiency or '—' }}</td>
+                <td class="py-3 pr-4">{{ filter_format_labels.get(line.format_type, line.format_type) }}</td>
+                <td class="py-3 pr-4">{{ line.dimensions or '—' }}</td>
+                <td class="py-3 text-right">
+                  <form method="post" action="/filtres-courroies/filtres/{{ line.id }}/delete">
+                    <button type="submit" class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20">Supprimer</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="7" class="py-6 text-center text-sm text-slate-400 dark:text-slate-500">Aucune ligne filtre enregistrée pour le moment.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="space-y-8 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+    <div class="space-y-2">
+      <h3 class="font-display text-xl text-slate-900 transition-colors duration-300 dark:text-white">Courroies</h3>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Suivez les références et semaines de commande pour vos consommables critiques.</p>
+    </div>
+    <form method="post" action="/filtres-courroies/courroies" class="space-y-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          Site
+          <input name="site" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+        </label>
+        <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          Équipement
+          <input name="equipment" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+        </label>
+        <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          Référence
+          <input name="reference" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+        </label>
+        <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+          Quantité
+          <input name="quantity" type="number" min="1" step="1" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+        </label>
+        <label class="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300 sm:col-span-2">
+          Semaine de commande
+          <input name="order_week" type="text" placeholder="Ex : S12" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
+        </label>
+      </div>
+      <div class="flex justify-end">
+        <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-500 px-5 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/60 dark:bg-indigo-500/90 dark:hover:bg-indigo-400">
+          Ajouter la courroie
+        </button>
+      </div>
+    </form>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-left text-sm text-slate-600 dark:divide-white/10 dark:text-slate-300">
+        <thead class="text-xs uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400">
+          <tr>
+            <th class="py-3 pr-4">Site</th>
+            <th class="py-3 pr-4">Équipement</th>
+            <th class="py-3 pr-4">Référence</th>
+            <th class="py-3 pr-4">Quantité</th>
+            <th class="py-3 pr-4">Semaine commande</th>
+            <th class="py-3 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-white/10">
+          {% if belts %}
+            {% for line in belts %}
+              <tr class="transition-colors duration-300 hover:bg-indigo-50/40 dark:hover:bg-indigo-500/10">
+                <td class="py-3 pr-4 font-medium text-slate-900 dark:text-white">{{ line.site }}</td>
+                <td class="py-3 pr-4">{{ line.equipment }}</td>
+                <td class="py-3 pr-4">{{ line.reference }}</td>
+                <td class="py-3 pr-4">{{ line.quantity }}</td>
+                <td class="py-3 pr-4">{{ line.order_week or '—' }}</td>
+                <td class="py-3 text-right">
+                  <form method="post" action="/filtres-courroies/courroies/{{ line.id }}/delete">
+                    <button type="submit" class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20">Supprimer</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6" class="py-6 text-center text-sm text-slate-400 dark:text-slate-500">Aucune ligne courroie enregistrée pour le moment.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+{% endblock %}

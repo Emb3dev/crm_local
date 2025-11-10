@@ -179,3 +179,65 @@ class SubcontractedServiceUpdate(SQLModel):
     realization_week: Optional[str] = None
     order_week: Optional[str] = None
     client_id: Optional[int] = None
+
+
+# =======================
+# TABLE LIGNES FILTRES
+# =======================
+
+
+class FilterLineBase(SQLModel):
+    site: str = Field(index=True, description="Nom du site")
+    equipment: str = Field(index=True, description="Équipement concerné")
+    filter_type: str = Field(description="Type de filtre")
+    efficiency: Optional[str] = Field(default=None, description="Classe d'efficacité du filtre")
+    format_type: str = Field(description="Format du filtre (cousus sur fil, cadre…)")
+    dimensions: Optional[str] = Field(default=None, description="Dimensions du filtre")
+
+
+class FilterLine(FilterLineBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class FilterLineCreate(FilterLineBase):
+    pass
+
+
+class FilterLineUpdate(SQLModel):
+    site: Optional[str] = None
+    equipment: Optional[str] = None
+    filter_type: Optional[str] = None
+    efficiency: Optional[str] = None
+    format_type: Optional[str] = None
+    dimensions: Optional[str] = None
+
+
+# =======================
+# TABLE LIGNES COURROIES
+# =======================
+
+
+class BeltLineBase(SQLModel):
+    site: str = Field(index=True, description="Nom du site")
+    equipment: str = Field(index=True, description="Équipement concerné")
+    reference: str = Field(description="Référence de la courroie")
+    quantity: int = Field(default=1, description="Quantité requise")
+    order_week: Optional[str] = Field(default=None, description="Semaine de commande (S01…)")
+
+
+class BeltLine(BeltLineBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class BeltLineCreate(BeltLineBase):
+    pass
+
+
+class BeltLineUpdate(SQLModel):
+    site: Optional[str] = None
+    equipment: Optional[str] = None
+    reference: Optional[str] = None
+    quantity: Optional[int] = None
+    order_week: Optional[str] = None
