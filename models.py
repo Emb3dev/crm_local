@@ -189,10 +189,13 @@ class SubcontractedServiceUpdate(SQLModel):
 class FilterLineBase(SQLModel):
     site: str = Field(index=True, description="Nom du site")
     equipment: str = Field(index=True, description="Équipement concerné")
-    filter_type: str = Field(description="Type de filtre")
     efficiency: Optional[str] = Field(default=None, description="Classe d'efficacité du filtre")
     format_type: str = Field(description="Format du filtre (cousus sur fil, cadre…)")
     dimensions: Optional[str] = Field(default=None, description="Dimensions du filtre")
+    quantity: int = Field(default=1, description="Quantité requise pour ce filtre")
+    order_week: Optional[str] = Field(
+        default=None, description="Semaine de commande (format S01, S02…)"
+    )
 
 
 class FilterLine(FilterLineBase, table=True):
@@ -207,10 +210,11 @@ class FilterLineCreate(FilterLineBase):
 class FilterLineUpdate(SQLModel):
     site: Optional[str] = None
     equipment: Optional[str] = None
-    filter_type: Optional[str] = None
     efficiency: Optional[str] = None
     format_type: Optional[str] = None
     dimensions: Optional[str] = None
+    quantity: Optional[int] = None
+    order_week: Optional[str] = None
 
 
 # =======================
