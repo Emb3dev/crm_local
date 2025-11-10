@@ -5,6 +5,10 @@
       const prestationSelect = form.querySelector('[data-prestation-select]');
       const budgetOutput = form.querySelector('[data-budget-output]');
       const frequencySelect = form.querySelector('[data-frequency-select]');
+      const customIntervalField = form.querySelector('[data-custom-interval-field]');
+      const customIntervalInput = customIntervalField?.querySelector('[data-custom-interval-input]');
+      const customIntervalUnit = customIntervalField?.querySelector('[data-custom-interval-unit]');
+      const customIntervalValue = frequencySelect?.dataset.customIntervalValue;
       const weekField = form.querySelector('[data-week-field]');
       const weekInput = weekField?.querySelector('input');
       const clientSelect = form.querySelector('[data-client-select]');
@@ -26,6 +30,19 @@
         }
       };
 
+      const toggleCustomInterval = () => {
+        if (!frequencySelect || !customIntervalField || !customIntervalInput || !customIntervalUnit || !customIntervalValue) return;
+        const isCustom = frequencySelect.value === customIntervalValue;
+        customIntervalField.classList.toggle('hidden', !isCustom);
+        customIntervalInput.disabled = !isCustom;
+        customIntervalInput.required = isCustom;
+        customIntervalUnit.disabled = !isCustom;
+        customIntervalUnit.required = isCustom;
+        if (!isCustom) {
+          customIntervalInput.value = '';
+        }
+      };
+
       const updateClientSummary = () => {
         if (!clientSelect || !clientOutput) return;
         const selected = clientSelect.options[clientSelect.selectedIndex];
@@ -34,11 +51,15 @@
       };
 
       prestationSelect?.addEventListener('change', updateBudget);
-      frequencySelect?.addEventListener('change', toggleWeekField);
+      frequencySelect?.addEventListener('change', () => {
+        toggleWeekField();
+        toggleCustomInterval();
+      });
       clientSelect?.addEventListener('change', updateClientSummary);
 
       updateBudget();
       toggleWeekField();
+      toggleCustomInterval();
       updateClientSummary();
       form.dataset.enhanced = 'true';
     };
