@@ -113,6 +113,7 @@
     {% set current_path = request.url.path %}
     {% set clients_active = current_path == '/' %}
     {% set prestations_active = current_path.startswith('/prestations') %}
+    {% set consumables_active = current_path.startswith('/filtres-courroies') %}
 
     <header class="sticky top-0 z-30 border-b border-slate-200 bg-white backdrop-blur dark:border-white/10 dark:bg-midnight-900/80">
       <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 text-slate-800 transition-colors duration-300 sm:px-6 lg:px-8 dark:text-slate-300">
@@ -155,6 +156,14 @@
             <span aria-hidden="true">🛠️</span>
             Prestations
           </a>
+          <a
+            href="/filtres-courroies"
+            class="flex items-center gap-2 rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-900 hover:shadow-md dark:hover:bg-white/10 dark:hover:text-white dark:hover:shadow dark:hover:shadow-indigo-500/20 {{ 'bg-slate-100 text-slate-900 shadow shadow-indigo-500/20 dark:text-midnight-900' if consumables_active else '' }}"
+            {% if consumables_active %}aria-current="page"{% endif %}
+          >
+            <span aria-hidden="true">🧰</span>
+            Filtres & Courroies
+          </a>
         </nav>
         <button
           id="themeToggle"
@@ -182,6 +191,14 @@
           >
             <span class="flex items-center gap-2"><span aria-hidden="true">🛠️</span> Prestations</span>
             {% if prestations_active %}<span class="text-xs font-semibold uppercase tracking-wide">Actif</span>{% endif %}
+          </a>
+          <a
+            href="/filtres-courroies"
+            class="flex items-center justify-between rounded-2xl px-4 py-3 transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-white/10 dark:hover:text-white {{ 'bg-slate-100 text-slate-900 shadow shadow-indigo-500/20 dark:text-midnight-900' if consumables_active else '' }}"
+            {% if consumables_active %}aria-current="page"{% endif %}
+          >
+            <span class="flex items-center gap-2"><span aria-hidden="true">🧰</span> Filtres & Courroies</span>
+            {% if consumables_active %}<span class="text-xs font-semibold uppercase tracking-wide">Actif</span>{% endif %}
           </a>
         </nav>
       </div>

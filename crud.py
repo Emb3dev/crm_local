@@ -5,11 +5,15 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
 from models import (
+    BeltLine,
+    BeltLineCreate,
     Client,
     ClientCreate,
     ClientUpdate,
     Contact,
     ContactCreate,
+    FilterLine,
+    FilterLineCreate,
     SubcontractedService,
     SubcontractedServiceCreate,
     SubcontractedServiceUpdate,
@@ -218,3 +222,47 @@ def update_subcontracted_service(
     session.commit()
     session.refresh(record)
     return record
+
+
+def list_filter_lines(session: Session) -> List[FilterLine]:
+    stmt = select(FilterLine).order_by(FilterLine.created_at.desc())
+    return session.exec(stmt).all()
+
+
+def create_filter_line(session: Session, data: FilterLineCreate) -> FilterLine:
+    record = FilterLine(**data.model_dump())
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
+def delete_filter_line(session: Session, line_id: int) -> bool:
+    record = session.get(FilterLine, line_id)
+    if not record:
+        return False
+    session.delete(record)
+    session.commit()
+    return True
+
+
+def list_belt_lines(session: Session) -> List[BeltLine]:
+    stmt = select(BeltLine).order_by(BeltLine.created_at.desc())
+    return session.exec(stmt).all()
+
+
+def create_belt_line(session: Session, data: BeltLineCreate) -> BeltLine:
+    record = BeltLine(**data.model_dump())
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
+def delete_belt_line(session: Session, line_id: int) -> bool:
+    record = session.get(BeltLine, line_id)
+    if not record:
+        return False
+    session.delete(record)
+    session.commit()
+    return True
