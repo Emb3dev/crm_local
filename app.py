@@ -1,4 +1,4 @@
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Iterable
 
 from io import BytesIO
 
@@ -218,7 +218,7 @@ SUBCONTRACTED_LOOKUP = {
     for option in group["options"]
 }
 
-FREQUENCY_OPTIONS = {
+PREDEFINED_FREQUENCY_OPTIONS = {
     "contrat_annuel": "Contrat de maintenance annuel",
     "contrat_semestriel": "Contrat de maintenance semestriel",
     "contrat_trimestriel": "Contrat de maintenance trimestriel",
@@ -226,6 +226,12 @@ FREQUENCY_OPTIONS = {
     "contrat_mensuel": "Contrat de maintenance mensuel",
     "prestation_ponctuelle": "Prestation ponctuelle",
 }
+
+CUSTOM_FREQUENCY_VALUE = "custom"
+CUSTOM_FREQUENCY_LABEL = "Fréquence personnalisée"
+
+FREQUENCY_SELECT_OPTIONS = dict(PREDEFINED_FREQUENCY_OPTIONS)
+FREQUENCY_SELECT_OPTIONS[CUSTOM_FREQUENCY_VALUE] = CUSTOM_FREQUENCY_LABEL
 
 SUBCONTRACTING_FILTER_DEFINITIONS = [
     {
@@ -238,9 +244,49 @@ SUBCONTRACTING_FILTER_DEFINITIONS = [
         "name": "frequency",
         "label": "Fréquence",
         "placeholder": "Toutes les fréquences",
-        "options": list(FREQUENCY_OPTIONS.items()),
+        "options": list(PREDEFINED_FREQUENCY_OPTIONS.items()),
     },
 ]
+
+
+def _resolve_frequency(selection: str, custom_value: Optional[str]) -> str:
+    if selection == CUSTOM_FREQUENCY_VALUE:
+        if not custom_value or not custom_value.strip():
+            raise HTTPException(400, "Veuillez renseigner une fréquence personnalisée")
+        normalized = custom_value.strip()
+        if len(normalized) > 100:
+            raise HTTPException(400, "La fréquence personnalisée est trop longue (100 caractères max)")
+        return normalized
+    if selection not in PREDEFINED_FREQUENCY_OPTIONS:
+        raise HTTPException(400, "Fréquence inconnue")
+    return selection
+
+
+def _build_frequency_labels(additional_values: Iterable[str] = ()) -> Dict[str, str]:
+    labels = dict(PREDEFINED_FREQUENCY_OPTIONS)
+    for value in additional_values:
+        if (
+            value
+            and value not in labels
+            and value != CUSTOM_FREQUENCY_VALUE
+        ):
+            labels[value] = value
+    return labels
+
+
+def _build_frequency_filter_options(additional_values: Iterable[str] = ()) -> List[tuple[str, str]]:
+    options: List[tuple[str, str]] = list(PREDEFINED_FREQUENCY_OPTIONS.items())
+    extra_values = sorted(
+        {
+            value
+            for value in additional_values
+            if value
+            and value not in PREDEFINED_FREQUENCY_OPTIONS
+            and value != CUSTOM_FREQUENCY_VALUE
+        }
+    )
+    options.extend((value, value) for value in extra_values)
+    return options
 
 
 def _parse_budget(value: Optional[str]) -> Optional[float]:
@@ -275,7 +321,9 @@ def _clients_context(request: Request, clients, q: Optional[str], filters: Dict[
         "subcontract_status_styles": SUBCONTRACT_STATUS_STYLES,
         "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
         "subcontracted_groups": SUBCONTRACTED_GROUPS,
-        "frequency_options": FREQUENCY_OPTIONS,
+        "frequency_options": _build_frequency_labels(),
+        "frequency_select_options": FREQUENCY_SELECT_OPTIONS,
+        "custom_frequency_value": CUSTOM_FREQUENCY_VALUE,
         "import_report": report,
         "focus_id": request.query_params.get("focus"),
         "active_filters": filters,
@@ -298,18 +346,31 @@ def _subcontractings_context(
         if service.client_id:
             client_ids.add(service.client_id)
 
+    additional_frequencies = set(frequency_totals.keys())
+    active_frequency = filters.get("frequency")
+    if active_frequency:
+        additional_frequencies.add(active_frequency)
+
+    frequency_labels = _build_frequency_labels(additional_frequencies)
+    frequency_filter_options = _build_frequency_filter_options(additional_frequencies)
+    filters_definition = [
+        {**SUBCONTRACTING_FILTER_DEFINITIONS[0]},
+        {**SUBCONTRACTING_FILTER_DEFINITIONS[1], "options": frequency_filter_options},
+    ]
+
     return {
         "request": request,
         "services": services,
         "q": q or "",
-        "frequency_options": FREQUENCY_OPTIONS,
+        "frequency_options": frequency_labels,
+        "frequency_select_options": FREQUENCY_SELECT_OPTIONS,
         "category_totals": category_totals,
         "frequency_totals": frequency_totals,
         "total_budget": total_budget,
         "total_services": len(services),
         "distinct_clients": len(client_ids),
         "active_filters": filters,
-        "filters_definition": SUBCONTRACTING_FILTER_DEFINITIONS,
+        "filters_definition": filters_definition,
         "focus_id": request.query_params.get("focus"),
         "subcontract_status_options": SUBCONTRACT_STATUS_OPTIONS,
         "subcontract_status_styles": SUBCONTRACT_STATUS_STYLES,
@@ -337,7 +398,7 @@ def _extract_subcontracting_filters(
     valid_categories = {group["title"] for group in SUBCONTRACTED_GROUPS}
     if category in valid_categories:
         filters["category"] = category
-    if frequency in FREQUENCY_OPTIONS:
+    if frequency and frequency != CUSTOM_FREQUENCY_VALUE:
         filters["frequency"] = frequency
     return filters
 
@@ -414,7 +475,9 @@ def subcontracted_service_edit_page(
             "request": request,
             "service": service,
             "subcontracted_groups": SUBCONTRACTED_GROUPS,
-            "frequency_options": FREQUENCY_OPTIONS,
+            "frequency_options": _build_frequency_labels([service.frequency]),
+            "frequency_select_options": FREQUENCY_SELECT_OPTIONS,
+            "custom_frequency_value": CUSTOM_FREQUENCY_VALUE,
             "subcontract_status_options": SUBCONTRACT_STATUS_OPTIONS,
             "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
             "available_prestations": available_keys,
@@ -431,6 +494,7 @@ def update_subcontracted_service(
     client_id: int = Form(...),
     budget: Optional[str] = Form(None),
     frequency: str = Form(...),
+    custom_frequency: Optional[str] = Form(None),
     status: str = Form(SUBCONTRACT_STATUS_DEFAULT),
     realization_week: Optional[str] = Form(None),
     order_week: Optional[str] = Form(None),
@@ -443,8 +507,7 @@ def update_subcontracted_service(
     if not crud.get_client(session, client_id):
         raise HTTPException(400, "Client inconnu")
 
-    if frequency not in FREQUENCY_OPTIONS:
-        raise HTTPException(400, "Fréquence inconnue")
+    resolved_frequency = _resolve_frequency(frequency, custom_frequency)
 
     details = SUBCONTRACTED_LOOKUP.get(prestation)
     if not details and prestation != service.prestation_key:
@@ -456,7 +519,7 @@ def update_subcontracted_service(
     parsed_budget = _parse_budget(budget)
 
     realization_value: Optional[str] = None
-    if frequency == "prestation_ponctuelle" and realization_week:
+    if resolved_frequency == "prestation_ponctuelle" and realization_week:
         realization_value = realization_week.strip().upper()
 
     order_value = order_week.strip().upper() if order_week else None
@@ -469,7 +532,7 @@ def update_subcontracted_service(
         category=(details["category"] if details else service.category),
         budget_code=(details["budget_code"] if details else service.budget_code),
         budget=parsed_budget,
-        frequency=frequency,
+        frequency=resolved_frequency,
         status=status,
         realization_week=realization_value,
         order_week=order_value,
@@ -602,6 +665,7 @@ def add_subcontracted_service(
     prestation: str = Form(...),
     budget: Optional[str] = Form(None),
     frequency: str = Form(...),
+    custom_frequency: Optional[str] = Form(None),
     status: str = Form(SUBCONTRACT_STATUS_DEFAULT),
     realization_week: Optional[str] = Form(None),
     order_week: Optional[str] = Form(None),
@@ -610,15 +674,16 @@ def add_subcontracted_service(
     details = SUBCONTRACTED_LOOKUP.get(prestation)
     if not details:
         raise HTTPException(400, "Prestation inconnue")
-    if frequency not in FREQUENCY_OPTIONS:
-        raise HTTPException(400, "Fréquence inconnue")
+    resolved_frequency = _resolve_frequency(frequency, custom_frequency)
 
     if status not in SUBCONTRACT_STATUS_OPTIONS:
         raise HTTPException(400, "Statut inconnu")
 
     parsed_budget = _parse_budget(budget)
     realization_value = (
-        realization_week.strip().upper() if realization_week and frequency == "prestation_ponctuelle" else None
+        realization_week.strip().upper()
+        if realization_week and resolved_frequency == "prestation_ponctuelle"
+        else None
     )
     order_value = order_week.strip().upper() if order_week else None
 
@@ -631,7 +696,7 @@ def add_subcontracted_service(
             category=details["category"],
             budget_code=details["budget_code"],
             budget=parsed_budget,
-            frequency=frequency,
+            frequency=resolved_frequency,
             status=status,
             realization_week=realization_value,
             order_week=order_value,
