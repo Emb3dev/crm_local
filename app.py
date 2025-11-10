@@ -220,6 +220,10 @@ SUBCONTRACTED_LOOKUP = {
 
 FREQUENCY_OPTIONS = {
     "contrat_annuel": "Contrat de maintenance annuel",
+    "contrat_semestriel": "Contrat de maintenance semestriel",
+    "contrat_trimestriel": "Contrat de maintenance trimestriel",
+    "contrat_bimestriel": "Contrat de maintenance bimestriel",
+    "contrat_mensuel": "Contrat de maintenance mensuel",
     "prestation_ponctuelle": "Prestation ponctuelle",
 }
 
