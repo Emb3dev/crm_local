@@ -16,6 +16,12 @@ def init_db():
             row[1]
             for row in conn.exec_driver_sql("PRAGMA table_info('filterline')")
         }
+        if "filter_type" not in filter_cols and "format_type" in filter_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE filterline RENAME COLUMN format_type TO filter_type"
+            )
+            filter_cols.remove("format_type")
+            filter_cols.add("filter_type")
         if "quantity" not in filter_cols:
             conn.exec_driver_sql(
                 "ALTER TABLE filterline ADD COLUMN quantity INTEGER DEFAULT 1"
