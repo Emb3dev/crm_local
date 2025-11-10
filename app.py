@@ -18,7 +18,11 @@ from models import (
     SubcontractedServiceUpdate,
 )
 import crud
-from importers import parse_clients_excel
+from importers import (
+    parse_belt_lines_excel,
+    parse_clients_excel,
+    parse_filter_lines_excel,
+)
 from openpyxl import Workbook
 from uuid import uuid4
 #uvicorn app:app --reload
@@ -64,6 +68,45 @@ FILTER_FORMAT_OPTIONS = [
     ("poche", "Format poche"),
 ]
 FILTER_FORMAT_LABELS = {value: label for value, label in FILTER_FORMAT_OPTIONS}
+
+ALLOWED_IMPORT_EXTENSIONS = (".xlsx", ".xlsm", ".xltx", ".xltm")
+
+
+def _consume_import_report(request: Request):
+    report_token = request.query_params.get("report")
+    if not report_token:
+        return None
+    reports = getattr(app.state, "import_reports", None)
+    if reports is None:
+        reports = {}
+        app.state.import_reports = reports
+    return reports.pop(report_token, None)
+
+
+def _store_import_report(
+    redirect_url: str,
+    *,
+    created: int,
+    total: int,
+    errors: List[str],
+    filename: str,
+    singular_label: str,
+    plural_label: str,
+) -> RedirectResponse:
+    report_id = uuid4().hex
+    reports = getattr(app.state, "import_reports", None)
+    if reports is None:
+        reports = {}
+        app.state.import_reports = reports
+    reports[report_id] = {
+        "created": created,
+        "errors": errors,
+        "total": total,
+        "filename": filename,
+        "entity_label": singular_label,
+        "entity_label_plural": plural_label,
+    }
+    return RedirectResponse(url=f"{redirect_url}?report={report_id}", status_code=303)
 
 CLIENT_FILTER_DEFINITIONS = [
     {
@@ -428,14 +471,7 @@ def _parse_budget(value: Optional[str]) -> Optional[float]:
 
 
 def _clients_context(request: Request, clients, q: Optional[str], filters: Dict[str, str]):
-    report_token = request.query_params.get("report")
-    report = None
-    if report_token:
-        reports = getattr(app.state, "import_reports", None)
-        if reports is None:
-            reports = {}
-            app.state.import_reports = reports
-        report = reports.pop(report_token, None)
+    report = _consume_import_report(request)
     all_services = [
         service
         for client in clients
@@ -891,6 +927,7 @@ def list_filters_and_belts(
             "belts": belts,
             "filter_format_options": FILTER_FORMAT_OPTIONS,
             "filter_format_labels": FILTER_FORMAT_LABELS,
+            "import_report": _consume_import_report(request),
         },
     )
 
@@ -899,25 +936,100 @@ def list_filters_and_belts(
 async def create_filter_line(
     site: str = Form(...),
     equipment: str = Form(...),
-    filter_type: str = Form(...),
     efficiency: Optional[str] = Form(None),
     format_type: str = Form(...),
     dimensions: Optional[str] = Form(None),
+    quantity: int = Form(...),
+    order_week: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
     if format_type not in FILTER_FORMAT_LABELS:
         raise HTTPException(status_code=400, detail="Format de filtre invalide")
 
+    if quantity < 1:
+        raise HTTPException(status_code=400, detail="Quantité invalide")
+
     payload = FilterLineCreate(
         site=site.strip(),
         equipment=equipment.strip(),
-        filter_type=filter_type.strip(),
         efficiency=(efficiency.strip() if efficiency else None),
         format_type=format_type,
         dimensions=(dimensions.strip() if dimensions else None),
+        quantity=quantity,
+        order_week=(order_week.strip().upper() if order_week else None),
     )
     crud.create_filter_line(session, payload)
     return RedirectResponse("/filtres-courroies", status_code=303)
+
+
+@app.post("/filtres-courroies/filtres/import")
+async def import_filter_lines(
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+):
+    if not file.filename:
+        return _store_import_report(
+            "/filtres-courroies",
+            created=0,
+            total=0,
+            errors=["Aucun fichier sélectionné."],
+            filename="Import filtres",
+            singular_label="ligne filtre",
+            plural_label="lignes filtre",
+        )
+
+    if not file.filename.lower().endswith(ALLOWED_IMPORT_EXTENSIONS):
+        return _store_import_report(
+            "/filtres-courroies",
+            created=0,
+            total=0,
+            errors=[
+                "Format de fichier non supporté. Merci d'utiliser un fichier Excel (.xlsx)."
+            ],
+            filename=file.filename,
+            singular_label="ligne filtre",
+            plural_label="lignes filtre",
+        )
+
+    content = await file.read()
+    try:
+        rows = parse_filter_lines_excel(content)
+    except ValueError as exc:
+        return _store_import_report(
+            "/filtres-courroies",
+            created=0,
+            total=0,
+            errors=[str(exc)],
+            filename=file.filename,
+            singular_label="ligne filtre",
+            plural_label="lignes filtre",
+        )
+
+    created = 0
+    errors: List[str] = []
+    for idx, row in enumerate(rows, start=1):
+        payload = {
+            key: value
+            for key, value in row.items()
+            if not key.startswith("__")
+        }
+        row_number = row.get("__row__", idx)
+        try:
+            crud.create_filter_line(session, FilterLineCreate(**payload))
+            created += 1
+        except Exception as exc:
+            session.rollback()
+            errors.append(f"Ligne {row_number} : {exc}")
+
+    return _store_import_report(
+        "/filtres-courroies",
+        created=created,
+        total=len(rows),
+        errors=errors,
+        filename=file.filename,
+        singular_label="ligne filtre",
+        plural_label="lignes filtre",
+    )
 
 
 @app.post("/filtres-courroies/filtres/{line_id}/delete")
@@ -947,6 +1059,76 @@ async def create_belt_line(
     return RedirectResponse("/filtres-courroies", status_code=303)
 
 
+@app.post("/filtres-courroies/courroies/import")
+async def import_belt_lines(
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+):
+    if not file.filename:
+        return _store_import_report(
+            "/filtres-courroies",
+            created=0,
+            total=0,
+            errors=["Aucun fichier sélectionné."],
+            filename="Import courroies",
+            singular_label="ligne courroie",
+            plural_label="lignes courroie",
+        )
+
+    if not file.filename.lower().endswith(ALLOWED_IMPORT_EXTENSIONS):
+        return _store_import_report(
+            "/filtres-courroies",
+            created=0,
+            total=0,
+            errors=[
+                "Format de fichier non supporté. Merci d'utiliser un fichier Excel (.xlsx)."
+            ],
+            filename=file.filename,
+            singular_label="ligne courroie",
+            plural_label="lignes courroie",
+        )
+
+    content = await file.read()
+    try:
+        rows = parse_belt_lines_excel(content)
+    except ValueError as exc:
+        return _store_import_report(
+            "/filtres-courroies",
+            created=0,
+            total=0,
+            errors=[str(exc)],
+            filename=file.filename,
+            singular_label="ligne courroie",
+            plural_label="lignes courroie",
+        )
+
+    created = 0
+    errors: List[str] = []
+    for idx, row in enumerate(rows, start=1):
+        payload = {
+            key: value
+            for key, value in row.items()
+            if not key.startswith("__")
+        }
+        row_number = row.get("__row__", idx)
+        try:
+            crud.create_belt_line(session, BeltLineCreate(**payload))
+            created += 1
+        except Exception as exc:
+            session.rollback()
+            errors.append(f"Ligne {row_number} : {exc}")
+
+    return _store_import_report(
+        "/filtres-courroies",
+        created=created,
+        total=len(rows),
+        errors=errors,
+        filename=file.filename,
+        singular_label="ligne courroie",
+        plural_label="lignes courroie",
+    )
+
+
 @app.post("/filtres-courroies/courroies/{line_id}/delete")
 def delete_belt_line(line_id: int, session: Session = Depends(get_session)):
     if not crud.delete_belt_line(session, line_id):
@@ -959,32 +1141,43 @@ async def import_clients(
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
 ):
-    def store_report(created: int, total: int, errors: list[str], filename: str) -> RedirectResponse:
-        report_id = uuid4().hex
-        reports = getattr(app.state, "import_reports", None)
-        if reports is None:
-            reports = {}
-            app.state.import_reports = reports
-        reports[report_id] = {
-            "created": created,
-            "errors": errors,
-            "total": total,
-            "filename": filename,
-        }
-        return RedirectResponse(url=f"/?report={report_id}", status_code=303)
-
     if not file.filename:
-        return store_report(0, 0, ["Aucun fichier sélectionné."], "Import")
+        return _store_import_report(
+            "/",
+            created=0,
+            total=0,
+            errors=["Aucun fichier sélectionné."],
+            filename="Import",
+            singular_label="client",
+            plural_label="clients",
+        )
 
-    allowed_extensions = (".xlsx", ".xlsm", ".xltx", ".xltm")
-    if not file.filename.lower().endswith(allowed_extensions):
-        return store_report(0, 0, ["Format de fichier non supporté. Merci d'utiliser un fichier Excel (.xlsx)."], file.filename)
+    if not file.filename.lower().endswith(ALLOWED_IMPORT_EXTENSIONS):
+        return _store_import_report(
+            "/",
+            created=0,
+            total=0,
+            errors=[
+                "Format de fichier non supporté. Merci d'utiliser un fichier Excel (.xlsx)."
+            ],
+            filename=file.filename,
+            singular_label="client",
+            plural_label="clients",
+        )
 
     content = await file.read()
     try:
         rows = parse_clients_excel(content)
     except ValueError as exc:
-        return store_report(0, 0, [str(exc)], file.filename)
+        return _store_import_report(
+            "/",
+            created=0,
+            total=0,
+            errors=[str(exc)],
+            filename=file.filename,
+            singular_label="client",
+            plural_label="clients",
+        )
 
     created = 0
     errors: list[str] = []
@@ -1004,7 +1197,25 @@ async def import_clients(
             session.rollback()
             errors.append(f"Ligne {row_number} : {exc}")
 
-    return store_report(created, len(rows), errors, file.filename)
+    return _store_import_report(
+        "/",
+        created=created,
+        total=len(rows),
+        errors=errors,
+        filename=file.filename,
+        singular_label="client",
+        plural_label="clients",
+    )
+
+
+def _autofit_sheet(sheet, padding: int = 2, max_width: int = 60) -> None:
+    for column_cells in sheet.columns:
+        max_length = 0
+        column = column_cells[0].column_letter
+        for cell in column_cells:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        sheet.column_dimensions[column].width = min(max_length + padding, max_width)
 
 
 def _build_client_import_template() -> BytesIO:
@@ -1083,14 +1294,7 @@ def _build_client_import_template() -> BytesIO:
         sheet.append([row.get(column, "") for column in headers])
 
     sheet.freeze_panes = "A2"
-
-    for column_cells in sheet.columns:
-        max_length = 0
-        column = column_cells[0].column_letter
-        for cell in column_cells:
-            if cell.value:
-                max_length = max(max_length, len(str(cell.value)))
-        sheet.column_dimensions[column].width = min(max_length + 2, 50)
+    _autofit_sheet(sheet, padding=2, max_width=50)
 
     options_sheet = workbook.create_sheet("Options")
     options_sheet.append(["Champ", "Valeurs autorisées", "Description"])
@@ -1125,13 +1329,7 @@ def _build_client_import_template() -> BytesIO:
         "Dupliquez le numéro (contact_4_*, contact_5_* …) pour ajouter des contacts additionnels. Seul le nom est obligatoire.",
     ])
 
-    for column_cells in options_sheet.columns:
-        max_length = 0
-        column = column_cells[0].column_letter
-        for cell in column_cells:
-            if cell.value:
-                max_length = max(max_length, len(str(cell.value)))
-        options_sheet.column_dimensions[column].width = min(max_length + 4, 70)
+    _autofit_sheet(options_sheet, padding=4, max_width=70)
 
     buffer = BytesIO()
     workbook.save(buffer)
@@ -1139,13 +1337,116 @@ def _build_client_import_template() -> BytesIO:
     return buffer
 
 
-def _template_response() -> Response:
-    buffer = _build_client_import_template()
+def _build_filter_import_template() -> BytesIO:
+    workbook = Workbook()
+
+    sheet = workbook.active
+    sheet.title = "Filtres"
+
+    headers = [
+        "site",
+        "equipment",
+        "format_type",
+        "efficiency",
+        "dimensions",
+        "quantity",
+        "order_week",
+    ]
+    sheet.append(headers)
+
+    sample_rows = [
+        {
+            "site": "Data Center Nord",
+            "equipment": "CTA N°1",
+            "format_type": "cadre",
+            "efficiency": "ISO ePM1 80%",
+            "dimensions": "592 x 592 x 47",
+            "quantity": 3,
+            "order_week": "S12",
+        },
+        {
+            "site": "Siège social",
+            "equipment": "Unité Rooftop",
+            "format_type": "poche",
+            "efficiency": "F7",
+            "dimensions": "287 x 592 x 635",
+            "quantity": 2,
+            "order_week": "S22",
+        },
+    ]
+
+    for row in sample_rows:
+        sheet.append([row.get(column, "") for column in headers])
+
+    sheet.freeze_panes = "A2"
+    _autofit_sheet(sheet, padding=2, max_width=55)
+
+    options_sheet = workbook.create_sheet("Options")
+    options_sheet.append(["format_type", "Libellé"])
+    options_sheet.freeze_panes = "A2"
+
+    for value, label in FILTER_FORMAT_OPTIONS:
+        options_sheet.append([value, label])
+
+    _autofit_sheet(options_sheet, padding=4, max_width=50)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def _build_belt_import_template() -> BytesIO:
+    workbook = Workbook()
+
+    sheet = workbook.active
+    sheet.title = "Courroies"
+
+    headers = ["site", "equipment", "reference", "quantity", "order_week"]
+    sheet.append(headers)
+
+    sample_rows = [
+        {
+            "site": "Usine Est",
+            "equipment": "Compresseur A",
+            "reference": "SPB-2000",
+            "quantity": 2,
+            "order_week": "S08",
+        },
+        {
+            "site": "Usine Est",
+            "equipment": "Ventilateur extraction",
+            "reference": "XPZ-1250",
+            "quantity": 3,
+            "order_week": "S30",
+        },
+        {
+            "site": "Entrepôt Sud",
+            "equipment": "CTA zone picking",
+            "reference": "SPC-1780",
+            "quantity": 1,
+            "order_week": "",
+        },
+    ]
+
+    for row in sample_rows:
+        sheet.append([row.get(column, "") for column in headers])
+
+    sheet.freeze_panes = "A2"
+    _autofit_sheet(sheet, padding=2, max_width=55)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def _template_response(buffer: BytesIO, filename: str) -> Response:
     content = buffer.getvalue()
     headers_dict = {
         "Content-Disposition": (
-            "attachment; filename=modele_import_clients.xlsx; "
-            "filename*=UTF-8''modele_import_clients.xlsx"
+            f"attachment; filename={filename}; "
+            f"filename*=UTF-8''{filename}"
         )
     }
     return Response(
@@ -1157,5 +1458,23 @@ def _template_response() -> Response:
 
 @app.get("/clients/import/template")
 @app.get("/clients/import/template/")
-def download_import_template():
-    return _template_response()
+def download_client_import_template():
+    return _template_response(
+        _build_client_import_template(), "modele_import_clients.xlsx"
+    )
+
+
+@app.get("/filtres-courroies/filtres/import/template")
+@app.get("/filtres-courroies/filtres/import/template/")
+def download_filter_import_template():
+    return _template_response(
+        _build_filter_import_template(), "modele_import_filtres.xlsx"
+    )
+
+
+@app.get("/filtres-courroies/courroies/import/template")
+@app.get("/filtres-courroies/courroies/import/template/")
+def download_belt_import_template():
+    return _template_response(
+        _build_belt_import_template(), "modele_import_courroies.xlsx"
+    )
