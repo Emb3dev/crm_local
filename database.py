@@ -12,6 +12,17 @@ def init_db():
             conn.exec_driver_sql("ALTER TABLE client ADD COLUMN astreinte VARCHAR")
         if "technician_name" not in cols:
             conn.exec_driver_sql("ALTER TABLE client ADD COLUMN technician_name VARCHAR")
+        filter_cols = {
+            row[1]
+            for row in conn.exec_driver_sql("PRAGMA table_info('filterline')")
+        }
+        if "quantity" not in filter_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE filterline ADD COLUMN quantity INTEGER DEFAULT 1"
+            )
+            conn.exec_driver_sql(
+                "UPDATE filterline SET quantity = 1 WHERE quantity IS NULL"
+            )
         service_cols = {
             row[1]
             for row in conn.exec_driver_sql("PRAGMA table_info('subcontractedservice')")
