@@ -190,7 +190,10 @@ class FilterLineBase(SQLModel):
     site: str = Field(index=True, description="Nom du site")
     equipment: str = Field(index=True, description="Équipement concerné")
     efficiency: Optional[str] = Field(default=None, description="Classe d'efficacité du filtre")
-    format_type: str = Field(description="Format du filtre (cousus sur fil, cadre…)")
+    format_type: str = Field(
+        description="Format du filtre (cousus sur fil, cadre…)",
+        sa_column=Column("filter_type", String, nullable=False),
+    )
     dimensions: Optional[str] = Field(default=None, description="Dimensions du filtre")
     quantity: int = Field(default=1, description="Quantité requise pour ce filtre")
     order_week: Optional[str] = Field(
