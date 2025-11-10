@@ -8,10 +8,13 @@
 {% if import_report %}
   {% set is_success = not import_report.errors %}
   {% set alert_classes = 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100' if is_success else 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100' %}
+  {% set singular_label = import_report.entity_label or 'enregistrement' %}
+  {% set plural_label = import_report.entity_label_plural or singular_label ~ 's' %}
+  {% set use_plural = import_report.created != 1 %}
   <div class="rounded-3xl border {{ alert_classes }} p-6 shadow-xl shadow-indigo-500/20 backdrop-blur">
     <p class="text-sm font-semibold uppercase tracking-[0.35em]">Import terminé</p>
     <p class="mt-2 text-base">
-      {{ import_report.created }} client{{ 's' if import_report.created > 1 else '' }} importé{{ 's' if import_report.created > 1 else '' }}
+      {{ import_report.created }} {{ plural_label if use_plural else singular_label }} importé{{ 's' if use_plural else '' }}
       sur {{ import_report.total }} depuis <strong>{{ import_report.filename }}</strong>.
     </p>
     {% if import_report.errors %}
