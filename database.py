@@ -23,6 +23,18 @@ def init_db():
             conn.exec_driver_sql(
                 "UPDATE filterline SET quantity = 1 WHERE quantity IS NULL"
             )
+        if "order_week" not in filter_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE filterline ADD COLUMN order_week VARCHAR"
+            )
+        belt_cols = {
+            row[1]
+            for row in conn.exec_driver_sql("PRAGMA table_info('beltline')")
+        }
+        if "order_week" not in belt_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE beltline ADD COLUMN order_week VARCHAR"
+            )
         service_cols = {
             row[1]
             for row in conn.exec_driver_sql("PRAGMA table_info('subcontractedservice')")
