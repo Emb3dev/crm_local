@@ -5,8 +5,13 @@
       const prestationSelect = form.querySelector('[data-prestation-select]');
       const budgetOutput = form.querySelector('[data-budget-output]');
       const frequencySelect = form.querySelector('[data-frequency-select]');
+      const customFrequencyField = form.querySelector('[data-custom-frequency-field]');
+      const customFrequencyInput = customFrequencyField?.querySelector('[data-custom-frequency-input]');
+      const customFrequencyValue = frequencySelect?.dataset.customFrequencyValue;
       const weekField = form.querySelector('[data-week-field]');
       const weekInput = weekField?.querySelector('input');
+      const clientSelect = form.querySelector('[data-client-select]');
+      const clientOutput = form.parentElement?.querySelector('[data-client-output]');
 
       const updateBudget = () => {
         if (!prestationSelect || !budgetOutput) return;
@@ -24,11 +29,32 @@
         }
       };
 
+      const toggleCustomFrequency = () => {
+        if (!frequencySelect || !customFrequencyField || !customFrequencyInput || !customFrequencyValue) return;
+        const isCustom = frequencySelect.value === customFrequencyValue;
+        customFrequencyField.classList.toggle('hidden', !isCustom);
+        customFrequencyInput.disabled = !isCustom;
+        customFrequencyInput.required = isCustom;
+      };
+
+      const updateClientSummary = () => {
+        if (!clientSelect || !clientOutput) return;
+        const selected = clientSelect.options[clientSelect.selectedIndex];
+        const label = selected?.textContent?.replace(/\s+/g, ' ').trim();
+        clientOutput.textContent = label || '—';
+      };
+
       prestationSelect?.addEventListener('change', updateBudget);
-      frequencySelect?.addEventListener('change', toggleWeekField);
+      frequencySelect?.addEventListener('change', () => {
+        toggleWeekField();
+        toggleCustomFrequency();
+      });
+      clientSelect?.addEventListener('change', updateClientSummary);
 
       updateBudget();
       toggleWeekField();
+      toggleCustomFrequency();
+      updateClientSummary();
       form.dataset.enhanced = 'true';
     };
 
