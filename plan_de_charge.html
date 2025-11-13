@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plan de charge (Final - Jours Semaine)</title>
+  <style>
+    /*==============================================================
+    = RÈGLES GÉNÉRALES ET VARIABLES CSS 
+    ==============================================================*/
+    :root{
+      /* Dimensions Fixes des Cellules */
+      --cell-w: 28px; 
+      --cell-h: 40px;    
+      
+      --left-col-w: 350px; 
+      --gap: 2px;        
+
+      /* Dimensions des En-têtes */
+      --toolbar-h: 50px; 
+      --week-h: 40px;    
+
+      --day-h: 30px;
+      /* Espace clair entre les jours et les cellules */
+      .head-cell.header-day {
+        margin-top: 0.25rem;     /* petit espace au-dessus, optionnel */
+        margin-bottom: 2.5rem;   /* espace en dessous pour éviter le chevauchement */
+      }
+
+      /* Force la grille à réserver une ligne fixe pour l’en-tête */
+      .grid {
+        grid-auto-rows: minmax(1.6em, auto); /* 1.6em ≈ hauteur d’une ligne de texte */
+      }
+	    
+
+
+      /* Couleurs */
+      --fg: #e5e7eb;   
+      --bg: #0b1020;   
+      --panel: #111827; 
+      --muted: #9ca3af;  
+      --ok: #16a34a;    /* Vert */
+      --warn: #fb923c;  /* Orange */
+      --bad: #dc2626;   /* Rouge */
+      --focus: #60a5fa; 
+      --sep: #1f2937;  
+    }
+    html, body{ height:100%; }
+    body{ margin:0; background:var(--bg); color:var(--fg); font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Inter, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji"; }
+
+    .app{ display:flex; flex-direction:column; min-height:100%; }
+    
+    /* BARRE D'OUTILS */
+    .toolbar{
+      position:sticky; top:0; z-index:5;
+      display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:10px 12px;
+      background:linear-gradient(180deg, rgba(17,24,39,.98), rgba(17,24,39,.92) 60%, rgba(17,24,39,0));
+      backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--sep);
+      min-height: var(--toolbar-h); 
+      box-sizing: border-box;
+    }
+    .toolbar .grow{ flex:1; }
+    .toolbar label{ font-size:12px; color:var(--muted); margin-right:6px; }
+
+    .toolbar .actions {
+      display: flex;
+      align-items: center;
+      gap: 8px; 
+    }
+
+    .toolbar input[type="text"], .toolbar select{
+      background: #0a0f1a; color:var(--fg); border:1px solid #1f2937; border-radius:8px; 
+      padding: 4px 8px; 
+      height: 28px;     
+      box-sizing: border-box; 
+    }
+
+    .badge{ display:inline-flex; align-items:center; gap:6px; border:1px solid #374151; border-radius:999px; padding:4px 10px; font-size:12px; }
+    .badge .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+
+    .wrap{ position:relative; overflow:auto; }
+
+    /* GRILLE */
+    .grid{      
+      display:grid; 
+      grid-template-columns: var(--left-col-w) repeat(364, var(--cell-w));
+      grid-auto-rows: minmax(var(--cell-h), auto); 
+      column-gap: var(--gap); 
+      row-gap: var(--gap); 
+      padding: 12px;
+      min-width: max(100%, calc(var(--left-col-w) + (var(--cell-w) + var(--gap)) * 364));
+    }
+
+    /* En-têtes Sticky */
+    .header{ position:sticky; z-index:3; background:rgba(11,16,32,.92); backdrop-filter: blur(4px); }
+    .header-wk{ top: var(--toolbar-h); height: var(--week-h); display:flex; align-items:center; }
+    .header-day{ top: calc(var(--toolbar-h) + var(--week-h)); height: var(--day-h); display:flex; align-items:center; }
+    .head-site{ position:sticky; left:0; z-index:4; background:linear-gradient(90deg, rgba(11,16,32,.96), rgba(11,16,32,.9)); border-right:1px solid var(--sep); }
+
+    .cell, .site-cell, .head-cell, .site-head, .week-cell, .site-week{ display:flex; align-items:center; justify-content:center; }
+
+    /* Ligne de Site */
+    .site-cell, .site-head, .site-week{ 
+        justify-content:space-between; 
+        padding:0 10px; 
+        height: var(--cell-h); 
+        box-sizing: border-box;
+    }
+    .site-row{ 
+      background:#0b1224; 
+      display:flex; 
+      flex-wrap:nowrap; 
+      align-items:center; 
+      width: 100%; 
+    }
+    .site-row:nth-child(even){ background:#0d1429; }
+    
+    /* Bloc Méta */
+    .site-row .meta{
+      display: flex;
+      flex-direction: column; 
+      align-items: flex-start;
+      justify-content: center;
+      flex-grow: 1; 
+      min-width: 0; 
+      overflow: hidden; 
+      height: 100%;
+      padding-right: 8px; 
+    }
+    .site-row .site-name{
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; 
+        line-height: 1.2;
+    }
+    .site-row .info{
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.2;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .site-row .info .count-ok{ color: var(--ok); }
+    .site-row .info .count-bad{ color: var(--bad); }
+
+    /* Bloc Actions */
+    .site-row > .actions{
+      flex-shrink: 0; 
+      display: flex;
+      gap: 6px; 
+      align-items: center; 
+      height: 100%;
+    }
+
+
+    /* CELLULES DE DONNÉES */
+    .cell{
+      height: var(--cell-h); 
+      width: var(--cell-w);
+      border:1px solid #1f2937; border-radius:4px; background:#0a0f1a; cursor:pointer; position:relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    /* Démarcation subtile des semaines */
+    .head-cell.wk-sep,
+    .cell.wk-sep{
+      /* Le lundi (i%7===0) a une bordure de 2px de couleur plus claire que la bordure par défaut */
+      border-left: 2px solid #374151; 
+      /* Décalage pour compenser les 2px et ne pas trop déformer la grille */
+      margin-left: -1px; 
+    }
+
+    /* Styles de couleur */
+    .cell[data-state^="ok"]{ background: rgba(22,163,74,.16); border-color: rgba(22,163,74,.5); color: var(--ok); } 
+    .cell[data-state="bad"]{ background: rgba(220,38,38,.16); border-color: rgba(220,38,38,.5); color: var(--bad); }
+    .cell[data-state="warn"]{ background: rgba(251,146,60,.16); border-color: rgba(251,146,60,.5); color: var(--warn); } 
+
+    /* Bordure en pointillés pour le Vert simple */
+    .cell[data-state="ok"]::after{ 
+      content:""; 
+      position:absolute; 
+      inset:4px; 
+      border-radius:2px; 
+      border:2px dashed rgba(22,163,74,.55); 
+      opacity:.9; 
+      mask-image: linear-gradient(#000,#000); 
+    }
+
+    .cell[data-state^="ok:"]::after {
+      content: none;
+    }
+
+    .cell[data-state="bad"]::after,
+    .cell[data-state="warn"]::after {
+      content: "";
+      position: initial; 
+    }
+
+    .cell:not([data-state])::after {
+      content: "";
+    }
+    
+    .cell:focus{ outline:2px solid var(--focus); outline-offset:1px; }
+
+    /* BOUTONS (Emojis) */
+    .btn{ 
+      background:#0a0f1a; color:var(--fg); border:1px solid #374151; border-radius:6px; 
+      padding:4px 6px; 
+      cursor:pointer; flex:0 0 auto; 
+      font-size:16px; 
+      line-height: 1.2; 
+      height: 28px; 
+      box-sizing: border-box;
+      display: flex; 
+      align-items: center;
+      justify-content: center;
+    }
+    .btn:hover{ background:#0e1525; }
+    
+    /* Utilitaires */
+    .muted{ color:var(--muted); }
+    .mark{ background:rgba(96,165,250,.22); border-radius:3px; padding:0 2px; }
+    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    .toast{ position:fixed; right:12px; bottom:12px; background:#0a0f1a; border:1px solid #374151; padding:10px 12px; border-radius:10px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+
+  </style>
+</head>
+<body>
+<div class="app" id="app" aria-live="polite">
+  <div class="toolbar">
+    <div class="actions">
+      <button class="btn" id="addSite">+ Site</button>
+      <button class="btn" id="exportBtn">Exporter JSON</button>
+      <label for="importFile" class="btn" role="button">Importer JSON<input id="importFile" type="file" accept="application/json" style="display:none"></label>
+    </div>
+    <div class="actions">
+      <label for="paintMode">Peinture</label>
+      <select id="paintMode" aria-label="Mode de peinture">
+        <option value="ok">Vert (planifié)</option>
+        <option value="warn">Orange (à revoir)</option>
+        <option value="bad">Rouge (à planifier)</option>
+        <option value="erase">Effacer</option>
+      </select>
+      <span id="modeBadge" class="badge" aria-live="polite">
+        <i class="dot" id="modeDot"></i>
+        <span id="modeText">Mode : Vert</span>
+        <span class="muted">(R: rouge, G: vert, A: orange, E: effacer)</span>
+      </span>
+    </div>
+    <div class="grow"></div>
+    <div class="actions">
+      <label for="filterInput">Filtrer</label>
+      <input id="filterInput" type="text" placeholder="Rechercher un site…" autocomplete="off">
+      <span id="filterCount" class="muted">0/0</span>
+    </div>
+    <div class="actions">
+      <label for="zoomRange">Zoom</label>
+      <input id="zoomRange" type="range" min="14" max="40" value="28">
+    </div>
+  </div>
+
+  <div class="wrap" id="wrap">
+    <div class="grid" id="grid" role="grid" aria-label="Plan de charge">
+      <div class="site-week head-site header header-wk" role="columnheader" style="grid-row:1;grid-column:1">Semaines</div>
+      <div class="site-head head-site header header-day" role="columnheader" style="grid-row:2;grid-column:1">Site / actions</div>
+
+      <template id="dayHeadTpl">
+        <div class="head-cell header header-day" role="columnheader"></div>
+      </template>
+      <template id="weekCellTpl">
+        <div class="week-cell header header-wk" role="columnheader"></div>
+      </template>
+
+      <template id="siteRowTpl">
+        <div class="site-cell head-site site-row" role="rowheader">
+          <div class="meta">
+            <strong class="site-name"></strong>
+            <span class="info"></span>
+          </div>
+          <div class="actions">
+            <button class="btn rename" title="Renommer">✏️</button>
+            <button class="btn del" title="Supprimer">🗑️</button>
+          </div>
+        </div>
+      </template>
+
+      <template id="cellTpl">
+        <button class="cell" role="gridcell" aria-pressed="false"></button>
+      </template>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+(function(){
+  const VERSION = 4; 
+  const NS = 'pc:v4:'; 
+  const K_SITES = NS + 'sites';
+  const K_CELL = NS + 'cell::';
+
+  const grid = document.getElementById('grid');
+  const filterInput = document.getElementById('filterInput');
+  const filterCount = document.getElementById('filterCount');
+  const zoomRange = document.getElementById('zoomRange');
+  const paintModeSel = document.getElementById('paintMode');
+  const modeDot = document.getElementById('modeDot');
+  const modeText = document.getElementById('modeText');
+  const addSiteBtn = document.getElementById('addSite');
+  const exportBtn = document.getElementById('exportBtn');
+  const importFile = document.getElementById('importFile');
+  const toast = document.getElementById('toast');
+
+  const dayHeadTpl = document.getElementById('dayHeadTpl');
+  const siteRowTpl = document.getElementById('siteRowTpl');
+  const cellTpl = document.getElementById('cellTpl');
+
+  // --- util
+  const ls = {
+    get(k, def){ try{ const v = localStorage.getItem(k); return v==null? def : JSON.parse(v);}catch{return def;} },
+    set(k, v){ localStorage.setItem(k, JSON.stringify(v)); },
+    del(k){ localStorage.removeItem(k); }
+  };
+
+  const state = {
+    sites: ls.get(K_SITES, []),
+    paint: ls.get(NS+'paint', 'ok'),
+    dragging: false,
+    dragSet: new Map(), // batch des écritures
+  };
+
+  // --- UI helpers
+  function setZoom(px){
+    document.documentElement.style.setProperty('--cell-w', px+"px");
+    document.documentElement.style.setProperty('--cell-h', '40px'); 
+  }
+  function setPaintMode(mode){
+    state.paint = mode; ls.set(NS+'paint', mode);
+    paintModeSel.value = mode;
+    const map = { 
+      ok:['#16a34a','Vert (planifié)'], 
+      warn:['#fb923c','Orange (à revoir)'], 
+      bad:['#dc2626','Rouge (à planifier)'], 
+      erase:['#9ca3af','Effacer'] 
+    };
+    modeDot.style.background = map[mode][0];
+    modeText.textContent = 'Mode\u00A0: ' + map[mode][1];
+  }
+  function showToast(msg){
+    toast.textContent = msg; toast.style.display='block';
+    clearTimeout(showToast._t); showToast._t = setTimeout(()=> toast.style.display='none', 2200);
+  }
+
+  // --- Build headers (MISE À JOUR)
+  function buildDayHeaders(){
+    // (1) Ligne "Semaines" (S01..S52)
+    const hasWeeks = grid.querySelector('.week-cell');
+    if(!hasWeeks){
+      const weekTpl = document.getElementById('weekCellTpl');
+      for(let w=0; w<52; w++){
+        const n = weekTpl.content.firstElementChild.cloneNode(true);
+        n.textContent = 'S' + String(w+1).padStart(2,'0');
+        n.style.gridRow = '1';
+        n.style.gridColumn = (2 + w*7) + ' / span 7';
+        if(w>0) n.classList.add('wk-sep');
+        grid.appendChild(n);
+      }
+    }
+
+    // (2) Ligne "Jours" (L M M J V S D...)
+    const hasDays = grid.querySelector('.head-cell.header-day');
+    if(!hasDays){
+      const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']; 
+
+      for(let i=0;i<364;i++){
+        const n = dayHeadTpl.content.firstElementChild.cloneNode(true);
+        
+        const dayIndex = i % 7; 
+        n.textContent = DAYS[dayIndex];
+        
+        n.style.gridRow = '2';
+        n.style.gridColumn = String(2 + i);
+        // Ajout de la classe de séparation au premier jour de la semaine (Lundi)
+        if(i > 0 && i % 7 === 0) n.classList.add('wk-sep');
+        grid.appendChild(n);
+      }
+    }
+  }
+
+  // --- Data access (inchangé)
+  function keyCell(site, idx){ return K_CELL + encodeURIComponent(site) + ':' + idx; }
+  function getCell(site, idx){ const v = localStorage.getItem(keyCell(site, idx)); return v ? v : ''; }
+  function setCell(site, idx, val){ state.dragSet.set(keyCell(site, idx), val ? val : null); }
+  function flushCells(){
+    state.dragSet.forEach((v,k)=>{ v==null ? localStorage.removeItem(k) : localStorage.setItem(k, v); });
+    state.dragSet.clear();
+  }
+
+  // --- Rendering (inchangé)
+  function render(){
+    buildDayHeaders();
+
+    grid.querySelectorAll('.site-row, .cell').forEach(n=> n.remove());
+
+    const sites = state.sites;
+    const frag = document.createDocumentFragment();
+
+    sites.forEach((site, rIndex)=>{
+      const head = siteRowTpl.content.firstElementChild.cloneNode(true);
+      const rowNumber = 3 + rIndex; 
+      head.style.gridColumn = '1';
+      head.style.gridRow = String(rowNumber);
+      head.querySelector('.site-name').textContent = site;
+      frag.appendChild(head);
+
+      for(let i=0;i<364;i++){
+        const c = cellTpl.content.firstElementChild.cloneNode(true);
+        const val = getCell(site, i); // e.g. 'ok:8', 'warn', 'bad'
+
+        if (val) {
+            c.dataset.state = val;
+            let displayContent = '';
+            if (val === 'bad') displayContent = '8';
+            else if (val === 'warn') displayContent = '4';
+            else if (val.startsWith('ok:')) displayContent = val.split(':')[1]; 
+            
+            c.textContent = displayContent; // Définit le contenu textuel
+        }
+
+        c.tabIndex = 0;
+        c.dataset.site = site; c.dataset.idx = i;
+        c.style.gridRow = String(rowNumber);
+        c.style.gridColumn = String(2 + i);
+        c.setAttribute('aria-label', `Site ${site}, jour ${i+1}: ${val || 'aucun état'}`);
+        c.setAttribute('aria-pressed', val? 'true':'false');
+        // Ajout de la classe de séparation au premier jour de la semaine (Lundi)
+        if(i > 0 && i % 7 === 0) c.classList.add('wk-sep'); 
+        frag.appendChild(c);
+      }
+    });
+
+    grid.appendChild(frag);
+    updateProgressAll();
+    applyFilter();
+  }
+
+  // updateProgressAll (logique de jauge supprimée, comptage conservé)
+  function updateProgressAll(){
+    const rows = grid.querySelectorAll('.site-row');
+    rows.forEach(row=>{
+      const site = row.querySelector('.site-name').textContent;
+      let ok=0, warn=0, bad=0; 
+      for(let i=0;i<364;i++){
+        const v = getCell(site, i); 
+        if(v.startsWith('ok')) ok++; 
+        else if(v==='warn') warn++; 
+        else if(v==='bad') bad++;
+      }
+      const info = row.querySelector('.info');
+      
+      // Mise à jour de l'affichage du compte (ok/364 vert • 4 orange • 8 rouge)
+      info.innerHTML = `<span class="count-ok">${ok}</span> vert • <span style="color:var(--warn);">${warn}</span> orange • <span class="count-bad">${bad}</span> rouge`;
+    });
+  }
+
+  // --- Filter (inchangé)
+  function highlight(text, q){ if(!q) return text; const re = new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','i'); return text.replace(re,'<span class="mark">$1</span>'); }
+  function applyFilter(){
+    const q = filterInput.value.trim();
+    const rows = grid.querySelectorAll('.site-row');
+    let shown=0;
+    rows.forEach(row=>{
+      const nameEl = row.querySelector('.site-name');
+      const name = nameEl.textContent;
+      const match = !q || name.toLowerCase().includes(q.toLowerCase());
+      row.style.display = match ? '' : 'none';
+      const idx = Array.prototype.indexOf.call(grid.children, row) + 1; 
+      for(let i=0;i<364;i++){
+        const c = grid.children[idx + i];
+        if(c && c.classList.contains('cell')) c.style.display = match ? '' : 'none';
+      }
+      if(match){
+        shown++;
+        nameEl.innerHTML = highlight(name, q);
+      }else{
+        nameEl.textContent = name; 
+      }
+    });
+    filterCount.textContent = `${shown}/${rows.length}`;
+  }
+
+  // --- Painting (inchangé)
+  function paintCell(el){
+    const site = el.dataset.site; 
+    const idx = +el.dataset.idx;
+    const mode = state.paint;
+    
+    const currentState = el.dataset.state || ''; 
+
+    let valToStore = '';
+    let valToDisplay = '';
+
+    if (mode === 'ok') {
+      if (currentState === 'bad') {
+        valToStore = 'ok:8'; 
+        valToDisplay = '8';
+      } else if (currentState === 'warn') {
+        valToStore = 'ok:4'; 
+        valToDisplay = '4';
+      } else if (currentState.startsWith('ok')) {
+        valToStore = currentState;
+        valToDisplay = el.textContent; 
+      } else {
+        valToStore = '';
+        valToDisplay = '';
+      }
+      
+    } else if (mode === 'warn') {
+      valToStore = 'warn';
+      valToDisplay = '4';
+      
+    } else if (mode === 'bad') {
+      valToStore = 'bad';
+      valToDisplay = '8';
+      
+    } else if (mode === 'erase') {
+      valToStore = '';
+      valToDisplay = '';
+    }
+    
+    if (valToStore === currentState && valToStore !== '') return; 
+
+    // 1. Mise à jour de l'affichage
+    if(valToStore){ 
+      el.dataset.state = valToStore; 
+      el.textContent = valToDisplay; 
+      el.setAttribute('aria-pressed','true'); 
+      el.setAttribute('aria-label', `Site ${site}, jour ${idx+1}: ${valToStore} (${valToDisplay} jours)`);
+    } else { 
+      el.removeAttribute('data-state'); 
+      el.textContent = ''; 
+      el.setAttribute('aria-pressed','false'); 
+      el.setAttribute('aria-label', `Site ${site}, jour ${idx+1}: aucun état`);
+    } 
+
+    // 2. Mise à jour du stockage
+    setCell(site, idx, valToStore);
+  }
+
+  // Delegation (inchangé)
+  grid.addEventListener('mousedown', e=>{
+    if(e.target.classList.contains('cell')){
+      state.dragging = true; paintCell(e.target);
+      e.preventDefault();
+    }
+  });
+  grid.addEventListener('mouseover', e=>{
+    if(state.dragging && e.target.classList.contains('cell')) paintCell(e.target);
+  });
+  window.addEventListener('mouseup', ()=>{ if(state.dragging){ state.dragging=false; flushCells(); updateProgressAll(); }});
+
+  // Keyboard navigation & shortcuts (inchangé)
+  document.addEventListener('keydown', e=>{
+    if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+    if(e.key==='g' || e.key==='G'){ setPaintMode('ok'); showToast('Mode Vert'); }
+    else if(e.key==='a' || e.key==='A'){ setPaintMode('warn'); showToast('Mode Orange'); }
+    else if(e.key==='r' || e.key==='R'){ setPaintMode('bad'); showToast('Mode Rouge'); }
+    else if(e.key==='e' || e.key==='E'){ setPaintMode('erase'); showToast('Mode Effacer'); }
+  });
+
+  grid.addEventListener('keydown', e=>{
+    const el = e.target;
+    if(!el.classList.contains('cell')) return;
+    const idx = +el.dataset.idx; 
+
+    const moveFocus = (delta)=>{
+      const i = Array.prototype.indexOf.call(grid.children, el);
+      const next = grid.children[i + delta];
+      if(next && next.classList.contains('cell')) next.focus();
+    };
+
+    if(e.key==='Enter' || e.key===' '){ paintCell(el); e.preventDefault(); flushCells(); updateProgressAll(); return; }
+    else if(e.key==='ArrowRight'){ moveFocus(1); e.preventDefault(); }
+    else if(e.key==='ArrowLeft'){ moveFocus(-1); e.preventDefault(); }
+    else if(e.key==='ArrowDown'){ moveFocus(365); e.preventDefault(); } 
+    else if(e.key==='ArrowUp'){ moveFocus(-365); e.preventDefault(); }
+    else if(e.key==='Home'){ 
+      const delta = -(idx % 7); moveFocus(delta); e.preventDefault();
+    }
+    else if(e.key==='End'){ 
+      const delta = 6 - (idx % 7); moveFocus(delta); e.preventDefault();
+    }
+    else if(e.key==='PageDown'){ moveFocus(7); e.preventDefault(); }
+    else if(e.key==='PageUp'){ moveFocus(-7); e.preventDefault(); }
+  });
+
+  // Toolbar events (inchangé)
+  zoomRange.addEventListener('input', e=> setZoom(+e.target.value));
+  paintModeSel.addEventListener('change', e=> setPaintMode(e.target.value));
+  filterInput.addEventListener('input', applyFilter);
+
+  addSiteBtn.addEventListener('click', ()=>{
+    const name = prompt('Nom du site ?');
+    if(!name) return;
+    if(state.sites.includes(name)) return showToast('Ce nom existe déjà');
+    state.sites.push(name); ls.set(K_SITES, state.sites); render(); showToast('Site ajouté');
+  });
+
+  grid.addEventListener('click', e=>{
+    const row = e.target.closest('.site-row');
+    if(!row) return;
+    const site = row.querySelector('.site-name').textContent;
+    if(e.target.classList.contains('rename')){
+      const nv = prompt('Nouveau nom ?', site);
+      if(!nv || nv===site) return;
+      if(state.sites.includes(nv)) return showToast('Nom déjà utilisé');
+      // migrate cells
+      for(let i=0;i<364;i++){
+        const oldK = keyCell(site, i); const v = localStorage.getItem(oldK);
+        if(v!=null){ localStorage.setItem(keyCell(nv, i), v); localStorage.removeItem(oldK); }
+      }
+      state.sites = state.sites.map(s=> s===site? nv : s); ls.set(K_SITES, state.sites);
+      render(); showToast('Site renommé');
+    }
+    if(e.target.classList.contains('del')){
+      if(!confirm(`Supprimer le site « ${site} » ?`)) return;
+      // remove cells
+      for(let i=0;i<364;i++) localStorage.removeItem(keyCell(site,i));
+      state.sites = state.sites.filter(s=> s!==site); ls.set(K_SITES, state.sites);
+      render(); showToast('Site supprimé');
+    }
+  });
+
+  exportBtn.addEventListener('click', ()=>{
+    const data = { version: VERSION, sites: state.sites, cells:{} };
+    state.sites.forEach(site=>{
+      const arr = [];
+      for(let i=0;i<364;i++) arr.push(getCell(site,i));
+      data.cells[site] = arr;
+    });
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'plan_de_charge_v'+VERSION+'.json'; a.click(); URL.revokeObjectURL(a.href);
+    showToast('Export effectué');
+  });
+
+  importFile.addEventListener('change', async (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const text = await f.text();
+    let data; try{ data = JSON.parse(text);}catch{ return showToast('Fichier invalide'); }
+
+    if(!confirm(`Importer ${Object.keys(data.cells||{}).length} sites ?`)) return;
+
+    // appliquer
+    state.sites = data.sites || [];
+    ls.set(K_SITES, state.sites);
+    // purge tout
+    Object.keys(localStorage).filter(k=> k.startsWith(K_CELL)).forEach(k=> localStorage.removeItem(k));
+    state.sites.forEach(site=>{
+      const arr = (data.cells && data.cells[site]) || [];
+      for(let i=0;i<364;i++){ const v=arr[i]||''; if(v) localStorage.setItem(keyCell(site,i), v); }
+    });
+    render(); showToast('Import terminé');
+    importFile.value = '';
+  });
+  
+  // --- Self-tests (inchangés)
+  function runTests(){
+    try{
+      console.group('%cTests plan de charge','color:#93c5fd');
+      const weeks = grid.querySelectorAll('.week-cell');
+      const days = grid.querySelectorAll('.head-cell.header-day');
+      console.assert(weeks.length===52, `Semaine headers attendus 52, obtenus ${weeks.length}`);
+      console.assert(days.length===364, `Jour headers attendus 364, obtenus ${days.length}`);
+      const row = grid.querySelector('.site-row');
+      if(row){
+        const rowNum = row.style.gridRow;
+        let cnt=0, sameRow=true; for(let i=0;i<364;i++){ const n=grid.querySelector(`.cell[style*="grid-row: ${rowNum};"][style*="grid-column: ${2+i}"]`); if(n){cnt++;} else {sameRow=false; break;} }
+        console.assert(cnt===364 && sameRow, `Cellules par ligne attendues 364 sur grid-row ${rowNum}, trouvées ${cnt}`);
+      }
+      const before = filterCount.textContent;
+      filterInput.value = 'Site A'; applyFilter();
+      const after = filterCount.textContent;
+      console.assert(before!==after && /\d+\/\d+/.test(after), `Compteur de filtre devrait changer (avant=${before}, après=${after})`);
+      filterInput.value = ''; applyFilter();
+      console.groupEnd();
+    }catch(e){ console.error('Tests en erreur:', e); }
+  }
+
+  // Init
+  setZoom(+zoomRange.value); 
+  setPaintMode(state.paint);
+  if(state.sites.length===0){ state.sites = ['Site A','Site B']; ls.set(K_SITES, state.sites); }
+  render();
+  runTests();
+})();
+</script>
+</body>
+</html>
