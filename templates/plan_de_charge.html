@@ -1,0 +1,866 @@
+{% extends "base.html" %}
+{% set default_sites = [
+  "Site A",
+  "Site B",
+  "Site C",
+  "Site D",
+  "Site E",
+  "Site F",
+  "Site G",
+  "Site H"
+] %}
+{% block title %}Plan de charge — CRM Local{% endblock %}
+{% block page_eyebrow %}Pilotage des opérations{% endblock %}
+{% block page_title %}Plan de charge{% endblock %}
+{% block page_subtitle %}Prévisualisez et ajustez la charge des équipes terrain sur 52 semaines, importez ou exportez vos données et visualisez l'état de chaque site en un clin d'œil.{% endblock %}
+{% block head_extra %}
+  <style>
+    :root {
+      --cell-w: 28px;
+      --cell-h: 40px;
+    }
+
+    .workload-shell {
+      --left-col-w: 340px;
+      --gap: 2px;
+      --toolbar-h: 54px;
+      --week-h: 40px;
+      --day-h: 32px;
+      --fg: #e5e7eb;
+      --bg: #0b1020;
+      --panel: #111827;
+      --muted: #9ca3af;
+      --ok: #16a34a;
+      --warn: #fb923c;
+      --bad: #dc2626;
+      --focus: #60a5fa;
+      --sep: #1f2937;
+      position: relative;
+      border-radius: 1.75rem;
+      background: radial-gradient(circle at 20% 20%, rgba(99,102,241,0.18), transparent 45%),
+        radial-gradient(circle at 80% 0%, rgba(56,189,248,0.15), transparent 55%),
+        linear-gradient(145deg, rgba(11,16,32,0.96), rgba(17,24,39,0.94));
+      color: var(--fg);
+      box-shadow: 0 32px 80px -40px rgba(79, 70, 229, 0.45);
+      overflow: hidden;
+    }
+
+    .workload-shell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .workload-app {
+      display: flex;
+      flex-direction: column;
+      min-height: 720px;
+      font: 14px/1.4 "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    .workload-app *,
+    .workload-app *::before,
+    .workload-app *::after {
+      box-sizing: border-box;
+    }
+
+    .workload-shell .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 14px 18px;
+      background: linear-gradient(180deg, rgba(17,24,39,0.96), rgba(17,24,39,0.82) 65%, rgba(17,24,39,0));
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--sep);
+      min-height: var(--toolbar-h);
+    }
+
+    .workload-shell .toolbar label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    .workload-shell .toolbar .actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .workload-shell .toolbar .grow {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .workload-shell .toolbar input[type="text"],
+    .workload-shell .toolbar select {
+      background: rgba(10,15,26,0.8);
+      color: var(--fg);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 10px;
+      padding: 6px 10px;
+      height: 32px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .workload-shell .toolbar input[type="text"]:focus,
+    .workload-shell .toolbar select:focus {
+      outline: none;
+      border-color: rgba(96, 165, 250, 0.6);
+      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+    }
+
+    .workload-shell .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 12px;
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .workload-shell .badge .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      background: var(--ok);
+    }
+
+    .workload-shell .wrap {
+      position: relative;
+      overflow: auto;
+      flex: 1;
+    }
+
+    .workload-shell .grid {
+      display: grid;
+      grid-template-columns: var(--left-col-w) repeat(364, var(--cell-w));
+      grid-auto-rows: minmax(var(--cell-h), auto);
+      column-gap: var(--gap);
+      row-gap: var(--gap);
+      padding: 16px;
+      min-width: max(100%, calc(var(--left-col-w) + (var(--cell-w) + var(--gap)) * 364));
+      background: rgba(11, 18, 36, 0.85);
+    }
+
+    .workload-shell .grid .header {
+      position: sticky;
+      z-index: 3;
+      background: rgba(11,16,32,0.9);
+      backdrop-filter: blur(6px);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .workload-shell .grid .header-wk {
+      top: var(--toolbar-h);
+      height: var(--week-h);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: rgba(226,232,240,0.85);
+    }
+
+    .workload-shell .grid .header-day {
+      top: calc(var(--toolbar-h) + var(--week-h));
+      height: var(--day-h);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: rgba(226,232,240,0.75);
+    }
+
+    .workload-shell .grid .head-site {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      background: linear-gradient(90deg, rgba(11,16,32,0.96), rgba(11,16,32,0.85));
+      border-right: 1px solid var(--sep);
+    }
+
+    .workload-shell .grid .cell,
+    .workload-shell .grid .site-cell,
+    .workload-shell .grid .head-cell,
+    .workload-shell .grid .site-head,
+    .workload-shell .grid .week-cell,
+    .workload-shell .grid .site-week {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .workload-shell .grid .site-row {
+      background: rgba(12, 19, 37, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      height: var(--cell-h);
+      gap: 12px;
+    }
+
+    .workload-shell .grid .site-row:nth-of-type(even) {
+      background: rgba(13, 20, 41, 0.95);
+    }
+
+    .workload-shell .grid .site-row .meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      gap: 4px;
+    }
+
+    .workload-shell .grid .site-row .site-name {
+      font-weight: 600;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .workload-shell .grid .site-row .info {
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .workload-shell .grid .site-row .count-ok {
+      color: var(--ok);
+    }
+
+    .workload-shell .grid .site-row .count-bad {
+      color: var(--bad);
+    }
+
+    .workload-shell .grid .site-row > .actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .workload-shell .grid .cell {
+      height: var(--cell-h);
+      width: var(--cell-w);
+      border: 1px solid rgba(55, 65, 81, 0.8);
+      border-radius: 6px;
+      background: rgba(9, 14, 23, 0.9);
+      color: inherit;
+      cursor: pointer;
+      position: relative;
+      font-weight: 600;
+      font-size: 15px;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .workload-shell .grid .cell:hover,
+    .workload-shell .grid .cell:focus-visible {
+      border-color: rgba(96, 165, 250, 0.6);
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    .workload-shell .grid .cell[data-state^="ok"] {
+      background: rgba(22, 163, 74, 0.18);
+      border-color: rgba(22, 163, 74, 0.55);
+      color: var(--ok);
+    }
+
+    .workload-shell .grid .cell[data-state="bad"] {
+      background: rgba(220, 38, 38, 0.18);
+      border-color: rgba(220, 38, 38, 0.6);
+      color: var(--bad);
+    }
+
+    .workload-shell .grid .cell[data-state="warn"] {
+      background: rgba(251, 146, 60, 0.18);
+      border-color: rgba(251, 146, 60, 0.55);
+      color: var(--warn);
+    }
+
+    .workload-shell .grid .cell[data-state="ok"]::after {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border-radius: 4px;
+      border: 2px dashed rgba(22, 163, 74, 0.55);
+      opacity: 0.9;
+    }
+
+    .workload-shell .grid .cell[data-state^="ok:"]::after {
+      content: none;
+    }
+
+    .workload-shell .grid .cell[data-state="bad"]::after,
+    .workload-shell .grid .cell[data-state="warn"]::after {
+      content: none;
+    }
+
+    .workload-shell .grid .cell:not([data-state])::after {
+      content: "";
+    }
+
+    .workload-shell .grid .wk-sep {
+      border-left: 2px solid rgba(148, 163, 184, 0.35);
+      margin-left: -1px;
+    }
+
+    .workload-shell .btn {
+      background: rgba(9,14,23,0.9);
+      color: var(--fg);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1.2;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .workload-shell .btn:hover {
+      background: rgba(15,23,42,0.9);
+      transform: translateY(-1px);
+    }
+
+    .workload-shell .muted {
+      color: var(--muted);
+    }
+
+    .workload-shell .mark {
+      background: rgba(96, 165, 250, 0.22);
+      border-radius: 3px;
+      padding: 0 2px;
+    }
+
+    .workload-toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      background: rgba(9,14,23,0.95);
+      border: 1px solid rgba(148,163,184,0.35);
+      padding: 12px 14px;
+      border-radius: 12px;
+      box-shadow: 0 18px 45px rgba(15,23,42,0.45);
+      color: var(--fg);
+      font-size: 13px;
+      z-index: 50;
+    }
+
+    .workload-sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1024px) {
+      .workload-shell {
+        --left-col-w: 280px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .workload-shell {
+        --left-col-w: 220px;
+      }
+
+      .workload-shell .toolbar {
+        position: static;
+      }
+    }
+  </style>
+{% endblock %}
+{% block main_classes %}space-y-12{% endblock %}
+{% block content %}
+  <section class="rounded-3xl border border-slate-200 bg-white/70 p-8 shadow-xl shadow-indigo-500/10 backdrop-blur dark:border-white/10 dark:bg-white/10 dark:shadow-indigo-500/20">
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div class="space-y-4">
+        <span class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-200">Vue synthétique</span>
+        <h2 class="font-display text-2xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Anticipez les pics d'activité</h2>
+        <p class="max-w-2xl text-base text-slate-600 transition-colors duration-300 dark:text-slate-300">La vue plan de charge permet de projeter l'allocation des équipes sur 52 semaines. Planifiez vos sites, partagez vos données et identifiez immédiatement les semaines critiques.</p>
+      </div>
+      <dl class="grid gap-4 sm:grid-cols-2">
+        <div class="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5 text-emerald-700 shadow shadow-emerald-200/50 transition-colors duration-300 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100">
+          <dt class="text-xs font-semibold uppercase tracking-[0.3em]">Sites suivis</dt>
+          <dd class="mt-3 text-3xl font-semibold">{{ default_sites|length }}</dd>
+          <p class="mt-2 text-sm">Importez vos données pour enrichir la projection hebdomadaire.</p>
+        </div>
+        <div class="rounded-3xl border border-sky-200 bg-sky-50/70 p-5 text-sky-700 shadow shadow-sky-200/50 transition-colors duration-300 dark:border-sky-400/40 dark:bg-sky-500/10 dark:text-sky-100">
+          <dt class="text-xs font-semibold uppercase tracking-[0.3em]">Période couverte</dt>
+          <dd class="mt-3 text-3xl font-semibold">52 semaines</dd>
+          <p class="mt-2 text-sm">Vue annuelle détaillée jour par jour avec repères hebdomadaires.</p>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="workload-shell mt-6">
+    <div class="workload-app" id="workloadApp" aria-live="polite">
+      <div class="toolbar" id="workloadToolbar">
+        <div class="actions">
+          <button class="btn" id="addSite">+ Site</button>
+          <button class="btn" id="exportBtn">Exporter JSON</button>
+          <label for="importFile" class="btn" role="button">Importer JSON<input id="importFile" type="file" accept="application/json" style="display:none"></label>
+        </div>
+        <div class="actions">
+          <label for="paintMode">Peinture</label>
+          <select id="paintMode" aria-label="Mode de peinture">
+            <option value="ok">Vert (planifié)</option>
+            <option value="warn">Orange (à revoir)</option>
+            <option value="bad">Rouge (à planifier)</option>
+            <option value="erase">Effacer</option>
+          </select>
+          <span id="modeBadge" class="badge" aria-live="polite">
+            <i class="dot" id="modeDot"></i>
+            <span id="modeText">Mode&nbsp;: Vert</span>
+            <span class="muted">(R: rouge, G: vert, A: orange, E: effacer)</span>
+          </span>
+        </div>
+        <div class="grow"></div>
+        <div class="actions">
+          <label for="filterInput">Filtrer</label>
+          <input id="filterInput" type="text" placeholder="Rechercher un site…" autocomplete="off">
+          <span id="filterCount" class="muted">0/0</span>
+        </div>
+        <div class="actions">
+          <label for="zoomRange">Zoom</label>
+          <input id="zoomRange" type="range" min="18" max="48" value="28">
+        </div>
+      </div>
+
+      <div class="wrap" id="workloadWrap">
+        <div class="grid" id="grid" role="grid" aria-label="Plan de charge">
+          <div class="site-week head-site header header-wk" role="columnheader" style="grid-row:1;grid-column:1">Semaines</div>
+          <div class="site-head head-site header header-day" role="columnheader" style="grid-row:2;grid-column:1">Site / actions</div>
+
+          <template id="dayHeadTpl">
+            <div class="head-cell header header-day" role="columnheader"></div>
+          </template>
+          <template id="weekCellTpl">
+            <div class="week-cell header header-wk" role="columnheader"></div>
+          </template>
+          <template id="siteRowTpl">
+            <div class="site-cell head-site site-row" role="rowheader">
+              <div class="meta">
+                <strong class="site-name"></strong>
+                <span class="info"></span>
+              </div>
+              <div class="actions">
+                <button class="btn rename" title="Renommer">✏️</button>
+                <button class="btn del" title="Supprimer">🗑️</button>
+              </div>
+            </div>
+          </template>
+          <template id="cellTpl">
+            <button class="cell" role="gridcell" aria-pressed="false"></button>
+          </template>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div id="toast" class="workload-toast" style="display:none"></div>
+
+  <p class="sr-only workload-sr-only" id="workloadInstructions">
+    Utilisez les touches G, A, R, E pour changer de mode de coloration. Appuyez sur Entrée pour peindre une cellule, flèches pour naviguer.
+  </p>
+
+  <script>
+    (function(){
+      const VERSION = 4;
+      const NS = 'pc:v4:';
+      const K_SITES = NS + 'sites';
+      const K_CELL = NS + 'cell::';
+
+      const grid = document.getElementById('grid');
+      const filterInput = document.getElementById('filterInput');
+      const filterCount = document.getElementById('filterCount');
+      const zoomRange = document.getElementById('zoomRange');
+      const paintModeSel = document.getElementById('paintMode');
+      const modeDot = document.getElementById('modeDot');
+      const modeText = document.getElementById('modeText');
+      const addSiteBtn = document.getElementById('addSite');
+      const exportBtn = document.getElementById('exportBtn');
+      const importFile = document.getElementById('importFile');
+      const toast = document.getElementById('toast');
+
+      const dayHeadTpl = document.getElementById('dayHeadTpl');
+      const weekCellTpl = document.getElementById('weekCellTpl');
+      const siteRowTpl = document.getElementById('siteRowTpl');
+      const cellTpl = document.getElementById('cellTpl');
+
+      const ls = {
+        get(k, def){ try{ const v = localStorage.getItem(k); return v==null? def : JSON.parse(v);}catch{return def;} },
+        set(k, v){ localStorage.setItem(k, JSON.stringify(v)); },
+        del(k){ localStorage.removeItem(k); }
+      };
+
+      const state = {
+        sites: ls.get(K_SITES, []),
+        paint: ls.get(NS+'paint', 'ok'),
+        dragging: false,
+        dragSet: new Map(),
+      };
+
+      function setZoom(px){
+        document.documentElement.style.setProperty('--cell-w', px + 'px');
+        document.documentElement.style.setProperty('--cell-h', '40px');
+      }
+
+      function setPaintMode(mode){
+        state.paint = mode; ls.set(NS+'paint', mode);
+        paintModeSel.value = mode;
+        const map = {
+          ok:['#16a34a','Vert (planifié)'],
+          warn:['#fb923c','Orange (à revoir)'],
+          bad:['#dc2626','Rouge (à planifier)'],
+          erase:['#9ca3af','Effacer']
+        };
+        modeDot.style.background = map[mode][0];
+        modeText.textContent = 'Mode\u00A0: ' + map[mode][1];
+      }
+
+      function showToast(msg){
+        toast.textContent = msg; toast.style.display='block';
+        clearTimeout(showToast._t); showToast._t = setTimeout(()=> toast.style.display='none', 2200);
+      }
+
+      function buildDayHeaders(){
+        if(!grid.querySelector('.week-cell')){
+          for(let w=0; w<52; w++){
+            const n = weekCellTpl.content.firstElementChild.cloneNode(true);
+            n.textContent = 'S' + String(w+1).padStart(2,'0');
+            n.style.gridRow = '1';
+            n.style.gridColumn = (2 + w*7) + ' / span 7';
+            if(w>0) n.classList.add('wk-sep');
+            grid.appendChild(n);
+          }
+        }
+
+        if(!grid.querySelector('.head-cell.header-day')){
+          const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+          for(let i=0;i<364;i++){
+            const n = dayHeadTpl.content.firstElementChild.cloneNode(true);
+            const dayIndex = i % 7;
+            n.textContent = DAYS[dayIndex];
+            n.style.gridRow = '2';
+            n.style.gridColumn = String(2 + i);
+            if(i > 0 && i % 7 === 0) n.classList.add('wk-sep');
+            grid.appendChild(n);
+          }
+        }
+      }
+
+      function keyCell(site, idx){ return K_CELL + encodeURIComponent(site) + ':' + idx; }
+      function getCell(site, idx){ const v = localStorage.getItem(keyCell(site, idx)); return v ? v : ''; }
+      function setCell(site, idx, val){ state.dragSet.set(keyCell(site, idx), val ? val : null); }
+      function flushCells(){
+        state.dragSet.forEach((v,k)=>{ v==null ? localStorage.removeItem(k) : localStorage.setItem(k, v); });
+        state.dragSet.clear();
+      }
+
+      function render(){
+        buildDayHeaders();
+        grid.querySelectorAll('.site-row, .cell').forEach(n=> n.remove());
+        const sites = state.sites;
+        const frag = document.createDocumentFragment();
+
+        sites.forEach((site, rIndex)=>{
+          const head = siteRowTpl.content.firstElementChild.cloneNode(true);
+          const rowNumber = 3 + rIndex;
+          head.style.gridColumn = '1';
+          head.style.gridRow = String(rowNumber);
+          head.querySelector('.site-name').textContent = site;
+          frag.appendChild(head);
+
+          for(let i=0;i<364;i++){
+            const c = cellTpl.content.firstElementChild.cloneNode(true);
+            const val = getCell(site, i);
+
+            if (val) {
+              c.dataset.state = val;
+              let displayContent = '';
+              if (val === 'bad') displayContent = '8';
+              else if (val === 'warn') displayContent = '4';
+              else if (val.startsWith('ok:')) displayContent = val.split(':')[1];
+              c.textContent = displayContent;
+            }
+
+            c.tabIndex = 0;
+            c.dataset.site = site; c.dataset.idx = i;
+            c.style.gridRow = String(rowNumber);
+            c.style.gridColumn = String(2 + i);
+            c.setAttribute('aria-label', `Site ${site}, jour ${i+1}: ${val || 'aucun état'}`);
+            c.setAttribute('aria-pressed', val? 'true':'false');
+            if(i > 0 && i % 7 === 0) c.classList.add('wk-sep');
+            frag.appendChild(c);
+          }
+        });
+
+        grid.appendChild(frag);
+        updateProgressAll();
+        applyFilter();
+      }
+
+      function updateProgressAll(){
+        const rows = grid.querySelectorAll('.site-row');
+        rows.forEach(row=>{
+          const site = row.querySelector('.site-name').textContent;
+          let ok=0, warn=0, bad=0;
+          for(let i=0;i<364;i++){
+            const v = getCell(site, i);
+            if(v.startsWith('ok')) ok++;
+            else if(v==='warn') warn++;
+            else if(v==='bad') bad++;
+          }
+          const info = row.querySelector('.info');
+          info.innerHTML = `<span class="count-ok">${ok}</span> vert • <span style="color:var(--warn);">${warn}</span> orange • <span class="count-bad">${bad}</span> rouge`;
+        });
+      }
+
+      function highlight(text, q){ if(!q) return text; const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&') + ')','i'); return text.replace(re,'<span class="mark">$1</span>'); }
+      function applyFilter(){
+        const q = filterInput.value.trim();
+        const rows = grid.querySelectorAll('.site-row');
+        let shown=0;
+        rows.forEach(row=>{
+          const nameEl = row.querySelector('.site-name');
+          const name = nameEl.textContent;
+          const match = !q || name.toLowerCase().includes(q.toLowerCase());
+          row.style.display = match ? '' : 'none';
+          const idx = Array.prototype.indexOf.call(grid.children, row) + 1;
+          for(let i=0;i<364;i++){
+            const c = grid.children[idx + i];
+            if(c && c.classList.contains('cell')) c.style.display = match ? '' : 'none';
+          }
+          if(match){
+            shown++;
+            nameEl.innerHTML = highlight(name, q);
+          }else{
+            nameEl.textContent = name;
+          }
+        });
+        filterCount.textContent = `${shown}/${rows.length}`;
+      }
+
+      function paintCell(el){
+        const site = el.dataset.site;
+        const idx = +el.dataset.idx;
+        const mode = state.paint;
+        const currentState = el.dataset.state || '';
+
+        let valToStore = '';
+        let valToDisplay = '';
+
+        if (mode === 'ok') {
+          if (currentState === 'bad') {
+            valToStore = 'ok:8';
+            valToDisplay = '8';
+          } else if (currentState === 'warn') {
+            valToStore = 'ok:4';
+            valToDisplay = '4';
+          } else if (currentState.startsWith('ok')) {
+            valToStore = currentState;
+            valToDisplay = el.textContent;
+          } else {
+            valToStore = '';
+            valToDisplay = '';
+          }
+
+        } else if (mode === 'warn') {
+          valToStore = 'warn';
+          valToDisplay = '4';
+
+        } else if (mode === 'bad') {
+          valToStore = 'bad';
+          valToDisplay = '8';
+
+        } else if (mode === 'erase') {
+          valToStore = '';
+          valToDisplay = '';
+        }
+
+        if (valToStore === currentState && valToStore !== '') return;
+
+        if(valToStore){
+          el.dataset.state = valToStore;
+          el.textContent = valToDisplay;
+          el.setAttribute('aria-pressed','true');
+          el.setAttribute('aria-label', `Site ${site}, jour ${idx+1}: ${valToStore} (${valToDisplay} jours)`);
+        } else {
+          el.removeAttribute('data-state');
+          el.textContent = '';
+          el.setAttribute('aria-pressed','false');
+          el.setAttribute('aria-label', `Site ${site}, jour ${idx+1}: aucun état`);
+        }
+
+        setCell(site, idx, valToStore);
+      }
+
+      grid.addEventListener('mousedown', e=>{
+        if(e.target.classList.contains('cell')){
+          state.dragging = true; paintCell(e.target);
+          e.preventDefault();
+        }
+      });
+      grid.addEventListener('mouseover', e=>{
+        if(state.dragging && e.target.classList.contains('cell')) paintCell(e.target);
+      });
+      window.addEventListener('mouseup', ()=>{ if(state.dragging){ state.dragging=false; flushCells(); updateProgressAll(); }});
+
+      document.addEventListener('keydown', e=>{
+        if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+        if(e.key==='g' || e.key==='G'){ setPaintMode('ok'); showToast('Mode Vert'); }
+        else if(e.key==='a' || e.key==='A'){ setPaintMode('warn'); showToast('Mode Orange'); }
+        else if(e.key==='r' || e.key==='R'){ setPaintMode('bad'); showToast('Mode Rouge'); }
+        else if(e.key==='e' || e.key==='E'){ setPaintMode('erase'); showToast('Mode Effacer'); }
+      });
+
+      grid.addEventListener('keydown', e=>{
+        const el = e.target;
+        if(!el.classList.contains('cell')) return;
+        const idx = +el.dataset.idx;
+
+        const moveFocus = (delta)=>{
+          const i = Array.prototype.indexOf.call(grid.children, el);
+          const next = grid.children[i + delta];
+          if(next && next.classList.contains('cell')) next.focus();
+        };
+
+        if(e.key==='Enter' || e.key===' '){ paintCell(el); e.preventDefault(); flushCells(); updateProgressAll(); return; }
+        else if(e.key==='ArrowRight'){ moveFocus(1); e.preventDefault(); }
+        else if(e.key==='ArrowLeft'){ moveFocus(-1); e.preventDefault(); }
+        else if(e.key==='ArrowDown'){ moveFocus(365); e.preventDefault(); }
+        else if(e.key==='ArrowUp'){ moveFocus(-365); e.preventDefault(); }
+        else if(e.key==='Home'){
+          const delta = -(idx % 7); moveFocus(delta); e.preventDefault();
+        }
+        else if(e.key==='End'){
+          const delta = 6 - (idx % 7); moveFocus(delta); e.preventDefault();
+        }
+        else if(e.key==='PageDown'){ moveFocus(7); e.preventDefault(); }
+        else if(e.key==='PageUp'){ moveFocus(-7); e.preventDefault(); }
+      });
+
+      zoomRange.addEventListener('input', e=> setZoom(+e.target.value));
+      paintModeSel.addEventListener('change', e=> setPaintMode(e.target.value));
+      filterInput.addEventListener('input', applyFilter);
+
+      addSiteBtn.addEventListener('click', ()=>{
+        const name = prompt('Nom du site ?');
+        if(!name) return;
+        if(state.sites.includes(name)) return showToast('Ce nom existe déjà');
+        state.sites.push(name); ls.set(K_SITES, state.sites); render(); showToast('Site ajouté');
+      });
+
+      grid.addEventListener('click', e=>{
+        const row = e.target.closest('.site-row');
+        if(!row) return;
+        const site = row.querySelector('.site-name').textContent;
+        if(e.target.classList.contains('rename')){
+          const nv = prompt('Nouveau nom ?', site);
+          if(!nv || nv===site) return;
+          if(state.sites.includes(nv)) return showToast('Nom déjà utilisé');
+          for(let i=0;i<364;i++){
+            const oldK = keyCell(site, i); const v = localStorage.getItem(oldK);
+            if(v!=null){ localStorage.setItem(keyCell(nv, i), v); localStorage.removeItem(oldK); }
+          }
+          state.sites = state.sites.map(s=> s===site? nv : s); ls.set(K_SITES, state.sites);
+          render(); showToast('Site renommé');
+        }
+        if(e.target.classList.contains('del')){
+          if(!confirm(`Supprimer le site « ${site} » ?`)) return;
+          for(let i=0;i<364;i++) localStorage.removeItem(keyCell(site,i));
+          state.sites = state.sites.filter(s=> s!==site); ls.set(K_SITES, state.sites);
+          render(); showToast('Site supprimé');
+        }
+      });
+
+      exportBtn.addEventListener('click', ()=>{
+        const data = { version: VERSION, sites: state.sites, cells:{} };
+        state.sites.forEach(site=>{
+          const arr = [];
+          for(let i=0;i<364;i++) arr.push(getCell(site,i));
+          data.cells[site] = arr;
+        });
+        const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'plan_de_charge_v'+VERSION+'.json'; a.click(); URL.revokeObjectURL(a.href);
+        showToast('Export effectué');
+      });
+
+      importFile.addEventListener('change', async (e)=>{
+        const f = e.target.files[0]; if(!f) return;
+        const text = await f.text();
+        let data; try{ data = JSON.parse(text);}catch{ return showToast('Fichier invalide'); }
+
+        if(!confirm(`Importer ${Object.keys(data.cells||{}).length} sites ?`)) return;
+
+        state.sites = data.sites || [];
+        ls.set(K_SITES, state.sites);
+        Object.keys(localStorage).filter(k=> k.startsWith(K_CELL)).forEach(k=> localStorage.removeItem(k));
+        state.sites.forEach(site=>{
+          const arr = (data.cells && data.cells[site]) || [];
+          for(let i=0;i<364;i++){ const v=arr[i]||''; if(v) localStorage.setItem(keyCell(site,i), v); }
+        });
+        render(); showToast('Import terminé');
+        importFile.value = '';
+      });
+
+      function runTests(){
+        try{
+          console.group('%cTests plan de charge','color:#93c5fd');
+          const weeks = grid.querySelectorAll('.week-cell');
+          const days = grid.querySelectorAll('.head-cell.header-day');
+          console.assert(weeks.length===52, `Semaine headers attendus 52, obtenus ${weeks.length}`);
+          console.assert(days.length===364, `Jour headers attendus 364, obtenus ${days.length}`);
+          const row = grid.querySelector('.site-row');
+          if(row){
+            const rowNum = row.style.gridRow;
+            let cnt=0, sameRow=true; for(let i=0;i<364;i++){ const n=grid.querySelector(`.cell[style*="grid-row: ${rowNum};"][style*="grid-column: ${2+i}"]`); if(n){cnt++;} else {sameRow=false; break;} }
+            console.assert(cnt===364 && sameRow, `Cellules par ligne attendues 364 sur grid-row ${rowNum}, trouvées ${cnt}`);
+          }
+          const before = filterCount.textContent;
+          filterInput.value = 'Site A'; applyFilter();
+          const after = filterCount.textContent;
+          console.assert(before!==after && /\d+\/\d+/.test(after), `Compteur de filtre devrait changer (avant=${before}, après=${after})`);
+          filterInput.value = ''; applyFilter();
+          console.groupEnd();
+        }catch(e){ console.error('Tests en erreur:', e); }
+      }
+
+      setZoom(+zoomRange.value);
+      setPaintMode(state.paint);
+      if(state.sites.length===0){ state.sites = {{ default_sites|tojson }}; ls.set(K_SITES, state.sites); }
+      render();
+      runTests();
+    })();
+  </script>
+{% endblock %}

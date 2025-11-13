@@ -1000,6 +1000,16 @@ def list_filters_and_belts(
     )
 
 
+@app.get("/plan-de-charge", response_class=HTMLResponse)
+def workload_plan(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "plan_de_charge.html",
+        {
+            "request": request,
+        },
+    )
+
+
 @app.post("/filtres-courroies/filtres")
 async def create_filter_line(
     site: str = Form(...),
