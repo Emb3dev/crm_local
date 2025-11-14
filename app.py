@@ -64,6 +64,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("CRM_TOKEN_EXPIRE_MINUTES", "48
 DEFAULT_ADMIN_USERNAME = os.environ.get("CRM_ADMIN_USERNAME", "admin")
 DEFAULT_ADMIN_PASSWORD = os.environ.get("CRM_ADMIN_PASSWORD", "admin")
 
+MAX_BCRYPT_PASSWORD_BYTES = 72
+
 SESSION_COOKIE_NAME = os.environ.get("CRM_SESSION_COOKIE_NAME", "session_token")
 SESSION_COOKIE_SECURE = os.environ.get("CRM_SESSION_COOKIE_SECURE", "false").lower() in {"1", "true", "yes"}
 
@@ -88,6 +90,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_password_hash(password: str) -> str:
+    if len(password.encode("utf-8")) > MAX_BCRYPT_PASSWORD_BYTES:
+        raise ValueError(
+            "Le mot de passe dépasse la longueur maximale prise en charge par bcrypt (72 octets)."
+        )
     return pwd_context.hash(password)
 
 
@@ -166,7 +172,13 @@ def _ensure_default_admin_user() -> None:
             logger.warning(
                 "CRM_ADMIN_PASSWORD n'est pas défini : utilisation d'identifiants par défaut 'admin/admin'."
             )
-        hashed_password = get_password_hash(DEFAULT_ADMIN_PASSWORD)
+        try:
+            hashed_password = get_password_hash(DEFAULT_ADMIN_PASSWORD)
+        except ValueError as exc:
+            raise RuntimeError(
+                "Le mot de passe administrateur par défaut dépasse la limite de 72 octets imposée par bcrypt. "
+                "Veuillez définir CRM_ADMIN_PASSWORD avec une valeur plus courte."
+            ) from exc
         crud.create_user(
             session,
             UserCreate(username=DEFAULT_ADMIN_USERNAME, hashed_password=hashed_password),
