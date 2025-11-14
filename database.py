@@ -1,7 +1,9 @@
+from sqlalchemy import func
 from sqlalchemy.exc import OperationalError
 from sqlmodel import SQLModel, create_engine, Session, select
 
-from models import Client, Entreprise
+from defaults import DEFAULT_PRESTATION_GROUPS
+from models import Client, Entreprise, PrestationDefinition
 
 engine = create_engine("sqlite:///./crm.db", connect_args={"check_same_thread": False})
 
@@ -188,6 +190,23 @@ def init_db():
             client.entreprise_id = entreprise.id
             client.company_name = entreprise.nom
         session.commit()
+
+        definitions_count = session.exec(
+            select(func.count(PrestationDefinition.id))
+        ).one()
+        if definitions_count == 0:
+            for group in DEFAULT_PRESTATION_GROUPS:
+                category = group["category"]
+                for option in group.get("options", []):
+                    definition = PrestationDefinition(
+                        key=option["value"],
+                        label=option["label"],
+                        budget_code=option["budget_code"],
+                        category=category,
+                        position=option.get("position", 0),
+                    )
+                    session.add(definition)
+            session.commit()
     SQLModel.metadata.create_all(engine)
 
 def get_session():

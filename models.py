@@ -137,6 +137,39 @@ class ContactUpdate(SQLModel):
 # =======================
 
 
+class PrestationDefinitionBase(SQLModel):
+    key: str = Field(index=True, description="Identifiant interne de la prestation")
+    label: str = Field(description="Libellé affiché dans les menus")
+    budget_code: str = Field(description="Code budget associé à la prestation")
+    category: str = Field(description="Famille de prestation (sous-traitance, location…)")
+    position: int = Field(
+        default=0,
+        description="Ordre d'affichage dans la catégorie",
+        sa_column=Column(Integer, nullable=False, server_default="0"),
+    )
+
+
+class PrestationDefinition(PrestationDefinitionBase, table=True):
+    __table_args__ = (
+        UniqueConstraint("key"),
+        UniqueConstraint("category", "label"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PrestationDefinitionCreate(PrestationDefinitionBase):
+    pass
+
+
+class PrestationDefinitionUpdate(SQLModel):
+    label: Optional[str] = None
+    budget_code: Optional[str] = None
+    category: Optional[str] = None
+    position: Optional[int] = None
+
+
 class SubcontractedServiceBase(SQLModel):
     prestation_key: str = Field(index=True, description="Identifiant de la prestation")
     prestation_label: str = Field(description="Libellé de la prestation")

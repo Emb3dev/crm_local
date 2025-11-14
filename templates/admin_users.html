@@ -8,6 +8,24 @@
 {% block main_classes %}space-y-10{% endblock %}
 
 {% block content %}
+  {% set admin_path = request.url.path %}
+  <nav class="flex flex-wrap items-center gap-3 rounded-3xl border border-slate-200 bg-white/80 p-2 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/40 dark:shadow-indigo-500/10">
+    <a
+      href="/admin/utilisateurs"
+      class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition {{ 'bg-indigo-500/10 text-indigo-700 shadow shadow-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-100' if admin_path.startswith('/admin/utilisateurs') else 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white' }}"
+    >
+      <span aria-hidden="true">👥</span>
+      Utilisateurs
+    </a>
+    <a
+      href="/admin/prestations"
+      class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition {{ 'bg-indigo-500/10 text-indigo-700 shadow shadow-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-100' if admin_path.startswith('/admin/prestations') else 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white' }}"
+    >
+      <span aria-hidden="true">🛠️</span>
+      Prestations
+    </a>
+  </nav>
+
   {% if success %}
     <div class="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-700 shadow-lg shadow-emerald-200/40 transition-colors duration-300 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100 dark:shadow-emerald-500/20">
       <p class="text-xs font-semibold uppercase tracking-[0.35em]">Nouveau compte créé</p>
