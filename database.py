@@ -135,6 +135,26 @@ def init_db():
             conn.exec_driver_sql(
                 "ALTER TABLE subcontractedservice ADD COLUMN frequency_unit VARCHAR"
             )
+        user_cols = {
+            row[1]
+            for row in conn.exec_driver_sql("PRAGMA table_info('user')")
+        }
+        if "last_login_at" not in user_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE user ADD COLUMN last_login_at DATETIME"
+            )
+        if "last_logout_at" not in user_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE user ADD COLUMN last_logout_at DATETIME"
+            )
+        if "last_active_at" not in user_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE user ADD COLUMN last_active_at DATETIME"
+            )
+        if "is_online" not in user_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE user ADD COLUMN is_online BOOLEAN DEFAULT 0"
+            )
     with Session(engine) as session:
         clients_without = session.exec(
             select(Client).where(Client.entreprise_id.is_(None))

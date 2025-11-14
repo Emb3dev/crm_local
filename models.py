@@ -1,6 +1,13 @@
 from typing import List, Optional
 from datetime import datetime
-from sqlalchemy import Column, String, Integer, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    String,
+    Integer,
+    UniqueConstraint,
+    Boolean,
+    DateTime,
+)
 from sqlmodel import SQLModel, Field, Relationship
 
 
@@ -324,7 +331,40 @@ class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str = Field(description="Mot de passe haché")
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_login_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime, nullable=True),
+        description="Dernière connexion réussie",
+    )
+    last_logout_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime, nullable=True),
+        description="Dernière déconnexion",
+    )
+    last_active_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime, nullable=True),
+        description="Dernière activité détectée",
+    )
+    is_online: bool = Field(
+        default=False,
+        sa_column=Column(Boolean, nullable=False, server_default="0"),
+        description="Indique si l'utilisateur est actuellement en ligne",
+    )
+    login_events: List["UserLoginEvent"] = Relationship(back_populates="user")
 
 
 class UserCreate(UserBase):
     hashed_password: str
+
+
+class UserLoginEvent(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    event_type: str = Field(description="Type d'événement (login/logout)")
+    occurred_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        sa_column=Column(DateTime, nullable=False),
+        description="Horodatage de l'événement",
+    )
+    user: Optional[User] = Relationship(back_populates="login_events")
