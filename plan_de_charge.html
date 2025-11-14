@@ -303,10 +303,10 @@
 
 <script>
 (function(){
-  const VERSION = 4; 
-  const NS = 'pc:v4:'; 
-  const K_SITES = NS + 'sites';
-  const K_CELL = NS + 'cell::';
+  const VERSION = 4;
+  const NS = 'pc:v4:';
+  const DAY_COUNT = 364;
+  const API_BASE = '/api/workload-plan';
 
   const grid = document.getElementById('grid');
   const filterInput = document.getElementById('filterInput');
@@ -324,45 +324,54 @@
   const siteRowTpl = document.getElementById('siteRowTpl');
   const cellTpl = document.getElementById('cellTpl');
 
-  // --- util
   const ls = {
     get(k, def){ try{ const v = localStorage.getItem(k); return v==null? def : JSON.parse(v);}catch{return def;} },
     set(k, v){ localStorage.setItem(k, JSON.stringify(v)); },
     del(k){ localStorage.removeItem(k); }
   };
 
+  function createEmptyRow(){
+    return Array.from({length: DAY_COUNT}, ()=>'');
+  }
+
+  function sortSites(){
+    state.sites.sort((a,b)=>{
+      const pos = (a.position || 0) - (b.position || 0);
+      if(pos !== 0) return pos;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
   const state = {
-    sites: ls.get(K_SITES, []),
+    sites: [],
+    cells: {},
     paint: ls.get(NS+'paint', 'ok'),
     dragging: false,
-    dragSet: new Map(), // batch des écritures
+    dragSet: new Map(),
   };
 
-  // --- UI helpers
   function setZoom(px){
     document.documentElement.style.setProperty('--cell-w', px+"px");
-    document.documentElement.style.setProperty('--cell-h', '40px'); 
+    document.documentElement.style.setProperty('--cell-h', '40px');
   }
   function setPaintMode(mode){
     state.paint = mode; ls.set(NS+'paint', mode);
     paintModeSel.value = mode;
-    const map = { 
-      ok:['#16a34a','Vert (planifié)'], 
-      warn:['#fb923c','Orange (à revoir)'], 
-      bad:['#dc2626','Rouge (à planifier)'], 
-      erase:['#9ca3af','Effacer'] 
+    const map = {
+      ok:['#16a34a','Vert (planifié)'],
+      warn:['#fb923c','Orange (à revoir)'],
+      bad:['#dc2626','Rouge (à planifier)'],
+      erase:['#9ca3af','Effacer']
     };
     modeDot.style.background = map[mode][0];
-    modeText.textContent = 'Mode\u00A0: ' + map[mode][1];
+    modeText.textContent = 'Mode : ' + map[mode][1];
   }
   function showToast(msg){
     toast.textContent = msg; toast.style.display='block';
     clearTimeout(showToast._t); showToast._t = setTimeout(()=> toast.style.display='none', 2200);
   }
 
-  // --- Build headers (MISE À JOUR)
   function buildDayHeaders(){
-    // (1) Ligne "Semaines" (S01..S52)
     const hasWeeks = grid.querySelector('.week-cell');
     if(!hasWeeks){
       const weekTpl = document.getElementById('weekCellTpl');
@@ -376,74 +385,112 @@
       }
     }
 
-    // (2) Ligne "Jours" (L M M J V S D...)
     const hasDays = grid.querySelector('.head-cell.header-day');
     if(!hasDays){
-      const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']; 
-
-      for(let i=0;i<364;i++){
+      const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+      for(let i=0;i<DAY_COUNT;i++){
         const n = dayHeadTpl.content.firstElementChild.cloneNode(true);
-        
-        const dayIndex = i % 7; 
+        const dayIndex = i % 7;
         n.textContent = DAYS[dayIndex];
-        
         n.style.gridRow = '2';
         n.style.gridColumn = String(2 + i);
-        // Ajout de la classe de séparation au premier jour de la semaine (Lundi)
         if(i > 0 && i % 7 === 0) n.classList.add('wk-sep');
         grid.appendChild(n);
       }
     }
   }
 
-  // --- Data access (inchangé)
-  function keyCell(site, idx){ return K_CELL + encodeURIComponent(site) + ':' + idx; }
-  function getCell(site, idx){ const v = localStorage.getItem(keyCell(site, idx)); return v ? v : ''; }
-  function setCell(site, idx, val){ state.dragSet.set(keyCell(site, idx), val ? val : null); }
-  function flushCells(){
-    state.dragSet.forEach((v,k)=>{ v==null ? localStorage.removeItem(k) : localStorage.setItem(k, v); });
-    state.dragSet.clear();
+  function ensureSiteCells(siteId){
+    if(!state.cells[siteId]){
+      state.cells[siteId] = createEmptyRow();
+    }
+    return state.cells[siteId];
   }
 
-  // --- Rendering (inchangé)
+  function getCell(siteId, idx){
+    const arr = ensureSiteCells(siteId);
+    return arr[idx] || '';
+  }
+
+  function setCell(siteId, idx, val){
+    const arr = ensureSiteCells(siteId);
+    arr[idx] = val ? val : '';
+    state.dragSet.set(`${siteId}:${idx}`, val ? val : '');
+  }
+
+  async function flushCells(){
+    if(state.dragSet.size===0) return;
+    const entries = Array.from(state.dragSet.entries());
+    state.dragSet.clear();
+    const updates = entries.map(([key, value])=>{
+      const [siteIdStr, idxStr] = key.split(':');
+      return {
+        key,
+        value,
+        payload: {
+          site_id: Number(siteIdStr),
+          day_index: Number(idxStr),
+          value: value ? value : null,
+        }
+      };
+    });
+    if(!updates.length) return;
+    try{
+      const resp = await fetch(`${API_BASE}/cells`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates: updates.map(u=>u.payload) }),
+      });
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    }catch(err){
+      console.error('flushCells error', err);
+      updates.forEach(({key, value})=>{
+        state.dragSet.set(key, value);
+      });
+      showToast('Erreur de sauvegarde');
+    }
+  }
+
   function render(){
     buildDayHeaders();
 
     grid.querySelectorAll('.site-row, .cell').forEach(n=> n.remove());
 
-    const sites = state.sites;
     const frag = document.createDocumentFragment();
 
-    sites.forEach((site, rIndex)=>{
+    state.sites.forEach((site, rIndex)=>{
       const head = siteRowTpl.content.firstElementChild.cloneNode(true);
-      const rowNumber = 3 + rIndex; 
+      const rowNumber = 3 + rIndex;
       head.style.gridColumn = '1';
       head.style.gridRow = String(rowNumber);
-      head.querySelector('.site-name').textContent = site;
+      head.dataset.siteId = site.id;
+      head.dataset.siteName = site.name;
+      const nameEl = head.querySelector('.site-name');
+      nameEl.textContent = site.name;
       frag.appendChild(head);
 
-      for(let i=0;i<364;i++){
+      for(let i=0;i<DAY_COUNT;i++){
         const c = cellTpl.content.firstElementChild.cloneNode(true);
-        const val = getCell(site, i); // e.g. 'ok:8', 'warn', 'bad'
+        const val = getCell(site.id, i);
 
         if (val) {
-            c.dataset.state = val;
-            let displayContent = '';
-            if (val === 'bad') displayContent = '8';
-            else if (val === 'warn') displayContent = '4';
-            else if (val.startsWith('ok:')) displayContent = val.split(':')[1]; 
-            
-            c.textContent = displayContent; // Définit le contenu textuel
+          c.dataset.state = val;
+          let displayContent = '';
+          if (val === 'bad') displayContent = '8';
+          else if (val === 'warn') displayContent = '4';
+          else if (val.startsWith('ok:')) displayContent = val.split(':')[1];
+          c.textContent = displayContent;
         }
 
         c.tabIndex = 0;
-        c.dataset.site = site; c.dataset.idx = i;
+        c.dataset.siteId = String(site.id);
+        c.dataset.siteName = site.name;
+        c.dataset.idx = i;
         c.style.gridRow = String(rowNumber);
         c.style.gridColumn = String(2 + i);
-        c.setAttribute('aria-label', `Site ${site}, jour ${i+1}: ${val || 'aucun état'}`);
+        c.setAttribute('aria-label', `Site ${site.name}, jour ${i+1}: ${val || 'aucun état'}`);
         c.setAttribute('aria-pressed', val? 'true':'false');
-        // Ajout de la classe de séparation au premier jour de la semaine (Lundi)
-        if(i > 0 && i % 7 === 0) c.classList.add('wk-sep'); 
+        if(i > 0 && i % 7 === 0) c.classList.add('wk-sep');
         frag.appendChild(c);
       }
     });
@@ -453,38 +500,40 @@
     applyFilter();
   }
 
-  // updateProgressAll (logique de jauge supprimée, comptage conservé)
   function updateProgressAll(){
     const rows = grid.querySelectorAll('.site-row');
     rows.forEach(row=>{
-      const site = row.querySelector('.site-name').textContent;
-      let ok=0, warn=0, bad=0; 
-      for(let i=0;i<364;i++){
-        const v = getCell(site, i); 
-        if(v.startsWith('ok')) ok++; 
-        else if(v==='warn') warn++; 
+      const siteId = Number(row.dataset.siteId);
+      let ok=0, warn=0, bad=0;
+      const cells = ensureSiteCells(siteId);
+      for(let i=0;i<DAY_COUNT;i++){
+        const v = cells[i] || '';
+        if(v.startsWith('ok')) ok++;
+        else if(v==='warn') warn++;
         else if(v==='bad') bad++;
       }
       const info = row.querySelector('.info');
-      
-      // Mise à jour de l'affichage du compte (ok/364 vert • 4 orange • 8 rouge)
       info.innerHTML = `<span class="count-ok">${ok}</span> vert • <span style="color:var(--warn);">${warn}</span> orange • <span class="count-bad">${bad}</span> rouge`;
     });
   }
 
-  // --- Filter (inchangé)
-  function highlight(text, q){ if(!q) return text; const re = new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','i'); return text.replace(re,'<span class="mark">$1</span>'); }
+  function highlight(text, q){
+    if(!q) return text;
+    const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp('(' + safe + ')', 'i');
+    return text.replace(re, '<span class="mark">$1</span>');
+  }
   function applyFilter(){
     const q = filterInput.value.trim();
     const rows = grid.querySelectorAll('.site-row');
     let shown=0;
     rows.forEach(row=>{
       const nameEl = row.querySelector('.site-name');
-      const name = nameEl.textContent;
+      const name = row.dataset.siteName || nameEl.textContent;
       const match = !q || name.toLowerCase().includes(q.toLowerCase());
       row.style.display = match ? '' : 'none';
-      const idx = Array.prototype.indexOf.call(grid.children, row) + 1; 
-      for(let i=0;i<364;i++){
+      const idx = Array.prototype.indexOf.call(grid.children, row) + 1;
+      for(let i=0;i<DAY_COUNT;i++){
         const c = grid.children[idx + i];
         if(c && c.classList.contains('cell')) c.style.display = match ? '' : 'none';
       }
@@ -492,71 +541,68 @@
         shown++;
         nameEl.innerHTML = highlight(name, q);
       }else{
-        nameEl.textContent = name; 
+        nameEl.textContent = name;
       }
     });
     filterCount.textContent = `${shown}/${rows.length}`;
   }
 
-  // --- Painting (inchangé)
   function paintCell(el){
-    const site = el.dataset.site; 
+    const siteId = Number(el.dataset.siteId);
+    const siteName = el.dataset.siteName || '';
     const idx = +el.dataset.idx;
     const mode = state.paint;
-    
-    const currentState = el.dataset.state || ''; 
+
+    const currentState = el.dataset.state || '';
 
     let valToStore = '';
     let valToDisplay = '';
 
     if (mode === 'ok') {
       if (currentState === 'bad') {
-        valToStore = 'ok:8'; 
+        valToStore = 'ok:8';
         valToDisplay = '8';
       } else if (currentState === 'warn') {
-        valToStore = 'ok:4'; 
+        valToStore = 'ok:4';
         valToDisplay = '4';
       } else if (currentState.startsWith('ok')) {
         valToStore = currentState;
-        valToDisplay = el.textContent; 
+        valToDisplay = el.textContent;
       } else {
         valToStore = '';
         valToDisplay = '';
       }
-      
+
     } else if (mode === 'warn') {
       valToStore = 'warn';
       valToDisplay = '4';
-      
+
     } else if (mode === 'bad') {
       valToStore = 'bad';
       valToDisplay = '8';
-      
+
     } else if (mode === 'erase') {
       valToStore = '';
       valToDisplay = '';
     }
-    
-    if (valToStore === currentState && valToStore !== '') return; 
 
-    // 1. Mise à jour de l'affichage
-    if(valToStore){ 
-      el.dataset.state = valToStore; 
-      el.textContent = valToDisplay; 
-      el.setAttribute('aria-pressed','true'); 
-      el.setAttribute('aria-label', `Site ${site}, jour ${idx+1}: ${valToStore} (${valToDisplay} jours)`);
-    } else { 
-      el.removeAttribute('data-state'); 
-      el.textContent = ''; 
-      el.setAttribute('aria-pressed','false'); 
-      el.setAttribute('aria-label', `Site ${site}, jour ${idx+1}: aucun état`);
-    } 
+    if (valToStore === currentState && valToStore !== '') return;
 
-    // 2. Mise à jour du stockage
-    setCell(site, idx, valToStore);
+    if(valToStore){
+      el.dataset.state = valToStore;
+      el.textContent = valToDisplay;
+      el.setAttribute('aria-pressed','true');
+      el.setAttribute('aria-label', `Site ${siteName}, jour ${idx+1}: ${valToStore} (${valToDisplay} jours)`);
+    } else {
+      el.removeAttribute('data-state');
+      el.textContent = '';
+      el.setAttribute('aria-pressed','false');
+      el.setAttribute('aria-label', `Site ${siteName}, jour ${idx+1}: aucun état`);
+    }
+
+    setCell(siteId, idx, valToStore);
   }
 
-  // Delegation (inchangé)
   grid.addEventListener('mousedown', e=>{
     if(e.target.classList.contains('cell')){
       state.dragging = true; paintCell(e.target);
@@ -566,9 +612,14 @@
   grid.addEventListener('mouseover', e=>{
     if(state.dragging && e.target.classList.contains('cell')) paintCell(e.target);
   });
-  window.addEventListener('mouseup', ()=>{ if(state.dragging){ state.dragging=false; flushCells(); updateProgressAll(); }});
+  window.addEventListener('mouseup', ()=>{
+    if(state.dragging){
+      state.dragging=false;
+      flushCells();
+      updateProgressAll();
+    }
+  });
 
-  // Keyboard navigation & shortcuts (inchangé)
   document.addEventListener('keydown', e=>{
     if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
     if(e.key==='g' || e.key==='G'){ setPaintMode('ok'); showToast('Mode Vert'); }
@@ -580,7 +631,7 @@
   grid.addEventListener('keydown', e=>{
     const el = e.target;
     if(!el.classList.contains('cell')) return;
-    const idx = +el.dataset.idx; 
+    const idx = +el.dataset.idx;
 
     const moveFocus = (delta)=>{
       const i = Array.prototype.indexOf.call(grid.children, el);
@@ -588,67 +639,106 @@
       if(next && next.classList.contains('cell')) next.focus();
     };
 
-    if(e.key==='Enter' || e.key===' '){ paintCell(el); e.preventDefault(); flushCells(); updateProgressAll(); return; }
+    if(e.key==='Enter' || e.key===' '){ paintCell(el); e.preventDefault(); updateProgressAll(); flushCells(); return; }
     else if(e.key==='ArrowRight'){ moveFocus(1); e.preventDefault(); }
     else if(e.key==='ArrowLeft'){ moveFocus(-1); e.preventDefault(); }
-    else if(e.key==='ArrowDown'){ moveFocus(365); e.preventDefault(); } 
-    else if(e.key==='ArrowUp'){ moveFocus(-365); e.preventDefault(); }
-    else if(e.key==='Home'){ 
+    else if(e.key==='ArrowDown'){ moveFocus(DAY_COUNT + 1); e.preventDefault(); }
+    else if(e.key==='ArrowUp'){ moveFocus(-(DAY_COUNT + 1)); e.preventDefault(); }
+    else if(e.key==='Home'){
       const delta = -(idx % 7); moveFocus(delta); e.preventDefault();
     }
-    else if(e.key==='End'){ 
+    else if(e.key==='End'){
       const delta = 6 - (idx % 7); moveFocus(delta); e.preventDefault();
     }
     else if(e.key==='PageDown'){ moveFocus(7); e.preventDefault(); }
     else if(e.key==='PageUp'){ moveFocus(-7); e.preventDefault(); }
   });
 
-  // Toolbar events (inchangé)
   zoomRange.addEventListener('input', e=> setZoom(+e.target.value));
   paintModeSel.addEventListener('change', e=> setPaintMode(e.target.value));
   filterInput.addEventListener('input', applyFilter);
 
-  addSiteBtn.addEventListener('click', ()=>{
+  addSiteBtn.addEventListener('click', async ()=>{
     const name = prompt('Nom du site ?');
     if(!name) return;
-    if(state.sites.includes(name)) return showToast('Ce nom existe déjà');
-    state.sites.push(name); ls.set(K_SITES, state.sites); render(); showToast('Site ajouté');
+    const normalized = name.trim();
+    if(!normalized) return;
+    if(state.sites.some(s=> s.name === normalized)) return showToast('Ce nom existe déjà');
+    try{
+      const resp = await fetch(`${API_BASE}/sites`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: normalized }),
+      });
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const site = await resp.json();
+      state.sites.push({ id: site.id, name: site.name, position: site.position });
+      state.cells[site.id] = site.cells || createEmptyRow();
+      sortSites();
+      render();
+      showToast('Site ajouté');
+    }catch(err){
+      console.error('addSite error', err);
+      showToast("Impossible d'ajouter le site");
+    }
   });
 
-  grid.addEventListener('click', e=>{
+  grid.addEventListener('click', async e=>{
     const row = e.target.closest('.site-row');
     if(!row) return;
-    const site = row.querySelector('.site-name').textContent;
+    const siteId = Number(row.dataset.siteId);
+    const site = state.sites.find(s=> s.id === siteId);
+    if(!site) return;
     if(e.target.classList.contains('rename')){
-      const nv = prompt('Nouveau nom ?', site);
-      if(!nv || nv===site) return;
-      if(state.sites.includes(nv)) return showToast('Nom déjà utilisé');
-      // migrate cells
-      for(let i=0;i<364;i++){
-        const oldK = keyCell(site, i); const v = localStorage.getItem(oldK);
-        if(v!=null){ localStorage.setItem(keyCell(nv, i), v); localStorage.removeItem(oldK); }
+      const nv = prompt('Nouveau nom ?', site.name);
+      if(!nv) return;
+      const normalized = nv.trim();
+      if(!normalized || normalized === site.name) return;
+      if(state.sites.some(s=> s.id !== siteId && s.name === normalized)) return showToast('Nom déjà utilisé');
+      try{
+        const resp = await fetch(`${API_BASE}/sites/${siteId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: normalized }),
+        });
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const updated = await resp.json();
+        site.name = updated.name;
+        site.position = updated.position;
+        state.cells[site.id] = updated.cells || ensureSiteCells(site.id);
+        sortSites();
+        render();
+        showToast('Site renommé');
+      }catch(err){
+        console.error('renameSite error', err);
+        showToast('Renommage impossible');
       }
-      state.sites = state.sites.map(s=> s===site? nv : s); ls.set(K_SITES, state.sites);
-      render(); showToast('Site renommé');
     }
     if(e.target.classList.contains('del')){
-      if(!confirm(`Supprimer le site « ${site} » ?`)) return;
-      // remove cells
-      for(let i=0;i<364;i++) localStorage.removeItem(keyCell(site,i));
-      state.sites = state.sites.filter(s=> s!==site); ls.set(K_SITES, state.sites);
-      render(); showToast('Site supprimé');
+      if(!confirm(`Supprimer le site « ${site.name} » ?`)) return;
+      try{
+        const resp = await fetch(`${API_BASE}/sites/${siteId}`, { method: 'DELETE' });
+        if(resp.status !== 204) throw new Error(`HTTP ${resp.status}`);
+        state.sites = state.sites.filter(s=> s.id !== siteId);
+        delete state.cells[siteId];
+        render();
+        showToast('Site supprimé');
+      }catch(err){
+        console.error('deleteSite error', err);
+        showToast('Suppression impossible');
+      }
     }
   });
 
   exportBtn.addEventListener('click', ()=>{
-    const data = { version: VERSION, sites: state.sites, cells:{} };
+    const data = { version: VERSION, sites: state.sites.map(s=> s.name), cells:{} };
     state.sites.forEach(site=>{
-      const arr = [];
-      for(let i=0;i<364;i++) arr.push(getCell(site,i));
-      data.cells[site] = arr;
+      const arr = ensureSiteCells(site.id).slice(0, DAY_COUNT);
+      data.cells[site.name] = arr;
     });
     const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'plan_de_charge_v'+VERSION+'.json'; a.click(); URL.revokeObjectURL(a.href);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'plan_de_charge_v'+VERSION+'.json';
+a.click(); URL.revokeObjectURL(a.href);
     showToast('Export effectué');
   });
 
@@ -659,32 +749,40 @@
 
     if(!confirm(`Importer ${Object.keys(data.cells||{}).length} sites ?`)) return;
 
-    // appliquer
-    state.sites = data.sites || [];
-    ls.set(K_SITES, state.sites);
-    // purge tout
-    Object.keys(localStorage).filter(k=> k.startsWith(K_CELL)).forEach(k=> localStorage.removeItem(k));
-    state.sites.forEach(site=>{
-      const arr = (data.cells && data.cells[site]) || [];
-      for(let i=0;i<364;i++){ const v=arr[i]||''; if(v) localStorage.setItem(keyCell(site,i), v); }
-    });
-    render(); showToast('Import terminé');
+    try{
+      const resp = await fetch(`${API_BASE}/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          version: data.version,
+          sites: data.sites || [],
+          cells: data.cells || {},
+        }),
+      });
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      await loadPlan();
+      sortSites();
+      render();
+      showToast('Import terminé');
+    }catch(err){
+      console.error('importPlan error', err);
+      showToast("Impossible d'importer le plan");
+    }
     importFile.value = '';
   });
-  
-  // --- Self-tests (inchangés)
+
   function runTests(){
     try{
       console.group('%cTests plan de charge','color:#93c5fd');
       const weeks = grid.querySelectorAll('.week-cell');
       const days = grid.querySelectorAll('.head-cell.header-day');
       console.assert(weeks.length===52, `Semaine headers attendus 52, obtenus ${weeks.length}`);
-      console.assert(days.length===364, `Jour headers attendus 364, obtenus ${days.length}`);
+      console.assert(days.length===DAY_COUNT, `Jour headers attendus ${DAY_COUNT}, obtenus ${days.length}`);
       const row = grid.querySelector('.site-row');
       if(row){
         const rowNum = row.style.gridRow;
-        let cnt=0, sameRow=true; for(let i=0;i<364;i++){ const n=grid.querySelector(`.cell[style*="grid-row: ${rowNum};"][style*="grid-column: ${2+i}"]`); if(n){cnt++;} else {sameRow=false; break;} }
-        console.assert(cnt===364 && sameRow, `Cellules par ligne attendues 364 sur grid-row ${rowNum}, trouvées ${cnt}`);
+        let cnt=0, sameRow=true; for(let i=0;i<DAY_COUNT;i++){ const n=grid.querySelector(`.cell[style*="grid-row: ${rowNum};"][style*="grid-column: ${2+i}"]`); if(n){cnt++;} else {sameRow=false; break;} }
+        console.assert(cnt===DAY_COUNT && sameRow, `Cellules par ligne attendues ${DAY_COUNT} sur grid-row ${rowNum}, trouvées ${cnt}`);
       }
       const before = filterCount.textContent;
       filterInput.value = 'Site A'; applyFilter();
@@ -695,13 +793,61 @@
     }catch(e){ console.error('Tests en erreur:', e); }
   }
 
-  // Init
-  setZoom(+zoomRange.value); 
-  setPaintMode(state.paint);
-  if(state.sites.length===0){ state.sites = ['Site A','Site B']; ls.set(K_SITES, state.sites); }
-  render();
-  runTests();
+  async function loadPlan(){
+    try{
+      const resp = await fetch(API_BASE);
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      state.sites = data.sites.map(site=> ({ id: site.id, name: site.name, position: site.position }));
+      state.cells = {};
+      data.sites.forEach(site=>{
+        const arr = createEmptyRow();
+        (site.cells || []).forEach((value, idx)=>{
+          if(idx < DAY_COUNT && value){ arr[idx] = value; }
+        });
+        state.cells[site.id] = arr;
+      });
+      state.dragSet.clear();
+    }catch(err){
+      console.error('loadPlan error', err);
+      state.sites = [];
+      state.cells = {};
+      showToast('Impossible de charger le plan');
+    }
+  }
+
+  async function ensureDefaultSites(){
+    const defaults = ['Site A', 'Site B'];
+    for(const name of defaults){
+      try{
+        const resp = await fetch(`${API_BASE}/sites`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name }),
+        });
+        if(!resp.ok && resp.status !== 400) throw new Error(`HTTP ${resp.status}`);
+      }catch(err){
+        console.error('ensureDefaultSites error', err);
+      }
+    }
+  }
+
+  async function init(){
+    setZoom(+zoomRange.value);
+    setPaintMode(state.paint);
+    await loadPlan();
+    if(state.sites.length === 0){
+      await ensureDefaultSites();
+      await loadPlan();
+    }
+    sortSites();
+    render();
+    runTests();
+  }
+
+  init();
 })();
 </script>
+
 </body>
 </html>
