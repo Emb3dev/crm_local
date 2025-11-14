@@ -459,6 +459,7 @@
       const rowNumber = 3 + rIndex;
       head.style.gridColumn = '1';
       head.style.gridRow = String(rowNumber);
+      head.dataset.baseRow = String(rowNumber);
       head.dataset.siteId = site.id;
       head.dataset.siteName = site.name;
       const nameEl = head.querySelector('.site-name');
@@ -483,6 +484,7 @@
         c.dataset.siteName = site.name;
         c.dataset.idx = i;
         c.style.gridRow = String(rowNumber);
+        c.dataset.baseRow = String(rowNumber);
         c.style.gridColumn = String(2 + i);
         c.setAttribute('aria-label', `Site ${site.name}, jour ${i+1}: ${val || 'aucun état'}`);
         c.setAttribute('aria-pressed', val? 'true':'false');
@@ -520,26 +522,88 @@
     return text.replace(re, '<span class="mark">$1</span>');
   }
   function applyFilter(){
-    const q = filterInput.value.trim();
-    const rows = grid.querySelectorAll('.site-row');
-    let shown=0;
-    rows.forEach(row=>{
-      const nameEl = row.querySelector('.site-name');
-      const name = row.dataset.siteName || nameEl.textContent;
-      const match = !q || name.toLowerCase().includes(q.toLowerCase());
-      row.style.display = match ? '' : 'none';
-      const idx = Array.prototype.indexOf.call(grid.children, row) + 1;
-      for(let i=0;i<DAY_COUNT;i++){
-        const c = grid.children[idx + i];
-        if(c && c.classList.contains('cell')) c.style.display = match ? '' : 'none';
+    const queryRaw = filterInput.value.trim();
+    const hasQuery = queryRaw.length > 0;
+    const query = queryRaw.toLowerCase();
+    const rows = Array.from(grid.querySelectorAll('.site-row'));
+    const entries = [];
+    let shown = 0;
+
+    const collectCells = (row)=>{
+      const cells = [];
+      const siteId = row.dataset.siteId;
+      let el = row.nextElementSibling;
+      while(el && el.classList.contains('cell') && el.dataset.siteId === siteId){
+        cells.push(el);
+        el = el.nextElementSibling;
       }
-      if(match){
+      return cells;
+    };
+
+    rows.forEach(row=>{
+      const name = row.dataset.siteName || row.querySelector('.site-name').textContent;
+      const nameLower = name.toLowerCase();
+      const entry = {
+        row,
+        cells: collectCells(row),
+        name,
+        isMatch: !hasQuery || nameLower.includes(query)
+      };
+      entries.push(entry);
+
+      const nameEl = row.querySelector('.site-name');
+
+      if(entry.isMatch){
         shown++;
-        nameEl.innerHTML = highlight(name, q);
+        row.style.display = '';
+        entry.cells.forEach(c=> c.style.display = '');
+        nameEl.innerHTML = hasQuery ? highlight(name, queryRaw) : name;
       }else{
+        if(hasQuery){
+          row.style.display = 'none';
+          entry.cells.forEach(c=> c.style.display = 'none');
+        }else{
+          row.style.display = '';
+          entry.cells.forEach(c=> c.style.display = '');
+        }
         nameEl.textContent = name;
       }
     });
+
+    const ordered = hasQuery
+      ? entries.filter(e=> e.isMatch).concat(entries.filter(e=> !e.isMatch))
+      : entries.slice().sort((a,b)=> Number(a.row.dataset.baseRow) - Number(b.row.dataset.baseRow));
+
+    const frag = document.createDocumentFragment();
+    let nextRow = 3;
+
+    const setRowPosition = (entry, rowNumber)=>{
+      const value = String(rowNumber);
+      entry.row.style.gridRow = value;
+      entry.cells.forEach(c=>{
+        c.style.gridRow = value;
+      });
+    };
+
+    ordered.forEach(entry=>{
+      if(hasQuery){
+        if(entry.isMatch){
+          setRowPosition(entry, nextRow++);
+        }else{
+          const baseRow = Number(entry.row.dataset.baseRow) || nextRow++;
+          setRowPosition(entry, baseRow);
+        }
+      }else{
+        const baseRow = Number(entry.row.dataset.baseRow) || nextRow++;
+        setRowPosition(entry, baseRow);
+      }
+
+      frag.appendChild(entry.row);
+      entry.cells.forEach(c=> frag.appendChild(c));
+    });
+
+    grid.appendChild(frag);
+
     filterCount.textContent = `${shown}/${rows.length}`;
   }
 
