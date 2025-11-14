@@ -113,10 +113,10 @@
     .workload-shell {
       --left-col-w: 340px;
       /*
-        Espacements internes de la grille :
-        - --col-gap : faible interstice de 2px entre les jours pour garder les colonnes lisibles sans trop élargir la vue.
-        - --day-gap-before : garde appliquée sous les numéros de semaines pour qu'ils ne soient plus masqués par la ligne des jours (L M M J V S D).
-        - --day-gap-after : garde appliquée uniquement à la première ligne de sites pour qu'elle ne soit plus masquée par la ligne des jours.
+        Variables d'espacement de la grille :
+        - --col-gap : léger interstice de 2 px entre les colonnes quotidiennes pour aérer la lecture sans perturber les alignements.
+        - --day-gap-before : marge injectée juste avant la rangée des jours pour que les numéros de semaine restent visibles lorsque l'en-tête colle en haut.
+        - --day-gap-after : marge appliquée uniquement à la toute première ligne de sites pour la décoller de l'en-tête des jours, sans ouvrir d'écart entre les lignes suivantes.
       */
       --col-gap: 2px;
       --day-gap-before: 6px;
@@ -271,6 +271,7 @@
     }
 
     .workload-shell .grid .header-day {
+      /* La marge avant est reportée dans la position sticky pour laisser respirer les semaines lorsqu'on scrolle. */
       top: calc(var(--toolbar-h) + var(--week-h) + var(--day-gap-before));
       margin-top: var(--day-gap-before);
       height: var(--day-h);
@@ -289,6 +290,11 @@
     }
 
     .workload-shell .grid .first-site-row {
+      margin-top: var(--day-gap-after);
+    }
+
+    .workload-shell .grid .first-site-row {
+      /* Uniquement la première ligne de sites hérite de la marge post en-tête. */
       margin-top: var(--day-gap-after);
     }
 
