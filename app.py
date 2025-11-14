@@ -796,9 +796,20 @@ def login_page(request: Request, next: Optional[str] = None):
     if cookie_token:
         try:
             payload = jwt.decode(cookie_token, SECRET_KEY, algorithms=[ALGORITHM])
-            if payload.get("sub"):
-                target = next or "/"
-                return RedirectResponse(url=target, status_code=status.HTTP_303_SEE_OTHER)
+            username = payload.get("sub")
+            if username:
+                with Session(engine) as session:
+                    user = crud.get_user_by_username(session, username)
+                if user:
+                    request.state.user = user
+                    return templates.TemplateResponse(
+                        "login.html",
+                        {
+                            "request": request,
+                            "next": next or "",
+                            "already_authenticated": True,
+                        },
+                    )
         except JWTError:
             pass
     request.state.user = None
