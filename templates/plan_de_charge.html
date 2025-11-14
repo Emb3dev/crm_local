@@ -433,8 +433,6 @@
       <div class="toolbar" id="workloadToolbar">
         <div class="actions">
           <button class="btn" id="addSite">+ Site</button>
-          <button class="btn" id="exportBtn">Exporter JSON</button>
-          <label for="importFile" class="btn" role="button">Importer JSON<input id="importFile" type="file" accept="application/json" style="display:none"></label>
           <button class="btn" id="exportExcelBtn">Exporter Excel</button>
           <label for="importExcelFile" class="btn" role="button">Importer Excel<input id="importExcelFile" type="file" accept=".xlsx,.xlsm,.xltx,.xltm" style="display:none"></label>
         </div>
@@ -513,8 +511,6 @@
       const modeDot = document.getElementById('modeDot');
       const modeText = document.getElementById('modeText');
       const addSiteBtn = document.getElementById('addSite');
-      const exportBtn = document.getElementById('exportBtn');
-      const importFile = document.getElementById('importFile');
       const exportExcelBtn = document.getElementById('exportExcelBtn');
       const importExcelFile = document.getElementById('importExcelFile');
       const toast = document.getElementById('toast');
@@ -1059,20 +1055,6 @@
         });
       }
 
-      exportBtn.addEventListener('click', ()=>{
-        const data = { version: VERSION, sites: state.sites.map(site => site.name), cells:{} };
-        state.sites.forEach(site=>{
-          data.cells[site.name] = site.cells.slice(0, 364);
-        });
-        const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'plan_de_charge_v' + VERSION + '.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showToast('Export effectué');
-      });
-
       if(importExcelFile){
         importExcelFile.addEventListener('change', async (e)=>{
           const f = e.target.files[0];
@@ -1102,42 +1084,6 @@
           }
         });
       }
-
-      importFile.addEventListener('change', async (e)=>{
-        const f = e.target.files[0]; if(!f) return;
-        const text = await f.text();
-        let data; try{ data = JSON.parse(text);}catch{ return showToast('Fichier invalide'); }
-
-        if(!confirm(`Importer ${Object.keys(data.cells||{}).length} sites ?`)) return;
-
-        try{
-          const payload = {
-            version: data.version ?? VERSION,
-            sites: data.sites || [],
-            cells: data.cells || {}
-          };
-          const resp = await fetch('/api/workload-plan/import', {
-            method: 'POST',
-            headers: API_HEADERS,
-            body: JSON.stringify(payload)
-          });
-          if(!resp.ok){
-            let detail = 'Import impossible';
-            try{
-              const errData = await resp.json();
-              if(errData && errData.detail) detail = errData.detail;
-            }catch{}
-            throw new Error(detail);
-          }
-          await loadData();
-          showToast('Import terminé');
-        }catch(err){
-          console.error('Import échoué', err);
-          showToast(err.message || 'Erreur lors de l\'import');
-        }finally{
-          importFile.value = '';
-        }
-      });
 
       async function init(){
         setZoom(+zoomRange.value);

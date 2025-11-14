@@ -237,8 +237,6 @@
   <div class="toolbar">
     <div class="actions">
       <button class="btn" id="addSite">+ Site</button>
-      <button class="btn" id="exportBtn">Exporter JSON</button>
-      <label for="importFile" class="btn" role="button">Importer JSON<input id="importFile" type="file" accept="application/json" style="display:none"></label>
     </div>
     <div class="actions">
       <label for="paintMode">Peinture</label>
@@ -316,8 +314,6 @@
   const modeDot = document.getElementById('modeDot');
   const modeText = document.getElementById('modeText');
   const addSiteBtn = document.getElementById('addSite');
-  const exportBtn = document.getElementById('exportBtn');
-  const importFile = document.getElementById('importFile');
   const toast = document.getElementById('toast');
 
   const dayHeadTpl = document.getElementById('dayHeadTpl');
@@ -728,47 +724,6 @@
         showToast('Suppression impossible');
       }
     }
-  });
-
-  exportBtn.addEventListener('click', ()=>{
-    const data = { version: VERSION, sites: state.sites.map(s=> s.name), cells:{} };
-    state.sites.forEach(site=>{
-      const arr = ensureSiteCells(site.id).slice(0, DAY_COUNT);
-      data.cells[site.name] = arr;
-    });
-    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'plan_de_charge_v'+VERSION+'.json';
-a.click(); URL.revokeObjectURL(a.href);
-    showToast('Export effectué');
-  });
-
-  importFile.addEventListener('change', async (e)=>{
-    const f = e.target.files[0]; if(!f) return;
-    const text = await f.text();
-    let data; try{ data = JSON.parse(text);}catch{ return showToast('Fichier invalide'); }
-
-    if(!confirm(`Importer ${Object.keys(data.cells||{}).length} sites ?`)) return;
-
-    try{
-      const resp = await fetch(`${API_BASE}/import`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          version: data.version,
-          sites: data.sites || [],
-          cells: data.cells || {},
-        }),
-      });
-      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      await loadPlan();
-      sortSites();
-      render();
-      showToast('Import terminé');
-    }catch(err){
-      console.error('importPlan error', err);
-      showToast("Impossible d'importer le plan");
-    }
-    importFile.value = '';
   });
 
   function runTests(){
