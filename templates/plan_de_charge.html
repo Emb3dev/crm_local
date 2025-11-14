@@ -115,7 +115,7 @@
       /*
         Espacements internes de la grille :
         - --col-gap : faible interstice de 2px entre les jours pour garder les colonnes lisibles sans trop élargir la vue.
-        - --head-body-gap : marge verticale de 6px exclusivement entre l'en-tête des jours (L M M J V S D) et la toute première ligne de sites afin d'éviter leur recouvrement.
+        - --head-body-gap : garde de 6px appliquée uniquement à la première ligne de sites pour qu'elle ne soit plus masquée par l'en-tête (L M M J V S D).
       */
       --col-gap: 2px;
       --head-body-gap: 6px;
@@ -279,6 +279,10 @@
       transition: color 0.3s ease;
       margin-top: var(--head-body-gap);
       margin-bottom: var(--head-body-gap);
+    }
+
+    .workload-shell .grid .first-site-row {
+      margin-top: var(--head-body-gap);
     }
 
     .workload-shell .grid .head-site {
@@ -791,6 +795,7 @@
           const nameEl = head.querySelector('.site-name');
           nameEl.textContent = site.name;
           nameEl.dataset.originalName = site.name;
+          if(rIndex === 0) head.classList.add('first-site-row');
           frag.appendChild(head);
 
           for(let i = 0; i < 364; i++){
@@ -813,6 +818,7 @@
             c.setAttribute('aria-label', `Site ${site.name}, jour ${i+1}: ${val || 'aucun état'}`);
             c.setAttribute('aria-pressed', val ? 'true' : 'false');
             if(i > 0 && i % 7 === 0) c.classList.add('wk-sep');
+            if(rIndex === 0) c.classList.add('first-site-row');
             frag.appendChild(c);
           }
         });
@@ -863,12 +869,16 @@
         const q = filterInput.value.trim();
         const rows = Array.from(grid.querySelectorAll('.site-row'));
         let shown = 0;
+        let firstVisibleAssigned = false;
         rows.forEach(row=>{
           const siteId = row.dataset.siteId;
           const nameEl = row.querySelector('.site-name');
           const original = nameEl.dataset.originalName || nameEl.textContent;
           const match = !q || original.toLowerCase().includes(q.toLowerCase());
           const cells = grid.querySelectorAll(`.cell[data-site-id="${siteId}"]`);
+
+          row.classList.remove('first-site-row');
+          cells.forEach(cell=> cell.classList.remove('first-site-row'));
 
           if(match){
             shown++;
@@ -880,6 +890,11 @@
               cell.style.gridRow = String(targetRow);
             });
             nameEl.innerHTML = highlight(original, q);
+            if(!firstVisibleAssigned){
+              firstVisibleAssigned = true;
+              row.classList.add('first-site-row');
+              cells.forEach(cell=> cell.classList.add('first-site-row'));
+            }
           } else {
             row.style.display = 'none';
             row.style.removeProperty('grid-row');
