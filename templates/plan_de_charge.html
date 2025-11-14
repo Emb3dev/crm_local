@@ -16,8 +16,98 @@
 {% block head_extra %}
   <style>
     :root {
+      color-scheme: light;
       --cell-w: 28px;
       --cell-h: 40px;
+      --workload-shell-bg: radial-gradient(circle at 20% 20%, rgba(129, 140, 248, 0.12), transparent 45%),
+        radial-gradient(circle at 80% 0%, rgba(56, 189, 248, 0.1), transparent 55%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.94));
+      --workload-shadow: 0 32px 80px -40px rgba(15, 23, 42, 0.25);
+      --workload-overlay-border: rgba(148, 163, 184, 0.18);
+      --workload-fg: #0f172a;
+      --workload-muted: #64748b;
+      --workload-sep: rgba(226, 232, 240, 0.8);
+      --workload-focus: rgba(59, 130, 246, 0.6);
+      --workload-focus-ring: rgba(59, 130, 246, 0.25);
+      --workload-input-bg: rgba(255, 255, 255, 0.9);
+      --workload-input-border: rgba(148, 163, 184, 0.45);
+      --workload-toolbar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.85) 65%, rgba(241, 245, 249, 0));
+      --workload-badge-border: rgba(148, 163, 184, 0.4);
+      --workload-badge-bg: rgba(226, 232, 240, 0.7);
+      --workload-grid-bg: rgba(248, 250, 252, 0.85);
+      --workload-header-bg: rgba(255, 255, 255, 0.92);
+      --workload-header-week-color: rgba(15, 23, 42, 0.78);
+      --workload-header-day-color: rgba(30, 41, 59, 0.7);
+      --workload-headsite-bg: linear-gradient(90deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.88));
+      --workload-site-row-bg: rgba(255, 255, 255, 0.95);
+      --workload-site-row-alt-bg: rgba(241, 245, 249, 0.95);
+      --workload-cell-border: rgba(148, 163, 184, 0.55);
+      --workload-cell-bg: rgba(255, 255, 255, 0.96);
+      --workload-cell-hover-border: rgba(59, 130, 246, 0.6);
+      --workload-week-divider: rgba(148, 163, 184, 0.45);
+      --workload-btn-bg: rgba(255, 255, 255, 0.95);
+      --workload-btn-hover-bg: rgba(241, 245, 249, 0.95);
+      --workload-btn-border: rgba(148, 163, 184, 0.45);
+      --workload-btn-text: #0f172a;
+      --workload-toast-bg: rgba(15, 23, 42, 0.92);
+      --workload-toast-border: rgba(148, 163, 184, 0.4);
+      --workload-toast-color: #f8fafc;
+      --workload-mark-bg: rgba(96, 165, 250, 0.22);
+      --workload-ok: #16a34a;
+      --workload-warn: #f97316;
+      --workload-bad: #dc2626;
+      --workload-ok-bg: rgba(22, 163, 74, 0.12);
+      --workload-ok-border: rgba(22, 163, 74, 0.4);
+      --workload-ok-dashed: rgba(22, 163, 74, 0.45);
+      --workload-warn-bg: rgba(251, 146, 60, 0.12);
+      --workload-warn-border: rgba(251, 146, 60, 0.45);
+      --workload-bad-bg: rgba(220, 38, 38, 0.12);
+      --workload-bad-border: rgba(220, 38, 38, 0.5);
+    }
+
+    html.dark {
+      color-scheme: dark;
+      --workload-shell-bg: radial-gradient(circle at 20% 20%, rgba(99,102,241,0.18), transparent 45%),
+        radial-gradient(circle at 80% 0%, rgba(56,189,248,0.15), transparent 55%),
+        linear-gradient(145deg, rgba(11,16,32,0.96), rgba(17,24,39,0.94));
+      --workload-shadow: 0 32px 80px -40px rgba(79, 70, 229, 0.45);
+      --workload-overlay-border: rgba(148, 163, 184, 0.15);
+      --workload-fg: #e5e7eb;
+      --workload-muted: #9ca3af;
+      --workload-sep: #1f2937;
+      --workload-focus: rgba(96, 165, 250, 0.6);
+      --workload-focus-ring: rgba(96, 165, 250, 0.25);
+      --workload-input-bg: rgba(10,15,26,0.8);
+      --workload-input-border: rgba(148, 163, 184, 0.25);
+      --workload-toolbar-bg: linear-gradient(180deg, rgba(17,24,39,0.96), rgba(17,24,39,0.82) 65%, rgba(17,24,39,0));
+      --workload-badge-border: rgba(148, 163, 184, 0.25);
+      --workload-badge-bg: rgba(15, 23, 42, 0.55);
+      --workload-grid-bg: rgba(11, 18, 36, 0.85);
+      --workload-header-bg: rgba(11,16,32,0.9);
+      --workload-header-week-color: rgba(226,232,240,0.85);
+      --workload-header-day-color: rgba(226,232,240,0.75);
+      --workload-headsite-bg: linear-gradient(90deg, rgba(11,16,32,0.96), rgba(11,16,32,0.85));
+      --workload-site-row-bg: rgba(12, 19, 37, 0.95);
+      --workload-site-row-alt-bg: rgba(13, 20, 41, 0.95);
+      --workload-cell-border: rgba(55, 65, 81, 0.8);
+      --workload-cell-bg: rgba(9, 14, 23, 0.9);
+      --workload-cell-hover-border: rgba(96, 165, 250, 0.6);
+      --workload-week-divider: rgba(148, 163, 184, 0.35);
+      --workload-btn-bg: rgba(9,14,23,0.9);
+      --workload-btn-hover-bg: rgba(15,23,42,0.9);
+      --workload-btn-border: rgba(148, 163, 184, 0.3);
+      --workload-btn-text: #e5e7eb;
+      --workload-toast-bg: rgba(9,14,23,0.95);
+      --workload-toast-border: rgba(148,163,184,0.35);
+      --workload-toast-color: #e5e7eb;
+      --workload-mark-bg: rgba(96, 165, 250, 0.22);
+      --workload-ok-bg: rgba(22, 163, 74, 0.18);
+      --workload-ok-border: rgba(22, 163, 74, 0.55);
+      --workload-ok-dashed: rgba(22, 163, 74, 0.55);
+      --workload-warn-bg: rgba(251, 146, 60, 0.18);
+      --workload-warn-border: rgba(251, 146, 60, 0.55);
+      --workload-bad-bg: rgba(220, 38, 38, 0.18);
+      --workload-bad-border: rgba(220, 38, 38, 0.6);
     }
 
     .workload-shell {
@@ -26,23 +116,13 @@
       --toolbar-h: 54px;
       --week-h: 40px;
       --day-h: 32px;
-      --fg: #e5e7eb;
-      --bg: #0b1020;
-      --panel: #111827;
-      --muted: #9ca3af;
-      --ok: #16a34a;
-      --warn: #fb923c;
-      --bad: #dc2626;
-      --focus: #60a5fa;
-      --sep: #1f2937;
       position: relative;
       border-radius: 1.75rem;
-      background: radial-gradient(circle at 20% 20%, rgba(99,102,241,0.18), transparent 45%),
-        radial-gradient(circle at 80% 0%, rgba(56,189,248,0.15), transparent 55%),
-        linear-gradient(145deg, rgba(11,16,32,0.96), rgba(17,24,39,0.94));
-      color: var(--fg);
-      box-shadow: 0 32px 80px -40px rgba(79, 70, 229, 0.45);
+      background: var(--workload-shell-bg);
+      color: var(--workload-fg);
+      box-shadow: var(--workload-shadow);
       overflow: hidden;
+      transition: background 0.4s ease, color 0.3s ease, box-shadow 0.3s ease;
     }
 
     .workload-shell::after {
@@ -51,7 +131,8 @@
       inset: 0;
       pointer-events: none;
       border-radius: inherit;
-      border: 1px solid rgba(148, 163, 184, 0.15);
+      border: 1px solid var(--workload-overlay-border);
+      transition: border-color 0.3s ease;
     }
 
     .workload-app {
@@ -76,17 +157,19 @@
       flex-wrap: wrap;
       gap: 12px;
       padding: 14px 18px;
-      background: linear-gradient(180deg, rgba(17,24,39,0.96), rgba(17,24,39,0.82) 65%, rgba(17,24,39,0));
+      background: var(--workload-toolbar-bg);
       backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--sep);
+      border-bottom: 1px solid var(--workload-sep);
       min-height: var(--toolbar-h);
+      transition: background 0.3s ease, border-color 0.3s ease;
     }
 
     .workload-shell .toolbar label {
       font-size: 12px;
-      color: var(--muted);
+      color: var(--workload-muted);
       margin-right: 6px;
       white-space: nowrap;
+      transition: color 0.3s ease;
     }
 
     .workload-shell .toolbar .actions {
@@ -103,31 +186,32 @@
 
     .workload-shell .toolbar input[type="text"],
     .workload-shell .toolbar select {
-      background: rgba(10,15,26,0.8);
-      color: var(--fg);
-      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: var(--workload-input-bg);
+      color: var(--workload-fg);
+      border: 1px solid var(--workload-input-border);
       border-radius: 10px;
       padding: 6px 10px;
       height: 32px;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
     }
 
     .workload-shell .toolbar input[type="text"]:focus,
     .workload-shell .toolbar select:focus {
       outline: none;
-      border-color: rgba(96, 165, 250, 0.6);
-      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+      border-color: var(--workload-focus);
+      box-shadow: 0 0 0 2px var(--workload-focus-ring);
     }
 
     .workload-shell .badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      border: 1px solid rgba(148, 163, 184, 0.25);
+      border: 1px solid var(--workload-badge-border);
       border-radius: 999px;
       padding: 5px 12px;
       font-size: 12px;
-      background: rgba(15, 23, 42, 0.55);
+      background: var(--workload-badge-bg);
+      transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
     }
 
     .workload-shell .badge .dot {
@@ -135,7 +219,7 @@
       height: 10px;
       border-radius: 50%;
       display: inline-block;
-      background: var(--ok);
+      background: var(--workload-ok);
     }
 
     .workload-shell .wrap {
@@ -152,17 +236,19 @@
       row-gap: var(--gap);
       padding: 16px;
       min-width: max(100%, calc(var(--left-col-w) + (var(--cell-w) + var(--gap)) * 364));
-      background: rgba(11, 18, 36, 0.85);
+      background: var(--workload-grid-bg);
+      transition: background 0.3s ease;
     }
 
     .workload-shell .grid .header {
       position: sticky;
       z-index: 3;
-      background: rgba(11,16,32,0.9);
+      background: var(--workload-header-bg);
       backdrop-filter: blur(6px);
       font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
+      transition: background 0.3s ease;
     }
 
     .workload-shell .grid .header-wk {
@@ -172,7 +258,8 @@
       align-items: center;
       justify-content: center;
       font-size: 12px;
-      color: rgba(226,232,240,0.85);
+      color: var(--workload-header-week-color);
+      transition: color 0.3s ease;
     }
 
     .workload-shell .grid .header-day {
@@ -182,15 +269,17 @@
       align-items: center;
       justify-content: center;
       font-size: 12px;
-      color: rgba(226,232,240,0.75);
+      color: var(--workload-header-day-color);
+      transition: color 0.3s ease;
     }
 
     .workload-shell .grid .head-site {
       position: sticky;
       left: 0;
       z-index: 4;
-      background: linear-gradient(90deg, rgba(11,16,32,0.96), rgba(11,16,32,0.85));
-      border-right: 1px solid var(--sep);
+      background: var(--workload-headsite-bg);
+      border-right: 1px solid var(--workload-sep);
+      transition: background 0.3s ease, border-color 0.3s ease;
     }
 
     .workload-shell .grid .cell,
@@ -205,17 +294,18 @@
     }
 
     .workload-shell .grid .site-row {
-      background: rgba(12, 19, 37, 0.95);
+      background: var(--workload-site-row-bg);
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 12px;
       height: var(--cell-h);
       gap: 12px;
+      transition: background 0.3s ease;
     }
 
     .workload-shell .grid .site-row:nth-of-type(even) {
-      background: rgba(13, 20, 41, 0.95);
+      background: var(--workload-site-row-alt-bg);
     }
 
     .workload-shell .grid .site-row .meta {
@@ -239,22 +329,27 @@
 
     .workload-shell .grid .site-row .info {
       font-size: 11px;
-      color: var(--muted);
+      color: var(--workload-muted);
       display: flex;
       align-items: center;
       gap: 6px;
+      transition: color 0.3s ease;
     }
 
     .workload-shell .grid .site-row .count-ok {
-      color: var(--ok);
+      color: var(--workload-ok);
+    }
+
+    .workload-shell .grid .site-row .count-warn {
+      color: var(--workload-warn);
     }
 
     .workload-shell .grid .site-row .count-bad {
-      color: var(--bad);
+      color: var(--workload-bad);
     }
 
     .workload-shell .grid .site-row .count-hours {
-      color: var(--fg);
+      color: var(--workload-fg);
       font-weight: 600;
     }
 
@@ -267,40 +362,40 @@
     .workload-shell .grid .cell {
       height: var(--cell-h);
       width: var(--cell-w);
-      border: 1px solid rgba(55, 65, 81, 0.8);
+      border: 1px solid var(--workload-cell-border);
       border-radius: 6px;
-      background: rgba(9, 14, 23, 0.9);
+      background: var(--workload-cell-bg);
       color: inherit;
       cursor: pointer;
       position: relative;
       font-weight: 600;
       font-size: 15px;
-      transition: border-color 0.2s ease, transform 0.2s ease;
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease, color 0.2s ease;
     }
 
     .workload-shell .grid .cell:hover,
     .workload-shell .grid .cell:focus-visible {
-      border-color: rgba(96, 165, 250, 0.6);
+      border-color: var(--workload-cell-hover-border);
       outline: none;
       transform: translateY(-1px);
     }
 
     .workload-shell .grid .cell[data-state^="ok"] {
-      background: rgba(22, 163, 74, 0.18);
-      border-color: rgba(22, 163, 74, 0.55);
-      color: var(--ok);
+      background: var(--workload-ok-bg);
+      border-color: var(--workload-ok-border);
+      color: var(--workload-ok);
     }
 
     .workload-shell .grid .cell[data-state="bad"] {
-      background: rgba(220, 38, 38, 0.18);
-      border-color: rgba(220, 38, 38, 0.6);
-      color: var(--bad);
+      background: var(--workload-bad-bg);
+      border-color: var(--workload-bad-border);
+      color: var(--workload-bad);
     }
 
     .workload-shell .grid .cell[data-state="warn"] {
-      background: rgba(251, 146, 60, 0.18);
-      border-color: rgba(251, 146, 60, 0.55);
-      color: var(--warn);
+      background: var(--workload-warn-bg);
+      border-color: var(--workload-warn-border);
+      color: var(--workload-warn);
     }
 
     .workload-shell .grid .cell[data-state="ok"]::after {
@@ -308,7 +403,7 @@
       position: absolute;
       inset: 5px;
       border-radius: 4px;
-      border: 2px dashed rgba(22, 163, 74, 0.55);
+      border: 2px dashed var(--workload-ok-dashed);
       opacity: 0.9;
     }
 
@@ -326,14 +421,15 @@
     }
 
     .workload-shell .grid .wk-sep {
-      border-left: 2px solid rgba(148, 163, 184, 0.35);
+      border-left: 2px solid var(--workload-week-divider);
       margin-left: -1px;
+      transition: border-color 0.3s ease;
     }
 
     .workload-shell .btn {
-      background: rgba(9,14,23,0.9);
-      color: var(--fg);
-      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: var(--workload-btn-bg);
+      color: var(--workload-btn-text);
+      border: 1px solid var(--workload-btn-border);
       border-radius: 8px;
       padding: 6px 10px;
       cursor: pointer;
@@ -343,36 +439,39 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s ease, transform 0.2s ease;
+      transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     }
 
     .workload-shell .btn:hover {
-      background: rgba(15,23,42,0.9);
+      background: var(--workload-btn-hover-bg);
       transform: translateY(-1px);
     }
 
     .workload-shell .muted {
-      color: var(--muted);
+      color: var(--workload-muted);
+      transition: color 0.3s ease;
     }
 
     .workload-shell .mark {
-      background: rgba(96, 165, 250, 0.22);
+      background: var(--workload-mark-bg);
       border-radius: 3px;
       padding: 0 2px;
+      transition: background 0.3s ease;
     }
 
     .workload-toast {
       position: fixed;
       right: 16px;
       bottom: 16px;
-      background: rgba(9,14,23,0.95);
-      border: 1px solid rgba(148,163,184,0.35);
+      background: var(--workload-toast-bg);
+      border: 1px solid var(--workload-toast-border);
       padding: 12px 14px;
       border-radius: 12px;
-      box-shadow: 0 18px 45px rgba(15,23,42,0.45);
-      color: var(--fg);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.45);
+      color: var(--workload-toast-color);
       font-size: 13px;
       z-index: 50;
+      transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
     }
 
     .workload-sr-only {
@@ -742,7 +841,7 @@
             }
           });
           const info = row.querySelector('.info');
-          info.innerHTML = `<span class="count-ok">${ok}</span> vert • <span style="color:var(--warn);">${warn}</span> orange • <span class="count-bad">${bad}</span> rouge • <span class="count-hours">${hours}</span> h`;
+          info.innerHTML = `<span class="count-ok">${ok}</span> vert • <span class="count-warn">${warn}</span> orange • <span class="count-bad">${bad}</span> rouge • <span class="count-hours">${hours}</span> h`;
         });
       }
 
