@@ -853,22 +853,32 @@
 
       function applyFilter(){
         const q = filterInput.value.trim();
-        const rows = grid.querySelectorAll('.site-row');
+        const rows = Array.from(grid.querySelectorAll('.site-row'));
         let shown = 0;
         rows.forEach(row=>{
           const siteId = row.dataset.siteId;
           const nameEl = row.querySelector('.site-name');
           const original = nameEl.dataset.originalName || nameEl.textContent;
           const match = !q || original.toLowerCase().includes(q.toLowerCase());
-          row.style.display = match ? '' : 'none';
           const cells = grid.querySelectorAll(`.cell[data-site-id="${siteId}"]`);
-          cells.forEach(cell=>{
-            cell.style.display = match ? '' : 'none';
-          });
+
           if(match){
             shown++;
+            const targetRow = 2 + shown;
+            row.style.display = '';
+            row.style.gridRow = String(targetRow);
+            cells.forEach(cell=>{
+              cell.style.display = '';
+              cell.style.gridRow = String(targetRow);
+            });
             nameEl.innerHTML = highlight(original, q);
           } else {
+            row.style.display = 'none';
+            row.style.removeProperty('grid-row');
+            cells.forEach(cell=>{
+              cell.style.display = 'none';
+              cell.style.removeProperty('grid-row');
+            });
             nameEl.textContent = original;
           }
         });
