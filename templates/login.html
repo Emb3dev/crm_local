@@ -7,6 +7,22 @@
 
 {% block content %}
   <div class="mx-auto max-w-lg space-y-6">
+    {% if current_user %}
+      <div class="space-y-4 rounded-3xl border border-emerald-300/70 bg-emerald-50/80 p-6 text-sm text-emerald-800 shadow-sm dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100">
+        <p class="text-base font-semibold">Vous êtes connecté en tant que {{ current_user.username }}.</p>
+        <p>Utilisez le bouton ci-dessous pour vous déconnecter et permettre une nouvelle connexion.</p>
+        <form method="post" action="/logout" class="flex flex-wrap items-center gap-3">
+          <input type="hidden" name="redirect_to" value="{{ next or '/login' }}">
+          <button
+            type="submit"
+            class="inline-flex items-center gap-2 rounded-2xl border border-rose-300 bg-rose-500/90 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/60 dark:bg-rose-500/70"
+          >
+            <span aria-hidden="true">🚪</span>
+            Se déconnecter
+          </button>
+        </form>
+      </div>
+    {% endif %}
     {% if error %}
       <div class="rounded-2xl border border-rose-300/70 bg-rose-50/80 p-4 text-sm text-rose-700 shadow-sm dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100">
         {{ error }}
