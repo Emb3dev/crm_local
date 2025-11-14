@@ -459,6 +459,7 @@
       const rowNumber = 3 + rIndex;
       head.style.gridColumn = '1';
       head.style.gridRow = String(rowNumber);
+      head.dataset.baseRow = String(rowNumber);
       head.dataset.siteId = site.id;
       head.dataset.siteName = site.name;
       const nameEl = head.querySelector('.site-name');
@@ -483,6 +484,7 @@
         c.dataset.siteName = site.name;
         c.dataset.idx = i;
         c.style.gridRow = String(rowNumber);
+        c.dataset.baseRow = String(rowNumber);
         c.style.gridColumn = String(2 + i);
         c.setAttribute('aria-label', `Site ${site.name}, jour ${i+1}: ${val || 'aucun état'}`);
         c.setAttribute('aria-pressed', val? 'true':'false');
@@ -523,23 +525,43 @@
     const q = filterInput.value.trim();
     const rows = grid.querySelectorAll('.site-row');
     let shown=0;
+    let nextRow = 3;
+
     rows.forEach(row=>{
       const nameEl = row.querySelector('.site-name');
       const name = row.dataset.siteName || nameEl.textContent;
       const match = !q || name.toLowerCase().includes(q.toLowerCase());
-      row.style.display = match ? '' : 'none';
+      const baseRow = row.dataset.baseRow || row.style.gridRow;
       const idx = Array.prototype.indexOf.call(grid.children, row) + 1;
-      for(let i=0;i<DAY_COUNT;i++){
-        const c = grid.children[idx + i];
-        if(c && c.classList.contains('cell')) c.style.display = match ? '' : 'none';
-      }
+
       if(match){
+        row.style.display = '';
+        row.style.gridRow = q ? String(nextRow) : baseRow;
         shown++;
         nameEl.innerHTML = highlight(name, q);
       }else{
+        row.style.display = 'none';
+        row.style.gridRow = baseRow;
         nameEl.textContent = name;
       }
+
+      for(let i=0;i<DAY_COUNT;i++){
+        const c = grid.children[idx + i];
+        if(!c || !c.classList.contains('cell')) continue;
+        if(match){
+          c.style.display = '';
+          c.style.gridRow = q ? String(nextRow) : (c.dataset.baseRow || c.style.gridRow);
+        }else{
+          c.style.display = 'none';
+          c.style.gridRow = c.dataset.baseRow || c.style.gridRow;
+        }
+      }
+
+      if(match && q){
+        nextRow++;
+      }
     });
+
     filterCount.textContent = `${shown}/${rows.length}`;
   }
 
