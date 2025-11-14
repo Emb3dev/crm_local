@@ -198,7 +198,6 @@ class SubcontractedServiceUpdate(SQLModel):
 
 class WorkloadSiteBase(SQLModel):
     name: str = Field(
-        index=True,
         description="Nom du site",
         sa_column=Column("name", String, unique=True, nullable=False),
     )
