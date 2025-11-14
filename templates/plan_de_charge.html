@@ -115,10 +115,10 @@
       /*
         Espacements internes de la grille :
         - --col-gap : faible interstice de 2px entre les jours pour garder les colonnes lisibles sans trop élargir la vue.
-        - --row-gap : marge verticale de 6px pour créer un dégagement net entre l'en-tête collant et la première ligne de sites.
+        - --head-body-gap : marge verticale de 6px exclusivement entre l'en-tête des jours (L M M J V S D) et la toute première ligne de sites afin d'éviter leur recouvrement.
       */
       --col-gap: 2px;
-      --row-gap: 6px;
+      --head-body-gap: 6px;
       --toolbar-h: 54px;
       --week-h: 40px;
       --day-h: 32px;
@@ -239,7 +239,7 @@
       grid-template-columns: var(--left-col-w) repeat(364, var(--cell-w));
       grid-auto-rows: minmax(var(--cell-h), auto);
       column-gap: var(--col-gap);
-      row-gap: var(--row-gap);
+      row-gap: 0; /* Aucun espacement automatique entre les lignes de sites. */
       padding: 16px;
       min-width: max(100%, calc(var(--left-col-w) + (var(--cell-w) + var(--col-gap)) * 364));
       background: var(--workload-grid-bg);
@@ -277,6 +277,8 @@
       font-size: 12px;
       color: var(--workload-header-day-color);
       transition: color 0.3s ease;
+      margin-top: var(--head-body-gap);
+      margin-bottom: var(--head-body-gap);
     }
 
     .workload-shell .grid .head-site {
