@@ -1,4 +1,4 @@
-from typing import Optional, Dict, List, Iterable
+from typing import Optional, Dict, List, Iterable, Union
 
 from io import BytesIO
 
@@ -1556,11 +1556,18 @@ def _build_workload_plan_workbook(sites: Iterable) -> BytesIO:
     headers = ["Site"] + [f"Jour {index + 1}" for index in range(364)]
     sheet.append(headers)
 
+    def _export_value(value: Optional[str]) -> Optional[Union[int, str]]:
+        if value == "bad":
+            return 8
+        if value == "warn":
+            return 4
+        return value
+
     for site in sites:
-        values = [""] * 364
+        values: List[Optional[Union[int, str]]] = [""] * 364
         for cell in getattr(site, "cells", []) or []:
             if cell and 0 <= getattr(cell, "day_index", -1) < 364 and cell.value:
-                values[cell.day_index] = cell.value
+                values[cell.day_index] = _export_value(cell.value)
         sheet.append([getattr(site, "name", "")] + values)
 
     sheet.freeze_panes = "B2"
@@ -1568,8 +1575,8 @@ def _build_workload_plan_workbook(sites: Iterable) -> BytesIO:
 
     legend = workbook.create_sheet("Légende")
     legend.append(["Valeur", "Signification"])
-    legend.append(["warn", "Orange — intervention à confirmer (4 h)"])
-    legend.append(["bad", "Rouge — charge pleine (8 h)"])
+    legend.append(["4", "Orange — intervention à confirmer (4 h)"])
+    legend.append(["8", "Rouge — charge pleine (8 h)"])
     legend.append(["ok:4", "Vert 4 h — retour au vert depuis orange"])
     legend.append(["ok:8", "Vert 8 h — retour au vert depuis rouge"])
     legend.append(["ok", "Vert — intervention validée"])
