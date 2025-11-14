@@ -171,6 +171,7 @@
               <div class="flex flex-col items-start gap-3 transition-colors duration-300 sm:items-end">
                 <span class="inline-flex items-center gap-2 rounded-full border {{ status_classes }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ status_options.get(status_key, status_key or "—") }}</span>
                 <span class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ contact_total }} contact{{ 's' if contact_total > 1 else '' }}</span>
+                <span class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ (c.subcontractings or []) | length }} prestation{{ 's' if (c.subcontractings or []) | length > 1 else '' }}</span>
                 <span class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sm text-slate-500 transition group-open:rotate-180 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
@@ -296,182 +297,12 @@
                 </form>
               </section>
 
-              <section class="space-y-6">
-                <div class="flex flex-wrap items-center justify-between gap-4">
-                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Prestations sous-traitées & locations</h4>
-                  <span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">{{ (c.subcontractings or []) | length }} prestation{{ 's' if (c.subcontractings or []) | length > 1 else '' }}</span>
+              <section class="space-y-4">
+                <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Prestations sous-traitées & locations</h4>
+                <div class="rounded-2xl border border-slate-200 bg-white px-4 py-5 text-sm text-slate-600 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:text-slate-200 dark:shadow-indigo-500/10">
+                  <p>Total prestations : <strong class="font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ (c.subcontractings or []) | length }}</strong></p>
+                  <p class="mt-2 text-xs uppercase tracking-[0.3em] text-slate-400 transition-colors duration-300 dark:text-slate-500">Consultez l'onglet Prestations pour le détail et la gestion.</p>
                 </div>
-                {% set services = c.subcontractings | sort(attribute='created_at', reverse=True) %}
-                {% if services %}
-                  <ul class="space-y-4">
-                    {% for service in services %}
-                      {% set frequency_label = frequency_options.get(service.frequency, service.frequency) %}
-                      <li class="rounded-2xl border border-slate-200 bg-white p-5 shadow shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/10">
-                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                          <div>
-                            <p class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ service.prestation_label }}</p>
-                            <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ service.category }}</p>
-                          </div>
-                          <div class="flex flex-wrap items-center gap-3">
-                            <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ frequency_label }}</span>
-                            <form action="/clients/{{ c.id }}/subcontractings/{{ service.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ service.prestation_label }} ?')">
-                              <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" type="submit" title="Supprimer la prestation">🗑️</button>
-                            </form>
-                          </div>
-                        </div>
-                        <dl class="mt-4 grid gap-4 text-sm text-slate-600 transition-colors duration-300 sm:grid-cols-2 dark:text-slate-300">
-                          <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Code budget</dt>
-                            <dd class="mt-1 text-base text-slate-900 transition-colors duration-300 dark:text-white/90">{{ service.budget_code }}</dd>
-                          </div>
-                          <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Budget</dt>
-                            <dd class="mt-1 text-base text-slate-900 transition-colors duration-300 dark:text-white/90">
-                              {% if service.budget is not none %}
-                                {{ '{:,.2f}'.format(service.budget).replace(',', ' ').rstrip('0').rstrip('.') }} €
-                              {% else %}
-                                —
-                              {% endif %}
-                            </dd>
-                          </div>
-                          {% set status_value = service.status or subcontract_status_default %}
-                          {% set status_class = subcontract_status_styles.get(status_value) or 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200' %}
-                          <div>
-                            <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Statut</dt>
-                            <dd class="mt-2">
-                              <span class="inline-flex items-center gap-2 rounded-full border {{ status_class }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ subcontract_status_options.get(status_value, 'Statut inconnu') }}</span>
-                            </dd>
-                          </div>
-                          {% if service.order_week or service.realization_week %}
-                            <div>
-                              <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Semaines</dt>
-                              <dd class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-200">
-                                {% if service.order_week %}<span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">Commande : {{ service.order_week }}</span>{% endif %}
-                                {% if service.realization_week %}<span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">Réalisation : {{ service.realization_week }}</span>{% endif %}
-                              </dd>
-                            </div>
-                          {% endif %}
-                        </dl>
-                      </li>
-                    {% endfor %}
-                  </ul>
-                {% else %}
-                  <p class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 transition-colors duration-300 dark:border-white/20 dark:bg-white/5 dark:text-slate-300">Aucune prestation enregistrée pour le moment.</p>
-                {% endif %}
-
-                <form class="rounded-2xl border border-slate-200 bg-white p-5 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10 subcontract-form" action="/clients/{{ c.id }}/subcontractings" method="post">
-                  <div class="grid gap-4 md:grid-cols-2">
-                    <label class="md:col-span-2 {{ form_label() }}">
-                      <span>Prestation *</span>
-                      <div class="relative mt-2">
-                        <select
-                          name="prestation"
-                          required
-                          data-prestation-select
-                          class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
-                        >
-                          <option value="" selected disabled>Choisir une prestation…</option>
-                          {% for group in subcontracted_groups %}
-                            <optgroup label="{{ group.title }}">
-                              {% for option in group.options %}
-                                <option value="{{ option.value }}" data-budget-code="{{ option.budget_code }}">{{ option.label }}</option>
-                              {% endfor %}
-                            </optgroup>
-                          {% endfor %}
-                        </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                          </svg>
-                        </span>
-                      </div>
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Code budget</span>
-                      <input type="text" readonly placeholder="Auto" data-budget-output class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Budget</span>
-                      <input type="number" name="budget" step="0.01" min="0" placeholder="0,00" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Fréquence</span>
-                      <div class="relative mt-2">
-                        <select
-                          name="frequency"
-                          required
-                          data-frequency-select
-                          data-custom-interval-value="{{ custom_interval_value }}"
-                          class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
-                        >
-                          {% for value, label in frequency_select_options.items() %}
-                            <option value="{{ value }}">{{ label }}</option>
-                          {% endfor %}
-                        </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                          </svg>
-                        </span>
-                      </div>
-                    </label>
-                    <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300 hidden" data-custom-interval-field>
-                      <span>Intervalle personnalisé</span>
-                      <div class="mt-2 flex items-center gap-3">
-                        <input
-                          type="number"
-                          name="custom_frequency_interval"
-                          min="1"
-                          max="120"
-                          placeholder="Intervalle"
-                          data-custom-interval-input
-                          disabled
-                          class="w-32 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
-                        />
-                        <select
-                          name="custom_frequency_unit"
-                          data-custom-interval-unit
-                          disabled
-                          class="nova-select w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
-                        >
-                          {% for unit_value, unit_label in frequency_unit_options %}
-                            <option value="{{ unit_value }}">{{ unit_label|capitalize }}</option>
-                          {% endfor %}
-                        </select>
-                      </div>
-                      <p class="mt-1 text-[0.65rem] uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">Renseignez un intervalle numérique pour automatiser le suivi.</p>
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Statut</span>
-                      <div class="relative mt-2">
-                        <select
-                          name="status"
-                          class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
-                        >
-                          {% for value, label in subcontract_status_options.items() %}
-                            <option value="{{ value }}" {% if value == subcontract_status_default %}selected{% endif %}>{{ label }}</option>
-                          {% endfor %}
-                        </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                          </svg>
-                        </span>
-                      </div>
-                    </label>
-                    <label class="subcontract-form__week hidden {{ form_label() }}" data-week-field>
-                      <span>Semaine de réalisation</span>
-                      <input type="text" name="realization_week" placeholder="S01" pattern="S\d{2}" disabled class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Semaine de commande</span>
-                      <input type="text" name="order_week" placeholder="S01" pattern="S\d{2}" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                    </label>
-                  </div>
-                  <div class="mt-5 flex justify-end gap-3">
-                    <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Ajouter une prestation</button>
-                  </div>
-                </form>
               </section>
 
               <div class="flex justify-end">
@@ -611,5 +442,4 @@
   {% endfor %}
 </datalist>
 
-{% include "_subcontract_form_script.html" %}
 {% endblock %}
