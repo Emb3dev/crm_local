@@ -253,6 +253,11 @@
       color: var(--bad);
     }
 
+    .workload-shell .grid .site-row .count-hours {
+      color: var(--fg);
+      font-weight: 600;
+    }
+
     .workload-shell .grid .site-row > .actions {
       display: flex;
       align-items: center;
@@ -716,14 +721,28 @@
           const siteId = Number(row.dataset.siteId);
           const site = findSiteById(siteId);
           if(!site) return;
-          let ok = 0, warn = 0, bad = 0;
+          let ok = 0, warn = 0, bad = 0, hours = 0;
           site.cells.forEach(value=>{
-            if(value.startsWith('ok')) ok++;
-            else if(value === 'warn') warn++;
-            else if(value === 'bad') bad++;
+            if(!value) return;
+            if(value.startsWith('ok')){
+              ok++;
+              const parts = value.split(':');
+              if(parts.length > 1){
+                const parsed = Number(parts[1]);
+                if(!Number.isNaN(parsed)) hours += parsed;
+              }
+            }
+            else if(value === 'warn'){
+              warn++;
+              hours += 4;
+            }
+            else if(value === 'bad'){
+              bad++;
+              hours += 8;
+            }
           });
           const info = row.querySelector('.info');
-          info.innerHTML = `<span class="count-ok">${ok}</span> vert • <span style="color:var(--warn);">${warn}</span> orange • <span class="count-bad">${bad}</span> rouge`;
+          info.innerHTML = `<span class="count-ok">${ok}</span> vert • <span style="color:var(--warn);">${warn}</span> orange • <span class="count-bad">${bad}</span> rouge • <span class="count-hours">${hours}</span> h`;
         });
       }
 
