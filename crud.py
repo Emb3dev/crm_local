@@ -646,3 +646,13 @@ def create_user(session: Session, data: UserCreate) -> User:
 def list_users(session: Session) -> List[User]:
     stmt = select(User).order_by(User.username.asc())
     return session.exec(stmt).all()
+
+
+def update_user_password(
+    session: Session, user: User, hashed_password: str
+) -> User:
+    user.hashed_password = hashed_password
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
