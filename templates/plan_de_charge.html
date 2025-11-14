@@ -269,7 +269,7 @@
     }
 
     .workload-shell .grid .header-day {
-      top: calc(var(--toolbar-h) + var(--week-h));
+      top: calc(var(--toolbar-h) + var(--week-h) + var(--row-gap));
       height: var(--day-h);
       display: flex;
       align-items: center;
@@ -277,6 +277,8 @@
       font-size: 12px;
       color: var(--workload-header-day-color);
       transition: color 0.3s ease;
+      margin-top: var(--head-body-gap);
+      margin-bottom: var(--head-body-gap);
     }
 
     .workload-shell .grid .first-site-row {
