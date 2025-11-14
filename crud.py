@@ -24,6 +24,8 @@ from models import (
     SubcontractedService,
     SubcontractedServiceCreate,
     SubcontractedServiceUpdate,
+    User,
+    UserCreate,
     WorkloadCell,
     WorkloadCellUpdate,
     WorkloadSite,
@@ -626,3 +628,21 @@ def delete_belt_line(session: Session, line_id: int) -> bool:
     session.delete(record)
     session.commit()
     return True
+
+
+def get_user_by_username(session: Session, username: str) -> Optional[User]:
+    stmt = select(User).where(User.username == username)
+    return session.exec(stmt).first()
+
+
+def create_user(session: Session, data: UserCreate) -> User:
+    user = User.model_validate(data)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def list_users(session: Session) -> List[User]:
+    stmt = select(User).order_by(User.username.asc())
+    return session.exec(stmt).all()
