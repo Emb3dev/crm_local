@@ -68,6 +68,7 @@ DEFAULT_ADMIN_PASSWORD = os.environ.get("CRM_ADMIN_PASSWORD", "admin")
 templates.env.globals["ADMIN_USERNAME"] = DEFAULT_ADMIN_USERNAME
 
 MAX_BCRYPT_PASSWORD_BYTES = 72
+PASSWORD_MIN_LENGTH = 8
 
 SESSION_COOKIE_NAME = os.environ.get("CRM_SESSION_COOKIE_NAME", "session_token")
 SESSION_COOKIE_SECURE = os.environ.get("CRM_SESSION_COOKIE_SECURE", "false").lower() in {"1", "true", "yes"}
@@ -877,6 +878,76 @@ def logout(
     )
     response.delete_cookie(SESSION_COOKIE_NAME)
     return response
+
+
+@app.get("/mon-compte", response_class=HTMLResponse)
+def account_page(request: Request, current_user: CurrentUser):
+    success = request.query_params.get("success") == "1"
+    return templates.TemplateResponse(
+        "account.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "errors": [],
+            "success": success,
+            "password_min_length": PASSWORD_MIN_LENGTH,
+        },
+    )
+
+
+@app.post("/mon-compte/mot-de-passe", response_class=HTMLResponse)
+def account_change_password(
+    request: Request,
+    current_user: CurrentUser,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    errors: List[str] = []
+    if not verify_password(current_password, current_user.hashed_password):
+        errors.append("Le mot de passe actuel est incorrect.")
+    if len(new_password) < PASSWORD_MIN_LENGTH:
+        errors.append(
+            f"Le nouveau mot de passe doit contenir au moins {PASSWORD_MIN_LENGTH} caractères."
+        )
+    if new_password != confirm_password:
+        errors.append("La confirmation du mot de passe ne correspond pas.")
+
+    db_user = crud.get_user_by_username(session, current_user.username)
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur introuvable.",
+        )
+
+    if not errors:
+        try:
+            hashed_password = get_password_hash(new_password)
+        except ValueError as exc:
+            errors.append(str(exc))
+        else:
+            updated_user = crud.update_user_password(session, db_user, hashed_password)
+            current_user.hashed_password = updated_user.hashed_password
+            request.state.user = updated_user
+            response = RedirectResponse(
+                url="/mon-compte?success=1",
+                status_code=status.HTTP_303_SEE_OTHER,
+            )
+            return response
+
+    request.state.user = current_user
+    return templates.TemplateResponse(
+        "account.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "errors": errors,
+            "success": False,
+            "password_min_length": PASSWORD_MIN_LENGTH,
+        },
+        status_code=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 @app.get("/admin/utilisateurs", response_class=HTMLResponse)

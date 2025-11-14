@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Mon compte · CRM Local{% endblock %}
+{% block page_eyebrow %}Espace personnel{% endblock %}
+{% block page_title %}Mon compte{% endblock %}
+{% block page_subtitle %}Gérez les informations de votre profil et mettez à jour votre mot de passe en toute sécurité.{% endblock %}
+
+{% block content %}
+<div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
+  <section class="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-indigo-500/10 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
+    <header class="mb-6">
+      <h2 class="font-display text-2xl font-semibold text-slate-900 dark:text-white">Modifier mon mot de passe</h2>
+      <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+        Choisissez un mot de passe robuste comportant au moins {{ password_min_length }} caractères pour sécuriser votre accès.
+      </p>
+    </header>
+
+    {% if success %}
+      <div class="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+        <span aria-hidden="true">✅</span>
+        <div>
+          <p class="font-semibold">Votre mot de passe a été mis à jour.</p>
+          <p class="mt-1">Vous pouvez poursuivre votre navigation en toute tranquillité.</p>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if errors %}
+      <div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200">
+        <p class="font-semibold">Impossible de mettre à jour le mot de passe :</p>
+        <ul class="mt-2 list-disc space-y-1 pl-5">
+          {% for error in errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <form method="post" action="/mon-compte/mot-de-passe" class="space-y-6">
+      <div>
+        <label for="current_password" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Mot de passe actuel</label>
+        <input
+          type="password"
+          id="current_password"
+          name="current_password"
+          required
+          autocomplete="current-password"
+          class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:border-white/10 dark:bg-midnight-900/60 dark:text-white"
+        >
+      </div>
+      <div class="grid gap-6 md:grid-cols-2">
+        <div>
+          <label for="new_password" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Nouveau mot de passe</label>
+          <input
+            type="password"
+            id="new_password"
+            name="new_password"
+            minlength="{{ password_min_length }}"
+            required
+            autocomplete="new-password"
+            class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:border-white/10 dark:bg-midnight-900/60 dark:text-white"
+          >
+        </div>
+        <div>
+          <label for="confirm_password" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Confirmer le nouveau mot de passe</label>
+          <input
+            type="password"
+            id="confirm_password"
+            name="confirm_password"
+            minlength="{{ password_min_length }}"
+            required
+            autocomplete="new-password"
+            class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:border-white/10 dark:bg-midnight-900/60 dark:text-white"
+          >
+        </div>
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/40 transition hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+        >
+          <span aria-hidden="true">💾</span>
+          Enregistrer les modifications
+        </button>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Un e-mail de confirmation peut vous être demandé lors de votre prochaine connexion.</p>
+      </div>
+    </form>
+  </section>
+
+  <aside class="rounded-3xl border border-indigo-200/60 bg-indigo-50/70 p-6 shadow-inner shadow-indigo-200/50 backdrop-blur transition-colors duration-300 dark:border-indigo-400/20 dark:bg-indigo-500/10 dark:text-indigo-100">
+    <h3 class="font-semibold text-indigo-700 dark:text-indigo-100">Conseils de sécurité</h3>
+    <ul class="mt-4 space-y-3 text-sm text-indigo-800/80 dark:text-indigo-100/90">
+      <li class="flex items-start gap-3"><span aria-hidden="true">•</span> Utilisez une combinaison de lettres, chiffres et caractères spéciaux.</li>
+      <li class="flex items-start gap-3"><span aria-hidden="true">•</span> Évitez de réutiliser un mot de passe déjà employé sur un autre service.</li>
+      <li class="flex items-start gap-3"><span aria-hidden="true">•</span> Renouvelez votre mot de passe régulièrement pour renforcer la sécurité.</li>
+    </ul>
+  </aside>
+</div>
+{% endblock %}
