@@ -569,21 +569,8 @@
         nameEl.textContent = name;
       }
 
-      for(let i=0;i<DAY_COUNT;i++){
-        const c = grid.children[idx + i];
-        if(!c || !c.classList.contains('cell')) continue;
-        if(match){
-          c.style.display = '';
-          c.style.gridRow = q ? String(nextRow) : (c.dataset.baseRow || c.style.gridRow);
-        }else{
-          c.style.display = 'none';
-          c.style.gridRow = c.dataset.baseRow || c.style.gridRow;
-        }
-      }
-
-      if(match && q){
-        nextRow++;
-      }
+      frag.appendChild(entry.row);
+      entry.cells.forEach(c=> frag.appendChild(c));
     });
 
     const ordered = hasQuery
@@ -603,12 +590,7 @@
 
     ordered.forEach(entry=>{
       if(hasQuery){
-        if(entry.isMatch){
-          setRowPosition(entry, nextRow++);
-        }else{
-          const baseRow = Number(entry.row.dataset.baseRow) || nextRow++;
-          setRowPosition(entry, baseRow);
-        }
+        setRowPosition(entry, nextRow++);
       }else{
         const baseRow = Number(entry.row.dataset.baseRow) || nextRow++;
         setRowPosition(entry, baseRow);
