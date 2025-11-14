@@ -1,8 +1,10 @@
-from typing import Optional, Dict, List, Iterable, Union, Annotated
+from typing import Optional, Dict, List, Iterable, Union, Annotated, Any, Tuple
 
 import logging
 import os
 import secrets
+import re
+from types import SimpleNamespace
 from datetime import datetime, timedelta
 from io import BytesIO
 from urllib.parse import quote
@@ -26,6 +28,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from database import init_db, get_session, engine
+from defaults import DEFAULT_PRESTATION_GROUPS
 from models import (
     BeltLineCreate,
     BeltLineUpdate,
@@ -41,6 +44,8 @@ from models import (
     WorkloadSiteUpdate,
     User,
     UserCreate,
+    PrestationDefinitionCreate,
+    PrestationDefinitionUpdate,
 )
 import crud
 from importers import (
@@ -324,142 +329,19 @@ CLIENT_FILTER_DEFINITIONS = [
     },
 ]
 
-SUBCONTRACTED_GROUPS = [
+SUBCONTRACTING_FILTER_BASE = [
     {
-        "key": "sous_traitance",
-        "title": "Sous-traitance",
-        "options": [
-            {"value": "analyse_eau", "label": "Analyse d'eau", "budget_code": "S1000"},
-            {"value": "analyse_huile", "label": "Analyse d'huile", "budget_code": "S1010"},
-            {
-                "value": "analyse_eau_nappe",
-                "label": "Analyse eau de nappe",
-                "budget_code": "S1020",
-            },
-            {
-                "value": "analyse_legionnelle",
-                "label": "Analyse légionnelle",
-                "budget_code": "S1030",
-            },
-            {
-                "value": "analyse_potabilite",
-                "label": "Analyse potabilité",
-                "budget_code": "S1040",
-            },
-            {"value": "colonnes_seches", "label": "Colonnes sèches", "budget_code": "S1050"},
-            {"value": "controle_acces", "label": "Contrôle d'accès", "budget_code": "S1060"},
-            {"value": "controle_ssi", "label": "Contrôle SSI", "budget_code": "S1070"},
-            {"value": "detection_co", "label": "Détection CO", "budget_code": "S1080"},
-            {"value": "detection_freon", "label": "Détection fréon", "budget_code": "S1090"},
-            {"value": "detection_incendie", "label": "Détection incendie", "budget_code": "S2000"},
-            {"value": "extincteurs", "label": "Extincteurs", "budget_code": "S2010"},
-            {"value": "exutoires", "label": "Exutoires", "budget_code": "S2020"},
-            {"value": "gtc", "label": "GTC", "budget_code": "S2030"},
-            {
-                "value": "inspection_video_puits",
-                "label": "Inspection vidéo puits",
-                "budget_code": "S2040",
-            },
-            {
-                "value": "maintenance_cellule_hta",
-                "label": "Maintenance cellule HTA",
-                "budget_code": "S2050",
-            },
-            {
-                "value": "maintenance_constructeur",
-                "label": "Maintenance constructeur",
-                "budget_code": "S2060",
-            },
-            {
-                "value": "maintenance_groupe_electrogene",
-                "label": "Maintenance groupe électrogène",
-                "budget_code": "S2070",
-            },
-            {
-                "value": "maintenance_groupe_froid",
-                "label": "Maintenance groupe froid",
-                "budget_code": "S2080",
-            },
-            {
-                "value": "nettoyage_gaines",
-                "label": "Nettoyage de gaines",
-                "budget_code": "S3000",
-            },
-            {"value": "onduleurs", "label": "Onduleurs", "budget_code": "S3010"},
-            {
-                "value": "pompe_relevage",
-                "label": "Pompe de relevage",
-                "budget_code": "S3020",
-            },
-            {
-                "value": "portes_automatiques",
-                "label": "Portes automatiques",
-                "budget_code": "S3030",
-            },
-            {
-                "value": "portes_coupe_feu",
-                "label": "Portes coupe-feu",
-                "budget_code": "S3040",
-            },
-            {"value": "ramonage", "label": "Ramonage", "budget_code": "S3050"},
-            {"value": "relamping", "label": "Relamping", "budget_code": "S3060"},
-            {
-                "value": "separateur_hydrocarbures",
-                "label": "Séparateur hydrocarbures",
-                "budget_code": "S3070",
-            },
-            {"value": "sorbonnes", "label": "Sorbonnes", "budget_code": "S4000"},
-            {
-                "value": "table_elevatrice",
-                "label": "Table élévatrice",
-                "budget_code": "S4010",
-            },
-            {
-                "value": "telesurveillance",
-                "label": "Télésurveillance",
-                "budget_code": "S4020",
-            },
-            {"value": "thermographie", "label": "Thermographie", "budget_code": "S4030"},
-            {"value": "traitement_eau", "label": "Traitement d'eau", "budget_code": "S4040"},
-            {
-                "value": "video_interphonie",
-                "label": "Vidéo et interphonie",
-                "budget_code": "S4050",
-            },
-        ],
+        "name": "category",
+        "label": "Catégorie",
+        "placeholder": "Toutes les catégories",
     },
     {
-        "key": "locations",
-        "title": "Locations",
-        "options": [
-            {
-                "value": "location_echafaudage",
-                "label": "Location échafaudage",
-                "budget_code": "L1010",
-            },
-            {
-                "value": "location_groupe_electrogene",
-                "label": "Location groupe électrogène",
-                "budget_code": "L1020",
-            },
-            {
-                "value": "location_nacelle",
-                "label": "Location nacelle",
-                "budget_code": "L1030",
-            },
-        ],
+        "name": "frequency",
+        "label": "Fréquence",
+        "placeholder": "Toutes les fréquences",
+        "options": [(key, data["label"]) for key, data in PREDEFINED_FREQUENCIES.items()],
     },
 ]
-
-SUBCONTRACTED_LOOKUP = {
-    option["value"]: {
-        "label": option["label"],
-        "budget_code": option["budget_code"],
-        "category": group["title"],
-    }
-    for group in SUBCONTRACTED_GROUPS
-    for option in group["options"]
-}
 
 FREQUENCY_UNITS = {
     "months": {
@@ -522,20 +404,93 @@ FREQUENCY_SELECT_OPTIONS[CUSTOM_INTERVAL_VALUE] = CUSTOM_INTERVAL_LABEL
 
 PREDEFINED_FREQUENCY_KEYS = tuple(PREDEFINED_FREQUENCIES.keys())
 
-SUBCONTRACTING_FILTER_DEFINITIONS = [
-    {
-        "name": "category",
-        "label": "Catégorie",
-        "placeholder": "Toutes les catégories",
-        "options": [(group["title"], group["title"]) for group in SUBCONTRACTED_GROUPS],
-    },
-    {
-        "name": "frequency",
-        "label": "Fréquence",
-        "placeholder": "Toutes les fréquences",
-        "options": [(key, data["label"]) for key, data in PREDEFINED_FREQUENCIES.items()],
-    },
-]
+def _slugify_identifier(value: str) -> str:
+    normalized = re.sub(r"[^a-z0-9]+", "_", value.lower())
+    normalized = re.sub(r"_+", "_", normalized).strip("_")
+    return normalized or "prestation"
+
+
+def _build_groups_from_definitions(
+    definitions: Iterable[Any],
+) -> Tuple[List[Dict[str, Any]], Dict[str, Dict[str, str]]]:
+    grouped: Dict[str, Dict[str, Any]] = {}
+    for definition in definitions:
+        category = getattr(definition, "category", "Autres") or "Autres"
+        group = grouped.setdefault(
+            category,
+            {
+                "key": _slugify_identifier(category),
+                "title": category,
+                "options": [],
+            },
+        )
+        option = {
+            "value": getattr(definition, "key"),
+            "label": getattr(definition, "label"),
+            "budget_code": getattr(definition, "budget_code"),
+            "position": getattr(definition, "position", 0) or 0,
+        }
+        group["options"].append(option)
+
+    groups = sorted(
+        grouped.values(),
+        key=lambda item: (
+            min((opt.get("position", 0) for opt in item["options"]), default=0),
+            item["title"].lower(),
+        ),
+    )
+
+    lookup: Dict[str, Dict[str, str]] = {}
+    for group in groups:
+        group["options"].sort(
+            key=lambda opt: (opt.get("position", 0), opt["label"].lower())
+        )
+        for option in group["options"]:
+            lookup[option["value"]] = {
+                "label": option["label"],
+                "budget_code": option["budget_code"],
+                "category": group["title"],
+            }
+        for option in group["options"]:
+            option.pop("position", None)
+    return groups, lookup
+
+
+def _build_groups_from_defaults() -> Tuple[List[Dict[str, Any]], Dict[str, Dict[str, str]]]:
+    definitions = [
+        SimpleNamespace(
+            key=option["value"],
+            label=option["label"],
+            budget_code=option["budget_code"],
+            category=group["category"],
+            position=option.get("position", 0),
+        )
+        for group in DEFAULT_PRESTATION_GROUPS
+        for option in group.get("options", [])
+    ]
+    return _build_groups_from_definitions(definitions)
+
+
+def _get_subcontracted_options(
+    session: Session,
+) -> Tuple[List[Dict[str, Any]], Dict[str, Dict[str, str]]]:
+    definitions = crud.list_prestation_definitions(session)
+    if definitions:
+        return _build_groups_from_definitions(definitions)
+    return _build_groups_from_defaults()
+
+
+def _build_category_filter_options(
+    groups: Iterable[Dict[str, Any]]
+) -> List[Tuple[str, str]]:
+    seen: set[str] = set()
+    options: List[Tuple[str, str]] = []
+    for group in groups:
+        title = group.get("title")
+        if title and title not in seen:
+            options.append((title, title))
+            seen.add(title)
+    return options
 
 
 def _parse_interval_frequency(value: str) -> tuple[Optional[int], Optional[str]]:
@@ -666,6 +621,7 @@ def _clients_context(
     q: Optional[str],
     filters: Dict[str, str],
     entreprises,
+    subcontracted_groups,
 ):
     report = _consume_import_report(request)
     all_services = [
@@ -687,7 +643,7 @@ def _clients_context(
         "subcontract_status_options": SUBCONTRACT_STATUS_OPTIONS,
         "subcontract_status_styles": SUBCONTRACT_STATUS_STYLES,
         "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
-        "subcontracted_groups": SUBCONTRACTED_GROUPS,
+        "subcontracted_groups": subcontracted_groups,
         "frequency_options": frequency_labels,
         "frequency_select_options": FREQUENCY_SELECT_OPTIONS,
         "frequency_unit_options": FREQUENCY_UNIT_OPTIONS,
@@ -700,7 +656,11 @@ def _clients_context(
     }
 
 def _subcontractings_context(
-    request: Request, services, q: Optional[str], filters: Dict[str, str]
+    request: Request,
+    services,
+    q: Optional[str],
+    filters: Dict[str, str],
+    subcontracted_groups,
 ):
     category_totals: Dict[str, int] = {}
     frequency_totals: Dict[str, int] = {}
@@ -718,9 +678,10 @@ def _subcontractings_context(
     active_frequency = filters.get("frequency")
     frequency_labels = _build_frequency_labels(services, [active_frequency] if active_frequency else [])
     frequency_filter_options = _build_frequency_filter_options(services, [active_frequency] if active_frequency else [])
+    category_filter_options = _build_category_filter_options(subcontracted_groups)
     filters_definition = [
-        {**SUBCONTRACTING_FILTER_DEFINITIONS[0]},
-        {**SUBCONTRACTING_FILTER_DEFINITIONS[1], "options": frequency_filter_options},
+        {**SUBCONTRACTING_FILTER_BASE[0], "options": category_filter_options},
+        {**SUBCONTRACTING_FILTER_BASE[1], "options": frequency_filter_options},
     ]
 
     return {
@@ -743,6 +704,7 @@ def _subcontractings_context(
         "subcontract_status_options": SUBCONTRACT_STATUS_OPTIONS,
         "subcontract_status_styles": SUBCONTRACT_STATUS_STYLES,
         "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
+        "subcontracted_groups": subcontracted_groups,
     }
 
 
@@ -760,15 +722,100 @@ def _extract_client_filters(
 
 
 def _extract_subcontracting_filters(
-    category: Optional[str], frequency: Optional[str]
+    category: Optional[str],
+    frequency: Optional[str],
+    *,
+    valid_categories: Optional[Iterable[str]] = None,
 ) -> Dict[str, str]:
     filters: Dict[str, str] = {}
-    valid_categories = {group["title"] for group in SUBCONTRACTED_GROUPS}
-    if category in valid_categories:
+    categories = set(valid_categories or [])
+    if category and (not categories or category in categories):
         filters["category"] = category
     if frequency and frequency != CUSTOM_INTERVAL_VALUE:
         filters["frequency"] = frequency
     return filters
+
+
+def _admin_prestations_context(
+    request: Request,
+    session: Session,
+    *,
+    errors: Optional[List[str]] = None,
+    success: bool = False,
+    updated: bool = False,
+    focus: Optional[str] = None,
+    form_values: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    definitions = crud.list_prestation_definitions(session)
+    usage_counts = crud.count_subcontracted_services_by_definition(session)
+
+    grouped: Dict[str, Dict[str, Any]] = {}
+    sorted_definitions = sorted(
+        definitions,
+        key=lambda d: (
+            (d.position or 0),
+            (d.category or "").lower(),
+            d.label.lower(),
+        ),
+    )
+
+    for definition in sorted_definitions:
+        category = definition.category or "Autres"
+        group = grouped.setdefault(
+            category,
+            {
+                "category": category,
+                "slug": _slugify_identifier(category),
+                "definitions": [],
+            },
+        )
+        group["definitions"].append(definition)
+
+    grouped_definitions = list(grouped.values())
+    grouped_definitions.sort(
+        key=lambda group: (
+            min((d.position or 0) for d in group["definitions"]),
+            group["category"].lower(),
+        )
+    )
+
+    if not grouped_definitions and not definitions:
+        # Provide a fallback view based on the defaults when no definition exists yet.
+        default_groups, _ = _build_groups_from_defaults()
+        grouped_definitions = [
+            {
+                "category": group["title"],
+                "slug": group["key"],
+                "definitions": [],
+            }
+            for group in default_groups
+        ]
+
+    form_defaults = {
+        "label": "",
+        "budget_code": "",
+        "category": grouped_definitions[0]["category"] if grouped_definitions else "",
+        "position": "0",
+        "identifier": "",
+    }
+    if form_values:
+        form_defaults.update(form_values)
+
+    category_suggestions = sorted({definition.category for definition in definitions if definition.category})
+    if not category_suggestions:
+        category_suggestions = [group["category"] for group in DEFAULT_PRESTATION_GROUPS]
+
+    return {
+        "request": request,
+        "grouped_definitions": grouped_definitions,
+        "usage_counts": usage_counts,
+        "errors": errors or None,
+        "success": success,
+        "updated": updated,
+        "focus_key": focus,
+        "form_values": form_defaults,
+        "category_suggestions": category_suggestions,
+    }
 
 
 @app.on_event("startup")
@@ -1094,6 +1141,172 @@ def admin_users_reset_password(
     )
 
 
+@app.get("/admin/prestations", response_class=HTMLResponse)
+def admin_prestations_page(
+    request: Request,
+    _current_user: CurrentUser,
+    session: Session = Depends(get_session),
+):
+    _ensure_admin_access(_current_user)
+    context = _admin_prestations_context(
+        request,
+        session,
+        success=request.query_params.get("success") == "1",
+        updated=request.query_params.get("updated") == "1",
+        focus=request.query_params.get("focus"),
+    )
+    return templates.TemplateResponse("admin_prestations.html", context)
+
+
+@app.post("/admin/prestations", response_class=HTMLResponse)
+def admin_prestations_create(
+    request: Request,
+    _current_user: CurrentUser,
+    label: str = Form(...),
+    budget_code: str = Form(...),
+    category: str = Form(...),
+    position: Optional[str] = Form("0"),
+    identifier: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    _ensure_admin_access(_current_user)
+    trimmed_label = label.strip()
+    trimmed_category = category.strip()
+    trimmed_budget_code = budget_code.strip()
+    slug_source = (identifier or trimmed_label).strip()
+    generated_key = _slugify_identifier(slug_source)
+    errors: List[str] = []
+    if not trimmed_label:
+        errors.append("Le libellé est obligatoire.")
+    if not trimmed_category:
+        errors.append("La catégorie est obligatoire.")
+    if not trimmed_budget_code:
+        errors.append("Le code budget est obligatoire.")
+    if not generated_key:
+        errors.append("L'identifiant doit contenir au moins un caractère alphanumérique.")
+    if generated_key and crud.get_prestation_definition_by_key(session, generated_key):
+        errors.append("Cet identifiant est déjà utilisé.")
+
+    try:
+        position_value = int(position or 0)
+        if position_value < 0:
+            raise ValueError
+    except ValueError:
+        errors.append("La position doit être un entier positif.")
+        position_value = 0
+
+    if errors:
+        context = _admin_prestations_context(
+            request,
+            session,
+            errors=errors,
+            form_values={
+                "label": trimmed_label,
+                "budget_code": trimmed_budget_code,
+                "category": trimmed_category,
+                "position": str(position_value),
+                "identifier": slug_source,
+            },
+        )
+        return templates.TemplateResponse(
+            "admin_prestations.html",
+            context,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    definition = crud.create_prestation_definition(
+        session,
+        PrestationDefinitionCreate(
+            key=generated_key,
+            label=trimmed_label,
+            budget_code=trimmed_budget_code,
+            category=trimmed_category,
+            position=position_value,
+        ),
+    )
+    return RedirectResponse(
+        url=f"/admin/prestations?success=1&focus={quote(definition.key)}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@app.post("/admin/prestations/{definition_id}/update", response_class=HTMLResponse)
+def admin_prestations_update(
+    request: Request,
+    _current_user: CurrentUser,
+    definition_id: int,
+    label: str = Form(...),
+    budget_code: str = Form(...),
+    category: str = Form(...),
+    position: Optional[str] = Form("0"),
+    session: Session = Depends(get_session),
+):
+    _ensure_admin_access(_current_user)
+    definition = crud.get_prestation_definition(session, definition_id)
+    if not definition:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Prestation introuvable")
+
+    trimmed_label = label.strip()
+    trimmed_category = category.strip()
+    trimmed_budget_code = budget_code.strip()
+    errors: List[str] = []
+
+    if not trimmed_label:
+        errors.append("Le libellé est obligatoire.")
+    if not trimmed_category:
+        errors.append("La catégorie est obligatoire.")
+    if not trimmed_budget_code:
+        errors.append("Le code budget est obligatoire.")
+
+    try:
+        position_value = int(position or 0)
+        if position_value < 0:
+            raise ValueError
+    except ValueError:
+        errors.append("La position doit être un entier positif.")
+        position_value = definition.position or 0
+
+    if errors:
+        context = _admin_prestations_context(
+            request,
+            session,
+            errors=errors,
+            form_values={
+                "label": trimmed_label,
+                "budget_code": trimmed_budget_code,
+                "category": trimmed_category,
+                "position": str(position_value),
+                "identifier": definition.key,
+            },
+            focus=definition.key,
+        )
+        return templates.TemplateResponse(
+            "admin_prestations.html",
+            context,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    updated_definition = crud.update_prestation_definition(
+        session,
+        definition_id,
+        PrestationDefinitionUpdate(
+            label=trimmed_label,
+            budget_code=trimmed_budget_code,
+            category=trimmed_category,
+            position=position_value,
+        ),
+    )
+    if not updated_definition:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Prestation introuvable")
+
+    crud.sync_subcontracted_services_from_definition(session, updated_definition)
+
+    return RedirectResponse(
+        url=f"/admin/prestations?updated=1&focus={quote(updated_definition.key)}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
 # Page liste
 @app.get("/", response_class=HTMLResponse)
 def clients_page(
@@ -1104,13 +1317,21 @@ def clients_page(
     depannage: Optional[str] = None,
     astreinte: Optional[str] = None,
     session: Session = Depends(get_session),
-):
+): 
     filters = _extract_client_filters(status, depannage, astreinte)
     clients = crud.list_clients(session, q=q, filters=filters)
     entreprises = crud.list_entreprises(session)
+    subcontracted_groups, _ = _get_subcontracted_options(session)
     return templates.TemplateResponse(
         "clients_list.html",
-        _clients_context(request, clients, q, filters, entreprises),
+        _clients_context(
+            request,
+            clients,
+            q,
+            filters,
+            entreprises,
+            subcontracted_groups,
+        ),
     )
 
 # Fragment liste (HTMX)
@@ -1123,13 +1344,21 @@ def clients_fragment(
     depannage: Optional[str] = None,
     astreinte: Optional[str] = None,
     session: Session = Depends(get_session),
-):
+): 
     filters = _extract_client_filters(status, depannage, astreinte)
     clients = crud.list_clients(session, q=q, filters=filters)
     entreprises = crud.list_entreprises(session)
+    subcontracted_groups, _ = _get_subcontracted_options(session)
     return templates.TemplateResponse(
         "clients_list.html",
-        _clients_context(request, clients, q, filters, entreprises),
+        _clients_context(
+            request,
+            clients,
+            q,
+            filters,
+            entreprises,
+            subcontracted_groups,
+        ),
     )
 
 
@@ -1142,11 +1371,23 @@ def subcontracted_services_page(
     frequency: Optional[str] = None,
     session: Session = Depends(get_session),
 ):
-    filters = _extract_subcontracting_filters(category, frequency)
+    subcontracted_groups, _ = _get_subcontracted_options(session)
+    valid_categories = [group.get("title") for group in subcontracted_groups]
+    filters = _extract_subcontracting_filters(
+        category,
+        frequency,
+        valid_categories=[c for c in valid_categories if c],
+    )
     services = crud.list_subcontracted_services(session, q=q, filters=filters)
     return templates.TemplateResponse(
         "subcontractings_list.html",
-        _subcontractings_context(request, services, q, filters),
+        _subcontractings_context(
+            request,
+            services,
+            q,
+            filters,
+            subcontracted_groups,
+        ),
     )
 
 
@@ -1161,14 +1402,15 @@ def subcontracted_service_edit_page(
     if not service:
         raise HTTPException(404, "Prestation introuvable")
 
-    available_keys = set(SUBCONTRACTED_LOOKUP.keys())
+    subcontracted_groups, subcontracted_lookup = _get_subcontracted_options(session)
+    available_keys = set(subcontracted_lookup.keys())
     clients = crud.list_client_choices(session)
     return templates.TemplateResponse(
         "subcontracting_edit.html",
         {
             "request": request,
             "service": service,
-            "subcontracted_groups": SUBCONTRACTED_GROUPS,
+            "subcontracted_groups": subcontracted_groups,
             "frequency_options": _build_frequency_labels([service]),
             "frequency_select_options": FREQUENCY_SELECT_OPTIONS,
             "frequency_unit_options": FREQUENCY_UNIT_OPTIONS,
@@ -1211,7 +1453,8 @@ def update_subcontracted_service(
         resolved_unit,
     ) = _resolve_frequency(frequency, custom_frequency_interval, custom_frequency_unit)
 
-    details = SUBCONTRACTED_LOOKUP.get(prestation)
+    _, subcontracted_lookup = _get_subcontracted_options(session)
+    details = subcontracted_lookup.get(prestation)
     if not details and prestation != service.prestation_key:
         raise HTTPException(400, "Prestation inconnue")
 
@@ -1405,7 +1648,8 @@ def add_subcontracted_service(
     order_week: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
-    details = SUBCONTRACTED_LOOKUP.get(prestation)
+    _, subcontracted_lookup = _get_subcontracted_options(session)
+    details = subcontracted_lookup.get(prestation)
     if not details:
         raise HTTPException(400, "Prestation inconnue")
     (

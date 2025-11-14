@@ -22,6 +22,9 @@ from models import (
     FilterLine,
     FilterLineCreate,
     FilterLineUpdate,
+    PrestationDefinition,
+    PrestationDefinitionCreate,
+    PrestationDefinitionUpdate,
     SubcontractedService,
     SubcontractedServiceCreate,
     SubcontractedServiceUpdate,
@@ -34,6 +37,94 @@ from models import (
     WorkloadSiteCreate,
     WorkloadSiteUpdate,
 )
+
+
+def list_prestation_definitions(session: Session) -> List[PrestationDefinition]:
+    stmt = (
+        select(PrestationDefinition)
+        .order_by(
+            PrestationDefinition.category.asc(),
+            PrestationDefinition.position.asc(),
+            PrestationDefinition.label.asc(),
+        )
+    )
+    return session.exec(stmt).all()
+
+
+def get_prestation_definition(
+    session: Session, definition_id: int
+) -> Optional[PrestationDefinition]:
+    return session.get(PrestationDefinition, definition_id)
+
+
+def get_prestation_definition_by_key(
+    session: Session, key: str
+) -> Optional[PrestationDefinition]:
+    stmt = select(PrestationDefinition).where(PrestationDefinition.key == key)
+    return session.exec(stmt).first()
+
+
+def create_prestation_definition(
+    session: Session, data: PrestationDefinitionCreate
+) -> PrestationDefinition:
+    definition = PrestationDefinition.model_validate(data)
+    session.add(definition)
+    session.commit()
+    session.refresh(definition)
+    return definition
+
+
+def update_prestation_definition(
+    session: Session, definition_id: int, data: PrestationDefinitionUpdate
+) -> Optional[PrestationDefinition]:
+    definition = session.get(PrestationDefinition, definition_id)
+    if not definition:
+        return None
+    updates = data.model_dump(exclude_unset=True)
+    for key, value in updates.items():
+        setattr(definition, key, value)
+    session.add(definition)
+    session.commit()
+    session.refresh(definition)
+    return definition
+
+
+def delete_prestation_definition(session: Session, definition_id: int) -> bool:
+    definition = session.get(PrestationDefinition, definition_id)
+    if not definition:
+        return False
+    session.delete(definition)
+    session.commit()
+    return True
+
+
+def count_subcontracted_services_by_definition(
+    session: Session,
+) -> Dict[str, int]:
+    stmt = (
+        select(SubcontractedService.prestation_key, func.count(SubcontractedService.id))
+        .group_by(SubcontractedService.prestation_key)
+    )
+    return {key: count for key, count in session.exec(stmt)}
+
+
+def sync_subcontracted_services_from_definition(
+    session: Session, definition: PrestationDefinition
+) -> int:
+    stmt = select(SubcontractedService).where(
+        SubcontractedService.prestation_key == definition.key
+    )
+    services = session.exec(stmt).all()
+    updated = 0
+    for service in services:
+        service.prestation_label = definition.label
+        service.category = definition.category
+        service.budget_code = definition.budget_code
+        session.add(service)
+        updated += 1
+    if updated:
+        session.commit()
+    return updated
 
 def get_entreprise(session: Session, entreprise_id: int) -> Optional[Entreprise]:
     return session.get(Entreprise, entreprise_id)

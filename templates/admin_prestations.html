@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% from "_ui_macros.html" import card_shell, form_panel, form_label, form_control %}
+
+{% block title %}Administration — Prestations — CRM Local{% endblock %}
+{% block page_eyebrow %}Administration{% endblock %}
+{% block page_title %}Gestion des prestations{% endblock %}
+{% block page_subtitle %}Ajoutez, mettez à jour et organisez les prestations proposées depuis un point de contrôle centralisé.{% endblock %}
+{% block main_classes %}space-y-10{% endblock %}
+
+{% block content %}
+  {% set admin_path = request.url.path %}
+  <nav class="flex flex-wrap items-center gap-3 rounded-3xl border border-slate-200 bg-white/80 p-2 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/40 dark:shadow-indigo-500/10">
+    <a
+      href="/admin/utilisateurs"
+      class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition {{ 'bg-indigo-500/10 text-indigo-700 shadow shadow-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-100' if admin_path.startswith('/admin/utilisateurs') else 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white' }}"
+    >
+      <span aria-hidden="true">👥</span>
+      Utilisateurs
+    </a>
+    <a
+      href="/admin/prestations"
+      class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition {{ 'bg-indigo-500/10 text-indigo-700 shadow shadow-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-100' if admin_path.startswith('/admin/prestations') else 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white' }}"
+    >
+      <span aria-hidden="true">🛠️</span>
+      Prestations
+    </a>
+  </nav>
+
+  {% if success %}
+    <div class="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-700 shadow-lg shadow-emerald-200/40 transition-colors duration-300 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100 dark:shadow-emerald-500/20">
+      <p class="text-xs font-semibold uppercase tracking-[0.35em]">Nouvelle prestation</p>
+      <p class="mt-2 text-sm">La prestation a été ajoutée avec succès. Elle est désormais disponible dans les formulaires de sélection.</p>
+    </div>
+  {% endif %}
+
+  {% if updated %}
+    <div class="rounded-3xl border border-sky-200 bg-sky-50 p-6 text-sky-800 shadow-lg shadow-sky-200/40 transition-colors duration-300 dark:border-sky-400/40 dark:bg-sky-500/10 dark:text-sky-100 dark:shadow-sky-500/20">
+      <p class="text-xs font-semibold uppercase tracking-[0.35em]">Prestation mise à jour</p>
+      <p class="mt-2 text-sm">Les clients associés ont été synchronisés avec les nouveaux libellés, catégories et codes budgétaires.</p>
+    </div>
+  {% endif %}
+
+  {% if errors %}
+    <div class="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-amber-800 shadow-lg shadow-amber-200/40 transition-colors duration-300 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100 dark:shadow-amber-500/20">
+      <p class="text-xs font-semibold uppercase tracking-[0.35em]">Veuillez corriger le formulaire</p>
+      <ul class="mt-3 space-y-2 text-sm">
+        {% for error in errors %}
+          <li class="flex items-start gap-2">
+            <span aria-hidden="true">⚠️</span>
+            <span>{{ error }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <section class="space-y-6 {{ card_shell() }}">
+    <div class="flex flex-col gap-3">
+      <span class="inline-flex w-fit items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100">Ajouter une prestation</span>
+      <h2 class="font-display text-2xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Créer une nouvelle entrée</h2>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Définissez le libellé, la catégorie et le code budget. L'identifiant technique est utilisé pour assurer la correspondance avec les prestations existantes.</p>
+    </div>
+    <form method="post" class="grid gap-5 md:grid-cols-2">
+      <div class="{{ form_panel() }}">
+        <label for="label" class="{{ form_label() }}">Libellé *</label>
+        <input id="label" name="label" value="{{ form_values.label }}" required class="{{ form_control() }}" placeholder="ex. Contrôle SSI" />
+      </div>
+      <div class="{{ form_panel() }}">
+        <label for="budget_code" class="{{ form_label() }}">Code budget *</label>
+        <input id="budget_code" name="budget_code" value="{{ form_values.budget_code }}" required class="{{ form_control() }}" placeholder="ex. S1070" />
+      </div>
+      <div class="{{ form_panel() }}">
+        <label for="category" class="{{ form_label() }}">Catégorie *</label>
+        <input id="category" name="category" value="{{ form_values.category }}" list="categorySuggestions" required class="{{ form_control() }}" placeholder="ex. Sous-traitance" />
+      </div>
+      <div class="{{ form_panel() }}">
+        <label for="position" class="{{ form_label() }}">Position</label>
+        <input id="position" name="position" value="{{ form_values.position }}" type="number" min="0" class="{{ form_control() }}" />
+      </div>
+      <div class="md:col-span-2 {{ form_panel() }}">
+        <label for="identifier" class="{{ form_label() }}">Identifiant technique</label>
+        <input id="identifier" name="identifier" value="{{ form_values.identifier }}" class="{{ form_control() }}" placeholder="Généré automatiquement à partir du libellé" />
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">L'identifiant est utilisé dans les formulaires. Il doit contenir uniquement des lettres minuscules, chiffres ou tirets bas.</p>
+      </div>
+      <div class="md:col-span-2 flex flex-wrap items-center justify-between gap-4">
+        <p class="text-xs text-slate-500 transition-colors duration-300 dark:text-slate-400">Les prestations ajoutées apparaîtront immédiatement dans les listes de sélection.</p>
+        <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-500/10 px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/20 transition hover:border-indigo-400 hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:bg-indigo-500/20 dark:text-indigo-100 dark:hover:border-indigo-300 dark:hover:bg-indigo-500/30">
+          <span aria-hidden="true">➕</span>
+          Ajouter la prestation
+        </button>
+      </div>
+    </form>
+    <datalist id="categorySuggestions">
+      {% for suggestion in category_suggestions %}
+        <option value="{{ suggestion }}"></option>
+      {% endfor %}
+    </datalist>
+  </section>
+
+  <section class="{{ card_shell('space-y-8') }}">
+    <div class="flex flex-col gap-2">
+      <h2 class="font-display text-xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Prestations référencées</h2>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Modifiez le libellé, la catégorie ou le code budget. Les prestations actives seront synchronisées automatiquement.</p>
+    </div>
+    {% if grouped_definitions %}
+      <div class="space-y-6">
+        {% for group in grouped_definitions %}
+          <article class="space-y-4 rounded-3xl border border-slate-200 bg-white/70 p-6 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
+            <header class="flex flex-wrap items-center justify-between gap-3">
+              <h3 class="text-lg font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ group.category }}</h3>
+              <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-500 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-300">{{ group.definitions|length }} prestation{{ 's' if group.definitions|length > 1 else '' }}</span>
+            </header>
+            <ul class="space-y-4">
+              {% for definition in group.definitions %}
+                {% set is_focus = focus_key and definition.key == focus_key %}
+                {% set usage_total = usage_counts.get(definition.key, 0) %}
+                <li class="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm transition-colors duration-300 dark:border-white/10 dark:bg-white/10 {{ 'ring-2 ring-indigo-200 shadow shadow-indigo-500/20 dark:ring-indigo-400/70' if is_focus else '' }}">
+                  <form method="post" action="/admin/prestations/{{ definition.id }}/update" class="grid gap-4 md:grid-cols-5">
+                    <div class="md:col-span-2">
+                      <label class="space-y-2 {{ form_label() }}">
+                        <span>Libellé</span>
+                        <input name="label" value="{{ definition.label }}" required class="{{ form_control() }}" />
+                      </label>
+                    </div>
+                    <div>
+                      <label class="space-y-2 {{ form_label() }}">
+                        <span>Code budget</span>
+                        <input name="budget_code" value="{{ definition.budget_code }}" required class="{{ form_control() }}" />
+                      </label>
+                    </div>
+                    <div>
+                      <label class="space-y-2 {{ form_label() }}">
+                        <span>Catégorie</span>
+                        <input name="category" value="{{ definition.category }}" list="categorySuggestions" required class="{{ form_control() }}" />
+                      </label>
+                    </div>
+                    <div>
+                      <label class="space-y-2 {{ form_label() }}">
+                        <span>Position</span>
+                        <input name="position" type="number" min="0" value="{{ definition.position or 0 }}" class="{{ form_control() }}" />
+                      </label>
+                    </div>
+                    <div class="md:col-span-5 flex flex-wrap items-center justify-between gap-3">
+                      <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 transition-colors duration-300 dark:text-slate-400">
+                        <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 font-mono text-[0.7rem] uppercase tracking-[0.3em] text-slate-500 dark:border-white/10 dark:bg-white/10">{{ definition.key }}</span>
+                        {% if usage_total > 0 %}
+                          <span>{{ usage_total }} utilisation{{ 's' if usage_total > 1 else '' }} synchronisée{{ 's' if usage_total > 1 else '' }}</span>
+                        {% else %}
+                          <span>Aucune utilisation enregistrée</span>
+                        {% endif %}
+                      </div>
+                      <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-indigo-700 shadow-sm shadow-indigo-500/20 transition hover:border-indigo-400 hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:bg-indigo-500/20 dark:text-indigo-100 dark:hover:border-indigo-300 dark:hover:bg-indigo-500/30">Sauvegarder</button>
+                    </div>
+                  </form>
+                </li>
+              {% else %}
+                <li class="rounded-2xl border border-dashed border-slate-200 bg-white/60 px-4 py-6 text-center text-sm text-slate-500 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-300">Aucune prestation enregistrée dans cette catégorie.</li>
+              {% endfor %}
+            </ul>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="rounded-3xl border border-dashed border-slate-300 bg-white/60 px-5 py-6 text-sm text-slate-500 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-900/40 dark:text-slate-300">Aucune prestation référencée pour le moment.</p>
+    {% endif %}
+  </section>
+{% endblock %}
