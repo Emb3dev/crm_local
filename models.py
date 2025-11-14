@@ -309,3 +309,22 @@ class BeltLineUpdate(SQLModel):
     reference: Optional[str] = None
     quantity: Optional[int] = None
     order_week: Optional[str] = None
+
+
+# =======================
+# TABLE UTILISATEURS
+# =======================
+
+
+class UserBase(SQLModel):
+    username: str = Field(index=True, unique=True, description="Identifiant de connexion")
+
+
+class User(UserBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    hashed_password: str = Field(description="Mot de passe haché")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class UserCreate(UserBase):
+    hashed_password: str

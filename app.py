@@ -1,13 +1,29 @@
-from typing import Optional, Dict, List, Iterable, Union
+from typing import Optional, Dict, List, Iterable, Union, Annotated
 
+import logging
+import os
+from datetime import datetime, timedelta
 from io import BytesIO
 
-from fastapi import FastAPI, Depends, Request, Form, HTTPException, UploadFile, File
+from fastapi import (
+    FastAPI,
+    Depends,
+    Request,
+    Form,
+    HTTPException,
+    UploadFile,
+    File,
+    status,
+)
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel import Session
-from database import init_db, get_session
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
+from database import init_db, get_session, engine
 from models import (
     BeltLineCreate,
     BeltLineUpdate,
@@ -21,6 +37,8 @@ from models import (
     WorkloadCellUpdate,
     WorkloadSiteCreate,
     WorkloadSiteUpdate,
+    User,
+    UserCreate,
 )
 import crud
 from importers import (
@@ -37,6 +55,138 @@ from pydantic import BaseModel, Field
 app = FastAPI(title="CRM Local")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+logger = logging.getLogger("crm_local.auth")
+
+SECRET_KEY = os.environ.get("CRM_SECRET_KEY", "change-me")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("CRM_TOKEN_EXPIRE_MINUTES", "480"))
+DEFAULT_ADMIN_USERNAME = os.environ.get("CRM_ADMIN_USERNAME", "admin")
+DEFAULT_ADMIN_PASSWORD = os.environ.get("CRM_ADMIN_PASSWORD", "admin")
+
+MAX_BCRYPT_PASSWORD_BYTES = 72
+
+SESSION_COOKIE_NAME = os.environ.get("CRM_SESSION_COOKIE_NAME", "session_token")
+SESSION_COOKIE_SECURE = os.environ.get("CRM_SESSION_COOKIE_SECURE", "false").lower() in {"1", "true", "yes"}
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except ValueError:
+        return False
+
+
+def get_password_hash(password: str) -> str:
+    if len(password.encode("utf-8")) > MAX_BCRYPT_PASSWORD_BYTES:
+        raise ValueError(
+            "Le mot de passe dépasse la longueur maximale prise en charge par bcrypt (72 octets)."
+        )
+    return pwd_context.hash(password)
+
+
+def authenticate_user(session: Session, username: str, password: str) -> Optional[User]:
+    user = crud.get_user_by_username(session, username)
+    if not user:
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    return user
+
+
+def create_access_token(
+    data: Dict[str, Union[str, int]],
+    expires_delta: Optional[timedelta] = None,
+) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (
+        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def get_token_from_request(
+    request: Request, token: Optional[str] = Depends(oauth2_scheme)
+) -> str:
+    if token:
+        return token
+    cookie_token = request.cookies.get("session_token")
+    if cookie_token:
+        return cookie_token
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentification requise",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+def get_current_user(
+    request: Request,
+    token: str = Depends(get_token_from_request),
+    session: Session = Depends(get_session),
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Jeton d'authentification invalide",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: Optional[str] = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = TokenData(username=username)
+    except JWTError as exc:
+        raise credentials_exception from exc
+    user = crud.get_user_by_username(session, token_data.username or "")
+    if not user:
+        raise credentials_exception
+    request.state.user = user
+    return user
+
+
+CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def _ensure_default_admin_user() -> None:
+    with Session(engine) as session:
+        if crud.get_user_by_username(session, DEFAULT_ADMIN_USERNAME):
+            return
+        if (
+            DEFAULT_ADMIN_PASSWORD == "admin"
+            and os.environ.get("CRM_ADMIN_PASSWORD") is None
+        ):
+            logger.warning(
+                "CRM_ADMIN_PASSWORD n'est pas défini : utilisation d'identifiants par défaut 'admin/admin'."
+            )
+        try:
+            hashed_password = get_password_hash(DEFAULT_ADMIN_PASSWORD)
+        except ValueError as exc:
+            raise RuntimeError(
+                "Le mot de passe administrateur par défaut dépasse la limite de 72 octets imposée par bcrypt. "
+                "Veuillez définir CRM_ADMIN_PASSWORD avec une valeur plus courte."
+            ) from exc
+        crud.create_user(
+            session,
+            UserCreate(username=DEFAULT_ADMIN_USERNAME, hashed_password=hashed_password),
+        )
+        logger.info(
+            "Utilisateur administrateur '%s' initialisé.", DEFAULT_ADMIN_USERNAME
+        )
+
 
 DEPANNAGE_OPTIONS = {
     "refacturable": "Refacturable",
@@ -605,12 +755,107 @@ def _extract_subcontracting_filters(
 @app.on_event("startup")
 def on_startup():
     init_db()
+    _ensure_default_admin_user()
     app.state.import_reports = {}
+
+# Page liste
+
+@app.post("/token", response_model=Token)
+def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: Session = Depends(get_session),
+) -> Token:
+    user = authenticate_user(session, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Identifiants invalides",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        {"sub": user.username}, expires_delta=access_token_expires
+    )
+    return Token(access_token=access_token, token_type="bearer")
+
+
+@app.get("/login", response_class=HTMLResponse)
+def login_page(request: Request, next: Optional[str] = None):
+    cookie_token = request.cookies.get(SESSION_COOKIE_NAME)
+    if cookie_token:
+        try:
+            payload = jwt.decode(cookie_token, SECRET_KEY, algorithms=[ALGORITHM])
+            if payload.get("sub"):
+                target = next or "/"
+                return RedirectResponse(url=target, status_code=status.HTTP_303_SEE_OTHER)
+        except JWTError:
+            pass
+    request.state.user = None
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request, "next": next or ""},
+    )
+
+
+@app.post("/login")
+def login_submit(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    next: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    user = authenticate_user(session, username, password)
+    if not user:
+        request.state.user = None
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "error": "Identifiants invalides",
+                "username": username,
+                "next": next or "",
+            },
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        {"sub": user.username}, expires_delta=access_token_expires
+    )
+    redirect_target = next or "/"
+    response = RedirectResponse(
+        url=redirect_target,
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+    response.set_cookie(
+        SESSION_COOKIE_NAME,
+        access_token,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        httponly=True,
+        secure=SESSION_COOKIE_SECURE,
+        samesite="lax",
+    )
+    return response
+
+
+@app.post("/logout")
+def logout(
+    _current_user: CurrentUser,
+    redirect_to: Optional[str] = Form("/login"),
+):
+    response = RedirectResponse(
+        url=redirect_to or "/login",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+    response.delete_cookie(SESSION_COOKIE_NAME)
+    return response
+
 
 # Page liste
 @app.get("/", response_class=HTMLResponse)
 def clients_page(
     request: Request,
+    _current_user: CurrentUser,
     q: Optional[str] = None,
     status: Optional[str] = None,
     depannage: Optional[str] = None,
@@ -629,6 +874,7 @@ def clients_page(
 @app.get("/_clients", response_class=HTMLResponse)
 def clients_fragment(
     request: Request,
+    _current_user: CurrentUser,
     q: Optional[str] = None,
     status: Optional[str] = None,
     depannage: Optional[str] = None,
@@ -647,6 +893,7 @@ def clients_fragment(
 @app.get("/prestations", response_class=HTMLResponse)
 def subcontracted_services_page(
     request: Request,
+    _current_user: CurrentUser,
     q: Optional[str] = None,
     category: Optional[str] = None,
     frequency: Optional[str] = None,
@@ -663,6 +910,7 @@ def subcontracted_services_page(
 @app.get("/prestations/{service_id}/edit", response_class=HTMLResponse)
 def subcontracted_service_edit_page(
     request: Request,
+    _current_user: CurrentUser,
     service_id: int,
     session: Session = Depends(get_session),
 ):
@@ -694,6 +942,7 @@ def subcontracted_service_edit_page(
 
 @app.post("/prestations/{service_id}/edit")
 def update_subcontracted_service(
+    _current_user: CurrentUser,
     service_id: int,
     prestation: str = Form(...),
     client_id: int = Form(...),
@@ -763,6 +1012,7 @@ def update_subcontracted_service(
 # Form création
 @app.post("/clients/new")
 def create_client(
+    _current_user: CurrentUser,
     company_name: str = Form(...),
     name: str = Form(...),
     email: Optional[str] = Form(None),
@@ -810,6 +1060,7 @@ def create_client(
 # Maj
 @app.post("/clients/{client_id}/edit")
 def edit_client(
+    _current_user: CurrentUser,
     client_id: int,
     company_name: str = Form(...),
     name: str = Form(...),
@@ -851,7 +1102,11 @@ def edit_client(
     return RedirectResponse(url="/", status_code=303)
 
 @app.post("/clients/{client_id}/delete")
-def remove_client(client_id: int, session: Session = Depends(get_session)):
+def remove_client(
+    _current_user: CurrentUser,
+    client_id: int,
+    session: Session = Depends(get_session),
+):
     ok = crud.delete_client(session, client_id)
     if not ok: raise HTTPException(404, "Client introuvable")
     return RedirectResponse(url="/", status_code=303)
@@ -859,6 +1114,7 @@ def remove_client(client_id: int, session: Session = Depends(get_session)):
 
 @app.post("/clients/{client_id}/contacts")
 def add_contact(
+    _current_user: CurrentUser,
     client_id: int,
     name: str = Form(..., alias="contact_name"),
     email: Optional[str] = Form(None, alias="contact_email"),
@@ -879,6 +1135,7 @@ def add_contact(
 
 @app.post("/clients/{client_id}/contacts/{contact_id}/delete")
 def remove_contact(
+    _current_user: CurrentUser,
     client_id: int,
     contact_id: int,
     session: Session = Depends(get_session),
@@ -893,6 +1150,7 @@ def remove_contact(
 
 @app.post("/clients/{client_id}/subcontractings")
 def add_subcontracted_service(
+    _current_user: CurrentUser,
     client_id: int,
     prestation: str = Form(...),
     budget: Optional[str] = Form(None),
@@ -950,6 +1208,7 @@ def add_subcontracted_service(
 
 @app.post("/clients/{client_id}/subcontractings/{service_id}/delete")
 def remove_subcontracted_service(
+    _current_user: CurrentUser,
     client_id: int,
     service_id: int,
     session: Session = Depends(get_session),
@@ -965,6 +1224,7 @@ def remove_subcontracted_service(
 @app.get("/filtres-courroies", response_class=HTMLResponse)
 def list_filters_and_belts(
     request: Request,
+    _current_user: CurrentUser,
     session: Session = Depends(get_session),
 ):
     filters = crud.list_filter_lines(session)
@@ -1007,7 +1267,9 @@ def list_filters_and_belts(
 
 @app.get("/plan-de-charge", response_class=HTMLResponse)
 def workload_plan(
-    request: Request, session: Session = Depends(get_session)
+    request: Request,
+    _current_user: CurrentUser,
+    session: Session = Depends(get_session),
 ) -> HTMLResponse:
     site_count = len(crud.list_workload_sites(session))
     return templates.TemplateResponse(
@@ -1052,7 +1314,10 @@ class WorkloadPlanResponse(BaseModel):
 
 
 @app.get("/api/workload-plan", response_model=WorkloadPlanResponse)
-def get_workload_plan(session: Session = Depends(get_session)) -> WorkloadPlanResponse:
+def get_workload_plan(
+    _current_user: CurrentUser,
+    session: Session = Depends(get_session),
+) -> WorkloadPlanResponse:
     sites = crud.list_workload_sites(session)
     payload_sites: List[WorkloadPlanSiteResponse] = []
     for site in sites:
@@ -1077,7 +1342,9 @@ def get_workload_plan(session: Session = Depends(get_session)) -> WorkloadPlanRe
     status_code=201,
 )
 def create_workload_plan_site(
-    payload: WorkloadPlanSitePayload, session: Session = Depends(get_session)
+    _current_user: CurrentUser,
+    payload: WorkloadPlanSitePayload,
+    session: Session = Depends(get_session),
 ) -> WorkloadPlanSiteResponse:
     try:
         site = crud.create_workload_site(
@@ -1095,6 +1362,7 @@ def create_workload_plan_site(
 
 @app.patch("/api/workload-plan/sites/{site_id}", response_model=WorkloadPlanSiteResponse)
 def rename_workload_plan_site(
+    _current_user: CurrentUser,
     site_id: int,
     payload: WorkloadPlanSitePayload,
     session: Session = Depends(get_session),
@@ -1121,7 +1389,9 @@ def rename_workload_plan_site(
 
 @app.delete("/api/workload-plan/sites/{site_id}", status_code=204)
 def delete_workload_plan_site(
-    site_id: int, session: Session = Depends(get_session)
+    _current_user: CurrentUser,
+    site_id: int,
+    session: Session = Depends(get_session),
 ) -> Response:
     deleted = crud.delete_workload_site(session, site_id)
     if not deleted:
@@ -1131,7 +1401,9 @@ def delete_workload_plan_site(
 
 @app.post("/api/workload-plan/cells")
 def update_workload_plan_cells(
-    payload: WorkloadPlanCellsPayload, session: Session = Depends(get_session)
+    _current_user: CurrentUser,
+    payload: WorkloadPlanCellsPayload,
+    session: Session = Depends(get_session),
 ) -> Dict[str, int]:
     updates = [
         WorkloadCellUpdate(**item.model_dump()) for item in payload.updates or []
@@ -1145,7 +1417,9 @@ def update_workload_plan_cells(
 
 @app.post("/api/workload-plan/import")
 def import_workload_plan(
-    payload: WorkloadPlanImportPayload, session: Session = Depends(get_session)
+    _current_user: CurrentUser,
+    payload: WorkloadPlanImportPayload,
+    session: Session = Depends(get_session),
 ) -> Dict[str, int]:
     try:
         count = crud.replace_workload_plan(session, payload.sites, payload.cells)
@@ -1155,7 +1429,10 @@ def import_workload_plan(
 
 
 @app.get("/api/workload-plan/export/excel")
-def export_workload_plan_excel(session: Session = Depends(get_session)) -> Response:
+def export_workload_plan_excel(
+    _current_user: CurrentUser,
+    session: Session = Depends(get_session),
+) -> Response:
     sites = crud.list_workload_sites(session)
     buffer = _build_workload_plan_workbook(sites)
     return _template_response(buffer, "plan_de_charge.xlsx")
@@ -1163,6 +1440,7 @@ def export_workload_plan_excel(session: Session = Depends(get_session)) -> Respo
 
 @app.post("/api/workload-plan/import/excel")
 async def import_workload_plan_excel(
+    _current_user: CurrentUser,
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
 ) -> Dict[str, int]:
@@ -1184,6 +1462,7 @@ async def import_workload_plan_excel(
 
 @app.post("/filtres-courroies/filtres")
 async def create_filter_line(
+    _current_user: CurrentUser,
     site: str = Form(...),
     equipment: str = Form(...),
     efficiency: Optional[str] = Form(None),
@@ -1214,6 +1493,7 @@ async def create_filter_line(
 
 @app.post("/filtres-courroies/filtres/{line_id}/update")
 async def update_filter_line(
+    _current_user: CurrentUser,
     line_id: int,
     site: str = Form(...),
     equipment: str = Form(...),
@@ -1249,6 +1529,7 @@ async def update_filter_line(
 
 @app.post("/filtres-courroies/filtres/import")
 async def import_filter_lines(
+    _current_user: CurrentUser,
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
 ):
@@ -1318,7 +1599,11 @@ async def import_filter_lines(
 
 
 @app.post("/filtres-courroies/filtres/{line_id}/delete")
-def delete_filter_line(line_id: int, session: Session = Depends(get_session)):
+def delete_filter_line(
+    _current_user: CurrentUser,
+    line_id: int,
+    session: Session = Depends(get_session),
+):
     if not crud.delete_filter_line(session, line_id):
         raise HTTPException(status_code=404, detail="Ligne filtre introuvable")
     return RedirectResponse("/filtres-courroies", status_code=303)
@@ -1326,6 +1611,7 @@ def delete_filter_line(line_id: int, session: Session = Depends(get_session)):
 
 @app.post("/filtres-courroies/courroies")
 async def create_belt_line(
+    _current_user: CurrentUser,
     site: str = Form(...),
     equipment: str = Form(...),
     reference: str = Form(...),
@@ -1346,6 +1632,7 @@ async def create_belt_line(
 
 @app.post("/filtres-courroies/courroies/{line_id}/update")
 async def update_belt_line(
+    _current_user: CurrentUser,
     line_id: int,
     site: str = Form(...),
     equipment: str = Form(...),
@@ -1374,6 +1661,7 @@ async def update_belt_line(
 
 @app.post("/filtres-courroies/courroies/import")
 async def import_belt_lines(
+    _current_user: CurrentUser,
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
 ):
@@ -1443,7 +1731,11 @@ async def import_belt_lines(
 
 
 @app.post("/filtres-courroies/courroies/{line_id}/delete")
-def delete_belt_line(line_id: int, session: Session = Depends(get_session)):
+def delete_belt_line(
+    _current_user: CurrentUser,
+    line_id: int,
+    session: Session = Depends(get_session),
+):
     if not crud.delete_belt_line(session, line_id):
         raise HTTPException(status_code=404, detail="Ligne courroie introuvable")
     return RedirectResponse("/filtres-courroies", status_code=303)
@@ -1451,6 +1743,7 @@ def delete_belt_line(line_id: int, session: Session = Depends(get_session)):
 
 @app.post("/clients/import")
 async def import_clients(
+    _current_user: CurrentUser,
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
 ):
@@ -1834,7 +2127,7 @@ def _template_response(buffer: BytesIO, filename: str) -> Response:
 
 @app.get("/clients/import/template")
 @app.get("/clients/import/template/")
-def download_client_import_template():
+def download_client_import_template(_current_user: CurrentUser):
     return _template_response(
         _build_client_import_template(), "modele_import_clients.xlsx"
     )
@@ -1842,7 +2135,7 @@ def download_client_import_template():
 
 @app.get("/filtres-courroies/filtres/import/template")
 @app.get("/filtres-courroies/filtres/import/template/")
-def download_filter_import_template():
+def download_filter_import_template(_current_user: CurrentUser):
     return _template_response(
         _build_filter_import_template(), "modele_import_filtres.xlsx"
     )
@@ -1850,7 +2143,7 @@ def download_filter_import_template():
 
 @app.get("/filtres-courroies/courroies/import/template")
 @app.get("/filtres-courroies/courroies/import/template/")
-def download_belt_import_template():
+def download_belt_import_template(_current_user: CurrentUser):
     return _template_response(
         _build_belt_import_template(), "modele_import_courroies.xlsx"
     )
