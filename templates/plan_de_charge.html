@@ -112,7 +112,15 @@
 
     .workload-shell {
       --left-col-w: 340px;
-      --gap: 2px;
+      /*
+        Espacements internes de la grille :
+        - --col-gap : faible interstice de 2px entre les jours pour garder les colonnes lisibles sans trop élargir la vue.
+        - --day-gap-before : garde appliquée sous les numéros de semaines pour qu'ils ne soient plus masqués par la ligne des jours (L M M J V S D).
+        - --day-gap-after : garde appliquée uniquement à la première ligne de sites pour qu'elle ne soit plus masquée par la ligne des jours.
+      */
+      --col-gap: 2px;
+      --day-gap-before: 6px;
+      --day-gap-after: 6px;
       --toolbar-h: 54px;
       --week-h: 40px;
       --day-h: 32px;
@@ -232,10 +240,10 @@
       display: grid;
       grid-template-columns: var(--left-col-w) repeat(364, var(--cell-w));
       grid-auto-rows: minmax(var(--cell-h), auto);
-      column-gap: var(--gap);
-      row-gap: var(--gap);
+      column-gap: var(--col-gap);
+      row-gap: 0; /* Aucun espacement automatique entre les lignes de sites. */
       padding: 16px;
-      min-width: max(100%, calc(var(--left-col-w) + (var(--cell-w) + var(--gap)) * 364));
+      min-width: max(100%, calc(var(--left-col-w) + (var(--cell-w) + var(--col-gap)) * 364));
       background: var(--workload-grid-bg);
       transition: background 0.3s ease;
     }
@@ -263,7 +271,8 @@
     }
 
     .workload-shell .grid .header-day {
-      top: calc(var(--toolbar-h) + var(--week-h));
+      top: calc(var(--toolbar-h) + var(--week-h) + var(--day-gap-before));
+      margin-top: var(--day-gap-before);
       height: var(--day-h);
       display: flex;
       align-items: center;
@@ -271,6 +280,10 @@
       font-size: 12px;
       color: var(--workload-header-day-color);
       transition: color 0.3s ease;
+    }
+
+    .workload-shell .grid .first-site-row {
+      margin-top: var(--day-gap-after);
     }
 
     .workload-shell .grid .head-site {
@@ -783,6 +796,7 @@
           const nameEl = head.querySelector('.site-name');
           nameEl.textContent = site.name;
           nameEl.dataset.originalName = site.name;
+          if(rIndex === 0) head.classList.add('first-site-row');
           frag.appendChild(head);
 
           for(let i = 0; i < 364; i++){
@@ -805,6 +819,7 @@
             c.setAttribute('aria-label', `Site ${site.name}, jour ${i+1}: ${val || 'aucun état'}`);
             c.setAttribute('aria-pressed', val ? 'true' : 'false');
             if(i > 0 && i % 7 === 0) c.classList.add('wk-sep');
+            if(rIndex === 0) c.classList.add('first-site-row');
             frag.appendChild(c);
           }
         });
@@ -855,12 +870,16 @@
         const q = filterInput.value.trim();
         const rows = Array.from(grid.querySelectorAll('.site-row'));
         let shown = 0;
+        let firstVisibleAssigned = false;
         rows.forEach(row=>{
           const siteId = row.dataset.siteId;
           const nameEl = row.querySelector('.site-name');
           const original = nameEl.dataset.originalName || nameEl.textContent;
           const match = !q || original.toLowerCase().includes(q.toLowerCase());
           const cells = grid.querySelectorAll(`.cell[data-site-id="${siteId}"]`);
+
+          row.classList.remove('first-site-row');
+          cells.forEach(cell=> cell.classList.remove('first-site-row'));
 
           if(match){
             shown++;
@@ -872,6 +891,11 @@
               cell.style.gridRow = String(targetRow);
             });
             nameEl.innerHTML = highlight(original, q);
+            if(!firstVisibleAssigned){
+              firstVisibleAssigned = true;
+              row.classList.add('first-site-row');
+              cells.forEach(cell=> cell.classList.add('first-site-row'));
+            }
           } else {
             row.style.display = 'none';
             row.style.removeProperty('grid-row');
