@@ -1,6 +1,6 @@
 from typing import List, Optional
 from datetime import datetime
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, String, Integer, UniqueConstraint
 from sqlmodel import SQLModel, Field, Relationship
 
 
@@ -189,6 +189,57 @@ class SubcontractedServiceUpdate(SQLModel):
     realization_week: Optional[str] = None
     order_week: Optional[str] = None
     client_id: Optional[int] = None
+
+
+# =======================
+# TABLE PLAN DE CHARGE
+# =======================
+
+
+class WorkloadSiteBase(SQLModel):
+    name: str = Field(
+        description="Nom du site",
+        sa_column=Column("name", String, unique=True, nullable=False),
+    )
+    position: int = Field(default=0, description="Position d'affichage du site")
+
+
+class WorkloadSite(WorkloadSiteBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    cells: List["WorkloadCell"] = Relationship(
+        back_populates="site",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+
+
+class WorkloadSiteCreate(SQLModel):
+    name: str
+
+
+class WorkloadSiteUpdate(SQLModel):
+    name: Optional[str] = None
+    position: Optional[int] = None
+
+
+class WorkloadCellBase(SQLModel):
+    day_index: int = Field(index=True, description="Indice du jour (0-363)")
+    value: Optional[str] = Field(default=None, description="Valeur stockée pour le jour")
+
+
+class WorkloadCell(WorkloadCellBase, table=True):
+    __table_args__ = (
+        UniqueConstraint("site_id", "day_index", name="uq_workloadcell_site_day"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    site_id: int = Field(foreign_key="workloadsite.id")
+    site: Optional[WorkloadSite] = Relationship(back_populates="cells")
+
+
+class WorkloadCellUpdate(SQLModel):
+    site_id: int
+    day_index: int
+    value: Optional[str] = None
 
 
 # =======================

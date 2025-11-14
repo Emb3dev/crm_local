@@ -18,6 +18,9 @@ from models import (
     FilterLineUpdate,
     SubcontractedServiceCreate,
     SubcontractedServiceUpdate,
+    WorkloadCellUpdate,
+    WorkloadSiteCreate,
+    WorkloadSiteUpdate,
 )
 import crud
 from importers import (
@@ -27,6 +30,7 @@ from importers import (
 )
 from openpyxl import Workbook
 from uuid import uuid4
+from pydantic import BaseModel, Field
 #uvicorn app:app --reload
 
 app = FastAPI(title="CRM Local")
@@ -1008,6 +1012,141 @@ def workload_plan(request: Request) -> HTMLResponse:
             "request": request,
         },
     )
+
+
+class WorkloadPlanSitePayload(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+
+
+class WorkloadPlanCellPayload(BaseModel):
+    site_id: int
+    day_index: int
+    value: Optional[str] = None
+
+
+class WorkloadPlanCellsPayload(BaseModel):
+    updates: List[WorkloadPlanCellPayload] = Field(default_factory=list)
+
+
+class WorkloadPlanImportPayload(BaseModel):
+    version: Optional[int] = None
+    sites: List[str] = Field(default_factory=list)
+    cells: Dict[str, List[Optional[str]]] = Field(default_factory=dict)
+
+
+class WorkloadPlanSiteResponse(BaseModel):
+    id: int
+    name: str
+    position: int
+    cells: List[str]
+
+
+class WorkloadPlanResponse(BaseModel):
+    version: int
+    sites: List[WorkloadPlanSiteResponse]
+
+
+@app.get("/api/workload-plan", response_model=WorkloadPlanResponse)
+def get_workload_plan(session: Session = Depends(get_session)) -> WorkloadPlanResponse:
+    sites = crud.list_workload_sites(session)
+    payload_sites: List[WorkloadPlanSiteResponse] = []
+    for site in sites:
+        cells = ["" for _ in range(364)]
+        for cell in site.cells:
+            if 0 <= cell.day_index < 364 and cell.value:
+                cells[cell.day_index] = cell.value
+        payload_sites.append(
+            WorkloadPlanSiteResponse(
+                id=site.id,
+                name=site.name,
+                position=site.position,
+                cells=cells,
+            )
+        )
+    return WorkloadPlanResponse(version=1, sites=payload_sites)
+
+
+@app.post(
+    "/api/workload-plan/sites",
+    response_model=WorkloadPlanSiteResponse,
+    status_code=201,
+)
+def create_workload_plan_site(
+    payload: WorkloadPlanSitePayload, session: Session = Depends(get_session)
+) -> WorkloadPlanSiteResponse:
+    try:
+        site = crud.create_workload_site(
+            session, WorkloadSiteCreate(name=payload.name)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return WorkloadPlanSiteResponse(
+        id=site.id,
+        name=site.name,
+        position=site.position,
+        cells=["" for _ in range(364)],
+    )
+
+
+@app.patch("/api/workload-plan/sites/{site_id}", response_model=WorkloadPlanSiteResponse)
+def rename_workload_plan_site(
+    site_id: int,
+    payload: WorkloadPlanSitePayload,
+    session: Session = Depends(get_session),
+) -> WorkloadPlanSiteResponse:
+    try:
+        site = crud.rename_workload_site(
+            session, site_id, WorkloadSiteUpdate(name=payload.name)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not site:
+        raise HTTPException(status_code=404, detail="Site introuvable")
+    cells = ["" for _ in range(364)]
+    for cell in site.cells:
+        if 0 <= cell.day_index < 364 and cell.value:
+            cells[cell.day_index] = cell.value
+    return WorkloadPlanSiteResponse(
+        id=site.id,
+        name=site.name,
+        position=site.position,
+        cells=cells,
+    )
+
+
+@app.delete("/api/workload-plan/sites/{site_id}", status_code=204)
+def delete_workload_plan_site(
+    site_id: int, session: Session = Depends(get_session)
+) -> Response:
+    deleted = crud.delete_workload_site(session, site_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Site introuvable")
+    return Response(status_code=204)
+
+
+@app.post("/api/workload-plan/cells")
+def update_workload_plan_cells(
+    payload: WorkloadPlanCellsPayload, session: Session = Depends(get_session)
+) -> Dict[str, int]:
+    updates = [
+        WorkloadCellUpdate(**item.model_dump()) for item in payload.updates or []
+    ]
+    try:
+        count = crud.bulk_update_workload_cells(session, updates)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"updated": count}
+
+
+@app.post("/api/workload-plan/import")
+def import_workload_plan(
+    payload: WorkloadPlanImportPayload, session: Session = Depends(get_session)
+) -> Dict[str, int]:
+    try:
+        count = crud.replace_workload_plan(session, payload.sites, payload.cells)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"sites": count}
 
 
 @app.post("/filtres-courroies/filtres")

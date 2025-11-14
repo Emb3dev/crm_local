@@ -1,8 +1,8 @@
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional
 
 import re
 
-from sqlalchemy import delete
+from sqlalchemy import delete, func
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
@@ -24,6 +24,11 @@ from models import (
     SubcontractedService,
     SubcontractedServiceCreate,
     SubcontractedServiceUpdate,
+    WorkloadCell,
+    WorkloadCellUpdate,
+    WorkloadSite,
+    WorkloadSiteCreate,
+    WorkloadSiteUpdate,
 )
 
 def get_entreprise(session: Session, entreprise_id: int) -> Optional[Entreprise]:
@@ -253,6 +258,168 @@ def delete_subcontracted_service(
     session.delete(record)
     session.commit()
     return True
+
+
+def list_workload_sites(session: Session) -> List[WorkloadSite]:
+    stmt = (
+        select(WorkloadSite)
+        .options(selectinload(WorkloadSite.cells))
+        .order_by(WorkloadSite.position.asc(), WorkloadSite.id.asc())
+    )
+    return session.exec(stmt).all()
+
+
+def create_workload_site(session: Session, data: WorkloadSiteCreate) -> WorkloadSite:
+    normalized = data.name.strip()
+    if not normalized:
+        raise ValueError("Le nom du site est requis")
+
+    existing = session.exec(
+        select(WorkloadSite).where(WorkloadSite.name == normalized)
+    ).first()
+    if existing:
+        raise ValueError("Ce site existe déjà")
+
+    max_position_row = session.exec(select(func.max(WorkloadSite.position))).one()
+    max_position = max_position_row[0] if max_position_row else None
+    position = (max_position or 0) + 1
+
+    site = WorkloadSite(name=normalized, position=position)
+    session.add(site)
+    session.commit()
+    session.refresh(site)
+    return site
+
+
+def rename_workload_site(
+    session: Session, site_id: int, data: WorkloadSiteUpdate
+) -> Optional[WorkloadSite]:
+    site = session.get(WorkloadSite, site_id)
+    if not site:
+        return None
+
+    updates = data.model_dump(exclude_unset=True)
+    new_name = updates.get("name")
+
+    if new_name is not None:
+        normalized = new_name.strip()
+        if not normalized:
+            raise ValueError("Le nom du site est requis")
+        exists = session.exec(
+            select(WorkloadSite)
+            .where(WorkloadSite.name == normalized)
+            .where(WorkloadSite.id != site_id)
+        ).first()
+        if exists:
+            raise ValueError("Ce nom est déjà utilisé")
+        site.name = normalized
+
+    if "position" in updates and updates["position"] is not None:
+        site.position = updates["position"]
+
+    session.add(site)
+    session.commit()
+    session.refresh(site)
+    return site
+
+
+def delete_workload_site(session: Session, site_id: int) -> bool:
+    site = session.get(WorkloadSite, site_id)
+    if not site:
+        return False
+    session.delete(site)
+    session.commit()
+    return True
+
+
+def bulk_update_workload_cells(
+    session: Session, updates: Iterable[WorkloadCellUpdate]
+) -> int:
+    items = list(updates)
+    if not items:
+        return 0
+
+    site_ids = {item.site_id for item in items}
+    if not site_ids:
+        return 0
+
+    existing_ids = set(
+        session.exec(select(WorkloadSite.id).where(WorkloadSite.id.in_(site_ids))).all()
+    )
+    missing = site_ids - existing_ids
+    if missing:
+        raise ValueError("Site introuvable")
+
+    for item in items:
+        if not 0 <= item.day_index < 364:
+            raise ValueError("Indice de jour invalide")
+
+        normalized = (item.value or "").strip()
+        cell = session.exec(
+            select(WorkloadCell)
+            .where(WorkloadCell.site_id == item.site_id)
+            .where(WorkloadCell.day_index == item.day_index)
+        ).first()
+
+        if normalized:
+            if cell:
+                cell.value = normalized
+            else:
+                cell = WorkloadCell(
+                    site_id=item.site_id, day_index=item.day_index, value=normalized
+                )
+                session.add(cell)
+        else:
+            if cell:
+                session.delete(cell)
+
+    session.commit()
+    return len(items)
+
+
+def replace_workload_plan(
+    session: Session,
+    site_names: Iterable[str],
+    cells_map: Dict[str, Iterable[Optional[str]]],
+) -> int:
+    normalized_cells = {
+        (name or "").strip(): list(values)
+        for name, values in (cells_map or {}).items()
+        if name is not None
+    }
+
+    session.exec(delete(WorkloadCell))
+    session.exec(delete(WorkloadSite))
+    session.commit()
+
+    created = 0
+    seen_names = set()
+    for position, raw_name in enumerate(site_names):
+        normalized = (raw_name or "").strip()
+        if not normalized or normalized in seen_names:
+            continue
+        seen_names.add(normalized)
+
+        site = WorkloadSite(name=normalized, position=position + 1)
+        session.add(site)
+        session.flush()
+
+        values = normalized_cells.get(normalized, [])
+        for day_index, value in enumerate(values[:364]):
+            normalized_value = (value or "").strip()
+            if normalized_value:
+                session.add(
+                    WorkloadCell(
+                        site_id=site.id,
+                        day_index=day_index,
+                        value=normalized_value,
+                    )
+                )
+
+        created += 1
+
+    session.commit()
+    return created
 
 
 def list_subcontracted_services(
