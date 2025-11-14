@@ -329,20 +329,6 @@ CLIENT_FILTER_DEFINITIONS = [
     },
 ]
 
-SUBCONTRACTING_FILTER_BASE = [
-    {
-        "name": "category",
-        "label": "Catégorie",
-        "placeholder": "Toutes les catégories",
-    },
-    {
-        "name": "frequency",
-        "label": "Fréquence",
-        "placeholder": "Toutes les fréquences",
-        "options": [(key, data["label"]) for key, data in PREDEFINED_FREQUENCIES.items()],
-    },
-]
-
 FREQUENCY_UNITS = {
     "months": {
         "select_label": "mois",
@@ -403,6 +389,20 @@ FREQUENCY_SELECT_OPTIONS = {
 FREQUENCY_SELECT_OPTIONS[CUSTOM_INTERVAL_VALUE] = CUSTOM_INTERVAL_LABEL
 
 PREDEFINED_FREQUENCY_KEYS = tuple(PREDEFINED_FREQUENCIES.keys())
+
+SUBCONTRACTING_FILTER_BASE = [
+    {
+        "name": "category",
+        "label": "Catégorie",
+        "placeholder": "Toutes les catégories",
+    },
+    {
+        "name": "frequency",
+        "label": "Fréquence",
+        "placeholder": "Toutes les fréquences",
+        "options": [(key, data["label"]) for key, data in PREDEFINED_FREQUENCIES.items()],
+    },
+]
 
 def _slugify_identifier(value: str) -> str:
     normalized = re.sub(r"[^a-z0-9]+", "_", value.lower())
