@@ -4,6 +4,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from io import BytesIO
+from urllib.parse import quote
 
 from fastapi import (
     FastAPI,
@@ -63,6 +64,8 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("CRM_TOKEN_EXPIRE_MINUTES", "480"))
 DEFAULT_ADMIN_USERNAME = os.environ.get("CRM_ADMIN_USERNAME", "admin")
 DEFAULT_ADMIN_PASSWORD = os.environ.get("CRM_ADMIN_PASSWORD", "admin")
+
+templates.env.globals["ADMIN_USERNAME"] = DEFAULT_ADMIN_USERNAME
 
 MAX_BCRYPT_PASSWORD_BYTES = 72
 
@@ -185,6 +188,14 @@ def _ensure_default_admin_user() -> None:
         )
         logger.info(
             "Utilisateur administrateur '%s' initialisé.", DEFAULT_ADMIN_USERNAME
+        )
+
+
+def _ensure_admin_access(user: User) -> None:
+    if user.username != DEFAULT_ADMIN_USERNAME:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès réservé à l'administrateur.",
         )
 
 
@@ -849,6 +860,79 @@ def logout(
     )
     response.delete_cookie(SESSION_COOKIE_NAME)
     return response
+
+
+@app.get("/admin/utilisateurs", response_class=HTMLResponse)
+def admin_users_page(
+    request: Request,
+    _current_user: CurrentUser,
+    session: Session = Depends(get_session),
+):
+    _ensure_admin_access(_current_user)
+    users = crud.list_users(session)
+    return templates.TemplateResponse(
+        "admin_users.html",
+        {
+            "request": request,
+            "users": users,
+            "errors": None,
+            "success": request.query_params.get("success") == "1",
+            "form_values": {"username": ""},
+            "focus_username": request.query_params.get("focus"),
+        },
+    )
+
+
+@app.post("/admin/utilisateurs", response_class=HTMLResponse)
+def admin_users_create(
+    request: Request,
+    _current_user: CurrentUser,
+    username: str = Form(...),
+    password: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    _ensure_admin_access(_current_user)
+    trimmed_username = username.strip()
+    errors: List[str] = []
+    if not trimmed_username:
+        errors.append("L'identifiant est obligatoire.")
+    if " " in trimmed_username:
+        errors.append("L'identifiant ne peut pas contenir d'espaces.")
+    if not password:
+        errors.append("Le mot de passe est obligatoire.")
+    if trimmed_username and crud.get_user_by_username(session, trimmed_username):
+        errors.append("Cet identifiant est déjà utilisé.")
+
+    hashed_password: Optional[str] = None
+    if not errors:
+        try:
+            hashed_password = get_password_hash(password)
+        except ValueError as exc:
+            errors.append(str(exc))
+
+    if errors or hashed_password is None:
+        users = crud.list_users(session)
+        return templates.TemplateResponse(
+            "admin_users.html",
+            {
+                "request": request,
+                "users": users,
+                "errors": errors,
+                "success": False,
+                "form_values": {"username": trimmed_username},
+                "focus_username": None,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    crud.create_user(
+        session,
+        UserCreate(username=trimmed_username, hashed_password=hashed_password),
+    )
+    return RedirectResponse(
+        url=f"/admin/utilisateurs?success=1&focus={quote(trimmed_username)}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
 
 
 # Page liste
