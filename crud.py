@@ -280,9 +280,13 @@ def create_workload_site(session: Session, data: WorkloadSiteCreate) -> Workload
     if existing:
         raise ValueError("Ce site existe déjà")
 
-    max_position_row = session.exec(select(func.max(WorkloadSite.position))).one()
-    max_position = max_position_row[0] if max_position_row else None
-    position = (max_position or 0) + 1
+    max_position = session.exec(
+        select(func.max(WorkloadSite.position))
+    ).one_or_none()
+    if max_position is None:
+        max_position = 0
+
+    position = max_position + 1
 
     site = WorkloadSite(name=normalized, position=position)
     session.add(site)
