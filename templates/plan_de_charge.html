@@ -497,8 +497,6 @@
     (function(){
       const VERSION = 4;
       const NS = 'pc:v4:';
-      const K_SITES = NS + 'sites';
-      const K_CELL = NS + 'cell::';
 
       const grid = document.getElementById('grid');
       const filterInput = document.getElementById('filterInput');
@@ -517,18 +515,58 @@
       const siteRowTpl = document.getElementById('siteRowTpl');
       const cellTpl = document.getElementById('cellTpl');
 
+      const DEFAULT_SITES = {{ default_sites|tojson }};
+      const API_HEADERS = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      };
+
       const ls = {
-        get(k, def){ try{ const v = localStorage.getItem(k); return v==null? def : JSON.parse(v);}catch{return def;} },
+        get(k, def){
+          try {
+            const v = localStorage.getItem(k);
+            return v == null ? def : JSON.parse(v);
+          } catch {
+            return def;
+          }
+        },
         set(k, v){ localStorage.setItem(k, JSON.stringify(v)); },
         del(k){ localStorage.removeItem(k); }
       };
 
       const state = {
-        sites: ls.get(K_SITES, []),
-        paint: ls.get(NS+'paint', 'ok'),
+        sites: [],
+        paint: ls.get(NS + 'paint', 'ok'),
         dragging: false,
-        dragSet: new Map(),
+        dragSet: new Map()
       };
+
+      function normalizeSite(site){
+        const cells = Array(364).fill('');
+        (site.cells || []).forEach((value, idx)=>{
+          if(idx < 364){
+            const normalized = (value == null ? '' : String(value)).trim();
+            cells[idx] = normalized;
+          }
+        });
+        return {
+          id: site.id,
+          name: site.name,
+          position: site.position ?? 0,
+          cells
+        };
+      }
+
+      function findSiteById(id){
+        return state.sites.find(site => site.id === id);
+      }
+
+      function sortSites(){
+        state.sites.sort((a, b)=>{
+          if(a.position !== b.position) return a.position - b.position;
+          return a.id - b.id;
+        });
+      }
 
       function setZoom(px){
         document.documentElement.style.setProperty('--cell-w', px + 'px');
@@ -536,38 +574,40 @@
       }
 
       function setPaintMode(mode){
-        state.paint = mode; ls.set(NS+'paint', mode);
+        state.paint = mode; ls.set(NS + 'paint', mode);
         paintModeSel.value = mode;
         const map = {
-          ok:['#16a34a','Vert (planifié)'],
-          warn:['#fb923c','Orange (à revoir)'],
-          bad:['#dc2626','Rouge (à planifier)'],
-          erase:['#9ca3af','Effacer']
+          ok: ['#16a34a', 'Vert (planifié)'],
+          warn: ['#fb923c', 'Orange (à revoir)'],
+          bad: ['#dc2626', 'Rouge (à planifier)'],
+          erase: ['#9ca3af', 'Effacer']
         };
         modeDot.style.background = map[mode][0];
         modeText.textContent = 'Mode\u00A0: ' + map[mode][1];
       }
 
       function showToast(msg){
-        toast.textContent = msg; toast.style.display='block';
-        clearTimeout(showToast._t); showToast._t = setTimeout(()=> toast.style.display='none', 2200);
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(()=> toast.style.display = 'none', 2200);
       }
 
       function buildDayHeaders(){
         if(!grid.querySelector('.week-cell')){
-          for(let w=0; w<52; w++){
+          for(let w = 0; w < 52; w++){
             const n = weekCellTpl.content.firstElementChild.cloneNode(true);
-            n.textContent = 'S' + String(w+1).padStart(2,'0');
+            n.textContent = 'S' + String(w + 1).padStart(2, '0');
             n.style.gridRow = '1';
-            n.style.gridColumn = (2 + w*7) + ' / span 7';
-            if(w>0) n.classList.add('wk-sep');
+            n.style.gridColumn = (2 + w * 7) + ' / span 7';
+            if(w > 0) n.classList.add('wk-sep');
             grid.appendChild(n);
           }
         }
 
         if(!grid.querySelector('.head-cell.header-day')){
           const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-          for(let i=0;i<364;i++){
+          for(let i = 0; i < 364; i++){
             const n = dayHeadTpl.content.firstElementChild.cloneNode(true);
             const dayIndex = i % 7;
             n.textContent = DAYS[dayIndex];
@@ -579,47 +619,87 @@
         }
       }
 
-      function keyCell(site, idx){ return K_CELL + encodeURIComponent(site) + ':' + idx; }
-      function getCell(site, idx){ const v = localStorage.getItem(keyCell(site, idx)); return v ? v : ''; }
-      function setCell(site, idx, val){ state.dragSet.set(keyCell(site, idx), val ? val : null); }
-      function flushCells(){
-        state.dragSet.forEach((v,k)=>{ v==null ? localStorage.removeItem(k) : localStorage.setItem(k, v); });
-        state.dragSet.clear();
+      function setCellPending(siteId, idx, value, previous){
+        const key = `${siteId}:${idx}`;
+        if(!state.dragSet.has(key)){
+          state.dragSet.set(key, { siteId, idx, previous, value });
+        } else {
+          const entry = state.dragSet.get(key);
+          if(!('previous' in entry)) entry.previous = previous;
+          entry.value = value;
+        }
+      }
+
+      async function loadData(){
+        try{
+          const resp = await fetch('/api/workload-plan');
+          if(!resp.ok) throw new Error('Erreur de chargement');
+          let data = await resp.json();
+          let sites = data.sites || [];
+
+          if(sites.length === 0 && DEFAULT_SITES.length){
+            try{
+              await fetch('/api/workload-plan/import', {
+                method: 'POST',
+                headers: API_HEADERS,
+                body: JSON.stringify({ version: VERSION, sites: DEFAULT_SITES, cells: {} })
+              });
+              const retry = await fetch('/api/workload-plan');
+              if(retry.ok){
+                const retryData = await retry.json();
+                sites = retryData.sites || [];
+              }
+            }catch(err){
+              console.error('Bootstrap plan de charge impossible', err);
+            }
+          }
+
+          state.sites = sites.map(normalizeSite);
+          sortSites();
+          state.dragSet.clear();
+          render();
+        }catch(err){
+          console.error('Chargement du plan de charge échoué', err);
+          showToast('Impossible de charger le plan de charge');
+        }
       }
 
       function render(){
         buildDayHeaders();
         grid.querySelectorAll('.site-row, .cell').forEach(n=> n.remove());
-        const sites = state.sites;
         const frag = document.createDocumentFragment();
 
-        sites.forEach((site, rIndex)=>{
+        state.sites.forEach((site, rIndex)=>{
           const head = siteRowTpl.content.firstElementChild.cloneNode(true);
           const rowNumber = 3 + rIndex;
           head.style.gridColumn = '1';
           head.style.gridRow = String(rowNumber);
-          head.querySelector('.site-name').textContent = site;
+          head.dataset.siteId = String(site.id);
+          head.dataset.siteName = site.name;
+          const nameEl = head.querySelector('.site-name');
+          nameEl.textContent = site.name;
+          nameEl.dataset.originalName = site.name;
           frag.appendChild(head);
 
-          for(let i=0;i<364;i++){
+          for(let i = 0; i < 364; i++){
             const c = cellTpl.content.firstElementChild.cloneNode(true);
-            const val = getCell(site, i);
-
-            if (val) {
+            const val = site.cells[i] || '';
+            if(val){
               c.dataset.state = val;
               let displayContent = '';
-              if (val === 'bad') displayContent = '8';
-              else if (val === 'warn') displayContent = '4';
-              else if (val.startsWith('ok:')) displayContent = val.split(':')[1];
+              if(val === 'bad') displayContent = '8';
+              else if(val === 'warn') displayContent = '4';
+              else if(val.startsWith('ok:')) displayContent = val.split(':')[1];
               c.textContent = displayContent;
             }
-
             c.tabIndex = 0;
-            c.dataset.site = site; c.dataset.idx = i;
+            c.dataset.idx = String(i);
+            c.dataset.siteId = String(site.id);
+            c.dataset.siteName = site.name;
             c.style.gridRow = String(rowNumber);
             c.style.gridColumn = String(2 + i);
-            c.setAttribute('aria-label', `Site ${site}, jour ${i+1}: ${val || 'aucun état'}`);
-            c.setAttribute('aria-pressed', val? 'true':'false');
+            c.setAttribute('aria-label', `Site ${site.name}, jour ${i+1}: ${val || 'aucun état'}`);
+            c.setAttribute('aria-pressed', val ? 'true' : 'false');
             if(i > 0 && i % 7 === 0) c.classList.add('wk-sep');
             frag.appendChild(c);
           }
@@ -633,49 +713,57 @@
       function updateProgressAll(){
         const rows = grid.querySelectorAll('.site-row');
         rows.forEach(row=>{
-          const site = row.querySelector('.site-name').textContent;
-          let ok=0, warn=0, bad=0;
-          for(let i=0;i<364;i++){
-            const v = getCell(site, i);
-            if(v.startsWith('ok')) ok++;
-            else if(v==='warn') warn++;
-            else if(v==='bad') bad++;
-          }
+          const siteId = Number(row.dataset.siteId);
+          const site = findSiteById(siteId);
+          if(!site) return;
+          let ok = 0, warn = 0, bad = 0;
+          site.cells.forEach(value=>{
+            if(value.startsWith('ok')) ok++;
+            else if(value === 'warn') warn++;
+            else if(value === 'bad') bad++;
+          });
           const info = row.querySelector('.info');
           info.innerHTML = `<span class="count-ok">${ok}</span> vert • <span style="color:var(--warn);">${warn}</span> orange • <span class="count-bad">${bad}</span> rouge`;
         });
       }
 
-      function highlight(text, q){ if(!q) return text; const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&') + ')','i'); return text.replace(re,'<span class="mark">$1</span>'); }
+      function highlight(text, q){
+        if(!q) return text;
+        const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&') + ')','i');
+        return text.replace(re,'<span class="mark">$1</span>');
+      }
+
       function applyFilter(){
         const q = filterInput.value.trim();
         const rows = grid.querySelectorAll('.site-row');
-        let shown=0;
+        let shown = 0;
         rows.forEach(row=>{
+          const siteId = row.dataset.siteId;
           const nameEl = row.querySelector('.site-name');
-          const name = nameEl.textContent;
-          const match = !q || name.toLowerCase().includes(q.toLowerCase());
+          const original = nameEl.dataset.originalName || nameEl.textContent;
+          const match = !q || original.toLowerCase().includes(q.toLowerCase());
           row.style.display = match ? '' : 'none';
-          const idx = Array.prototype.indexOf.call(grid.children, row) + 1;
-          for(let i=0;i<364;i++){
-            const c = grid.children[idx + i];
-            if(c && c.classList.contains('cell')) c.style.display = match ? '' : 'none';
-          }
+          const cells = grid.querySelectorAll(`.cell[data-site-id="${siteId}"]`);
+          cells.forEach(cell=>{
+            cell.style.display = match ? '' : 'none';
+          });
           if(match){
             shown++;
-            nameEl.innerHTML = highlight(name, q);
-          }else{
-            nameEl.textContent = name;
+            nameEl.innerHTML = highlight(original, q);
+          } else {
+            nameEl.textContent = original;
           }
         });
         filterCount.textContent = `${shown}/${rows.length}`;
       }
 
       function paintCell(el){
-        const site = el.dataset.site;
-        const idx = +el.dataset.idx;
+        const siteId = Number(el.dataset.siteId);
+        const idx = Number(el.dataset.idx);
+        const site = findSiteById(siteId);
+        if(!site) return;
         const mode = state.paint;
-        const currentState = el.dataset.state || '';
+        const currentState = site.cells[idx] || '';
 
         let valToStore = '';
         let valToDisplay = '';
@@ -708,21 +796,61 @@
           valToDisplay = '';
         }
 
-        if (valToStore === currentState && valToStore !== '') return;
+        if (valToStore === currentState) return;
+
+        setCellPending(siteId, idx, valToStore, currentState);
+        site.cells[idx] = valToStore;
 
         if(valToStore){
           el.dataset.state = valToStore;
           el.textContent = valToDisplay;
           el.setAttribute('aria-pressed','true');
-          el.setAttribute('aria-label', `Site ${site}, jour ${idx+1}: ${valToStore} (${valToDisplay} jours)`);
+          el.setAttribute('aria-label', `Site ${site.name}, jour ${idx+1}: ${valToStore} (${valToDisplay || '?'} jours)`);
         } else {
           el.removeAttribute('data-state');
           el.textContent = '';
           el.setAttribute('aria-pressed','false');
-          el.setAttribute('aria-label', `Site ${site}, jour ${idx+1}: aucun état`);
+          el.setAttribute('aria-label', `Site ${site.name}, jour ${idx+1}: aucun état`);
         }
+      }
 
-        setCell(site, idx, valToStore);
+      async function flushCells(){
+        if(state.dragSet.size === 0) return;
+        const entries = Array.from(state.dragSet.values());
+        const payload = {
+          updates: entries.map(({ siteId, idx, value })=>({
+            site_id: siteId,
+            day_index: idx,
+            value: value ? value : null
+          }))
+        };
+        try{
+          const resp = await fetch('/api/workload-plan/cells', {
+            method: 'POST',
+            headers: API_HEADERS,
+            body: JSON.stringify(payload)
+          });
+          if(!resp.ok){
+            let detail = 'Enregistrement impossible';
+            try{
+              const data = await resp.json();
+              if(data && data.detail) detail = data.detail;
+            }catch{}
+            throw new Error(detail);
+          }
+        }catch(err){
+          entries.forEach(entry=>{
+            const site = findSiteById(entry.siteId);
+            if(site){
+              site.cells[entry.idx] = entry.previous || '';
+            }
+          });
+          render();
+          console.error('Mise à jour échouée', err);
+          showToast(err.message || 'Erreur lors de l\'enregistrement');
+        }finally{
+          state.dragSet.clear();
+        }
       }
 
       grid.addEventListener('mousedown', e=>{
@@ -734,7 +862,13 @@
       grid.addEventListener('mouseover', e=>{
         if(state.dragging && e.target.classList.contains('cell')) paintCell(e.target);
       });
-      window.addEventListener('mouseup', ()=>{ if(state.dragging){ state.dragging=false; flushCells(); updateProgressAll(); }});
+      window.addEventListener('mouseup', ()=>{
+        if(state.dragging){
+          state.dragging = false;
+          flushCells();
+          updateProgressAll();
+        }
+      });
 
       document.addEventListener('keydown', e=>{
         if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
@@ -774,45 +908,116 @@
       paintModeSel.addEventListener('change', e=> setPaintMode(e.target.value));
       filterInput.addEventListener('input', applyFilter);
 
-      addSiteBtn.addEventListener('click', ()=>{
+      addSiteBtn.addEventListener('click', async ()=>{
         const name = prompt('Nom du site ?');
         if(!name) return;
-        if(state.sites.includes(name)) return showToast('Ce nom existe déjà');
-        state.sites.push(name); ls.set(K_SITES, state.sites); render(); showToast('Site ajouté');
+        const normalized = name.trim();
+        if(!normalized) return showToast('Nom requis');
+        if(state.sites.some(site => site.name.toLowerCase() === normalized.toLowerCase())){
+          return showToast('Ce nom existe déjà');
+        }
+        try{
+          const resp = await fetch('/api/workload-plan/sites', {
+            method: 'POST',
+            headers: API_HEADERS,
+            body: JSON.stringify({ name: normalized })
+          });
+          if(!resp.ok){
+            let detail = 'Impossible de créer le site';
+            try{
+              const data = await resp.json();
+              if(data && data.detail) detail = data.detail;
+            }catch{}
+            throw new Error(detail);
+          }
+          const site = await resp.json();
+          state.sites.push(normalizeSite(site));
+          sortSites();
+          render();
+          showToast('Site ajouté');
+        }catch(err){
+          console.error('Ajout site échoué', err);
+          showToast(err.message || 'Erreur lors de l\'ajout');
+        }
       });
 
-      grid.addEventListener('click', e=>{
+      grid.addEventListener('click', async e=>{
         const row = e.target.closest('.site-row');
         if(!row) return;
-        const site = row.querySelector('.site-name').textContent;
+        const siteId = Number(row.dataset.siteId);
+        const site = findSiteById(siteId);
+        if(!site) return;
+
         if(e.target.classList.contains('rename')){
-          const nv = prompt('Nouveau nom ?', site);
-          if(!nv || nv===site) return;
-          if(state.sites.includes(nv)) return showToast('Nom déjà utilisé');
-          for(let i=0;i<364;i++){
-            const oldK = keyCell(site, i); const v = localStorage.getItem(oldK);
-            if(v!=null){ localStorage.setItem(keyCell(nv, i), v); localStorage.removeItem(oldK); }
+          const nv = prompt('Nouveau nom ?', site.name);
+          if(!nv) return;
+          const normalized = nv.trim();
+          if(!normalized || normalized === site.name) return;
+          if(state.sites.some(s => s.id !== siteId && s.name.toLowerCase() === normalized.toLowerCase())){
+            return showToast('Nom déjà utilisé');
           }
-          state.sites = state.sites.map(s=> s===site? nv : s); ls.set(K_SITES, state.sites);
-          render(); showToast('Site renommé');
+          try{
+            const resp = await fetch(`/api/workload-plan/sites/${siteId}`, {
+              method: 'PATCH',
+              headers: API_HEADERS,
+              body: JSON.stringify({ name: normalized })
+            });
+            if(!resp.ok){
+              let detail = 'Impossible de renommer le site';
+              try{
+                const data = await resp.json();
+                if(data && data.detail) detail = data.detail;
+              }catch{}
+              throw new Error(detail);
+            }
+            const updated = normalizeSite(await resp.json());
+            const idx = state.sites.findIndex(s => s.id === siteId);
+            if(idx !== -1){
+              state.sites[idx] = { ...updated, position: state.sites[idx].position };
+            }
+            render();
+            showToast('Site renommé');
+          }catch(err){
+            console.error('Renommage échoué', err);
+            showToast(err.message || 'Erreur lors du renommage');
+          }
         }
+
         if(e.target.classList.contains('del')){
-          if(!confirm(`Supprimer le site « ${site} » ?`)) return;
-          for(let i=0;i<364;i++) localStorage.removeItem(keyCell(site,i));
-          state.sites = state.sites.filter(s=> s!==site); ls.set(K_SITES, state.sites);
-          render(); showToast('Site supprimé');
+          if(!confirm(`Supprimer le site « ${site.name} » ?`)) return;
+          try{
+            const resp = await fetch(`/api/workload-plan/sites/${siteId}`, {
+              method: 'DELETE'
+            });
+            if(resp.status !== 204){
+              let detail = 'Impossible de supprimer le site';
+              try{
+                const data = await resp.json();
+                if(data && data.detail) detail = data.detail;
+              }catch{}
+              throw new Error(detail);
+            }
+            state.sites = state.sites.filter(s => s.id !== siteId);
+            render();
+            showToast('Site supprimé');
+          }catch(err){
+            console.error('Suppression échouée', err);
+            showToast(err.message || 'Erreur lors de la suppression');
+          }
         }
       });
 
       exportBtn.addEventListener('click', ()=>{
-        const data = { version: VERSION, sites: state.sites, cells:{} };
+        const data = { version: VERSION, sites: state.sites.map(site => site.name), cells:{} };
         state.sites.forEach(site=>{
-          const arr = [];
-          for(let i=0;i<364;i++) arr.push(getCell(site,i));
-          data.cells[site] = arr;
+          data.cells[site.name] = site.cells.slice(0, 364);
         });
         const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'plan_de_charge_v'+VERSION+'.json'; a.click(); URL.revokeObjectURL(a.href);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'plan_de_charge_v' + VERSION + '.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
         showToast('Export effectué');
       });
 
@@ -823,16 +1028,41 @@
 
         if(!confirm(`Importer ${Object.keys(data.cells||{}).length} sites ?`)) return;
 
-        state.sites = data.sites || [];
-        ls.set(K_SITES, state.sites);
-        Object.keys(localStorage).filter(k=> k.startsWith(K_CELL)).forEach(k=> localStorage.removeItem(k));
-        state.sites.forEach(site=>{
-          const arr = (data.cells && data.cells[site]) || [];
-          for(let i=0;i<364;i++){ const v=arr[i]||''; if(v) localStorage.setItem(keyCell(site,i), v); }
-        });
-        render(); showToast('Import terminé');
-        importFile.value = '';
+        try{
+          const payload = {
+            version: data.version ?? VERSION,
+            sites: data.sites || [],
+            cells: data.cells || {}
+          };
+          const resp = await fetch('/api/workload-plan/import', {
+            method: 'POST',
+            headers: API_HEADERS,
+            body: JSON.stringify(payload)
+          });
+          if(!resp.ok){
+            let detail = 'Import impossible';
+            try{
+              const errData = await resp.json();
+              if(errData && errData.detail) detail = errData.detail;
+            }catch{}
+            throw new Error(detail);
+          }
+          await loadData();
+          showToast('Import terminé');
+        }catch(err){
+          console.error('Import échoué', err);
+          showToast(err.message || 'Erreur lors de l\'import');
+        }finally{
+          importFile.value = '';
+        }
       });
+
+      async function init(){
+        setZoom(+zoomRange.value);
+        setPaintMode(state.paint);
+        await loadData();
+        runTests();
+      }
 
       function runTests(){
         try{
@@ -844,23 +1074,26 @@
           const row = grid.querySelector('.site-row');
           if(row){
             const rowNum = row.style.gridRow;
-            let cnt=0, sameRow=true; for(let i=0;i<364;i++){ const n=grid.querySelector(`.cell[style*="grid-row: ${rowNum};"][style*="grid-column: ${2+i}"]`); if(n){cnt++;} else {sameRow=false; break;} }
+            let cnt=0, sameRow=true;
+            for(let i=0;i<364;i++){
+              const n=grid.querySelector(`.cell[style*="grid-row: ${rowNum};"][style*="grid-column: ${2+i}"]`);
+              if(n){cnt++;}
+              else {sameRow=false; break;}
+            }
             console.assert(cnt===364 && sameRow, `Cellules par ligne attendues 364 sur grid-row ${rowNum}, trouvées ${cnt}`);
           }
           const before = filterCount.textContent;
-          filterInput.value = 'Site A'; applyFilter();
-          const after = filterCount.textContent;
-          console.assert(before!==after && /\d+\/\d+/.test(after), `Compteur de filtre devrait changer (avant=${before}, après=${after})`);
+          if(state.sites.some(site => site.name === 'Site A')){
+            filterInput.value = 'Site A'; applyFilter();
+            const after = filterCount.textContent;
+            console.assert(before!==after && /\d+\/\d+/.test(after), `Compteur de filtre devrait changer (avant=${before}, après=${after})`);
+          }
           filterInput.value = ''; applyFilter();
           console.groupEnd();
         }catch(e){ console.error('Tests en erreur:', e); }
       }
 
-      setZoom(+zoomRange.value);
-      setPaintMode(state.paint);
-      if(state.sites.length===0){ state.sites = {{ default_sites|tojson }}; ls.set(K_SITES, state.sites); }
-      render();
-      runTests();
+      init();
     })();
   </script>
 {% endblock %}
