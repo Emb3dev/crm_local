@@ -618,8 +618,8 @@
 
   document.addEventListener('keydown', e=>{
     if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
-    if(e.key==='g' || e.key==='G'){ setPaintMode('ok'); showToast('Mode Vert'); }
-    else if(e.key==='a' || e.key==='A'){ setPaintMode('warn'); showToast('Mode Orange'); }
+    if(e.key==='v' || e.key==='V'){ setPaintMode('ok'); showToast('Mode Vert'); }
+    else if(e.key==='o' || e.key==='O'){ setPaintMode('warn'); showToast('Mode Orange'); }
     else if(e.key==='r' || e.key==='R'){ setPaintMode('bad'); showToast('Mode Rouge'); }
     else if(e.key==='e' || e.key==='E'){ setPaintMode('erase'); showToast('Mode Effacer'); }
   });
