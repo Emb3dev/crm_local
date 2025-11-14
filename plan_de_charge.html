@@ -568,6 +568,9 @@
         }
         nameEl.textContent = name;
       }
+
+      frag.appendChild(entry.row);
+      entry.cells.forEach(c=> frag.appendChild(c));
     });
 
     const ordered = hasQuery
