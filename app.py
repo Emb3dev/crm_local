@@ -1006,11 +1006,15 @@ def list_filters_and_belts(
 
 
 @app.get("/plan-de-charge", response_class=HTMLResponse)
-def workload_plan(request: Request) -> HTMLResponse:
+def workload_plan(
+    request: Request, session: Session = Depends(get_session)
+) -> HTMLResponse:
+    site_count = len(crud.list_workload_sites(session))
     return templates.TemplateResponse(
         "plan_de_charge.html",
         {
             "request": request,
+            "workload_site_count": site_count,
         },
     )
 
