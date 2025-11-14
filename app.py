@@ -808,6 +808,7 @@ def login_page(request: Request, next: Optional[str] = None):
                             "request": request,
                             "next": next or "",
                             "already_authenticated": True,
+                            "current_user": user,
                         },
                     )
         except JWTError:
@@ -815,7 +816,11 @@ def login_page(request: Request, next: Optional[str] = None):
     request.state.user = None
     return templates.TemplateResponse(
         "login.html",
-        {"request": request, "next": next or ""},
+        {
+            "request": request,
+            "next": next or "",
+            "current_user": None,
+        },
     )
 
 
@@ -837,6 +842,7 @@ def login_submit(
                 "error": "Identifiants invalides",
                 "username": username,
                 "next": next or "",
+                "current_user": None,
             },
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
