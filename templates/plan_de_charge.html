@@ -435,6 +435,8 @@
           <button class="btn" id="addSite">+ Site</button>
           <button class="btn" id="exportBtn">Exporter JSON</button>
           <label for="importFile" class="btn" role="button">Importer JSON<input id="importFile" type="file" accept="application/json" style="display:none"></label>
+          <button class="btn" id="exportExcelBtn">Exporter Excel</button>
+          <label for="importExcelFile" class="btn" role="button">Importer Excel<input id="importExcelFile" type="file" accept=".xlsx,.xlsm,.xltx,.xltm" style="display:none"></label>
         </div>
         <div class="actions">
           <label for="paintMode">Peinture</label>
@@ -513,6 +515,8 @@
       const addSiteBtn = document.getElementById('addSite');
       const exportBtn = document.getElementById('exportBtn');
       const importFile = document.getElementById('importFile');
+      const exportExcelBtn = document.getElementById('exportExcelBtn');
+      const importExcelFile = document.getElementById('importExcelFile');
       const toast = document.getElementById('toast');
 
       const dayHeadTpl = document.getElementById('dayHeadTpl');
@@ -1026,6 +1030,35 @@
         }
       });
 
+      if(exportExcelBtn){
+        exportExcelBtn.addEventListener('click', async ()=>{
+          try{
+            const resp = await fetch('/api/workload-plan/export/excel');
+            if(!resp.ok){
+              let detail = 'Export Excel impossible';
+              try{
+                const errData = await resp.json();
+                if(errData && errData.detail) detail = errData.detail;
+              }catch{}
+              throw new Error(detail);
+            }
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plan_de_charge.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Export Excel effectué');
+          }catch(err){
+            console.error('Export Excel échoué', err);
+            showToast(err.message || "Erreur lors de l'export Excel");
+          }
+        });
+      }
+
       exportBtn.addEventListener('click', ()=>{
         const data = { version: VERSION, sites: state.sites.map(site => site.name), cells:{} };
         state.sites.forEach(site=>{
@@ -1039,6 +1072,36 @@
         URL.revokeObjectURL(a.href);
         showToast('Export effectué');
       });
+
+      if(importExcelFile){
+        importExcelFile.addEventListener('change', async (e)=>{
+          const f = e.target.files[0];
+          if(!f) return;
+          const formData = new FormData();
+          formData.append('file', f);
+          try{
+            const resp = await fetch('/api/workload-plan/import/excel', {
+              method: 'POST',
+              body: formData
+            });
+            if(!resp.ok){
+              let detail = 'Import Excel impossible';
+              try{
+                const errData = await resp.json();
+                if(errData && errData.detail) detail = errData.detail;
+              }catch{}
+              throw new Error(detail);
+            }
+            await loadData();
+            showToast('Import Excel terminé');
+          }catch(err){
+            console.error('Import Excel échoué', err);
+            showToast(err.message || "Erreur lors de l'import Excel");
+          }finally{
+            importExcelFile.value = '';
+          }
+        });
+      }
 
       importFile.addEventListener('change', async (e)=>{
         const f = e.target.files[0]; if(!f) return;

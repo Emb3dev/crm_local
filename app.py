@@ -27,6 +27,7 @@ from importers import (
     parse_belt_lines_excel,
     parse_clients_excel,
     parse_filter_lines_excel,
+    parse_workload_plan_excel,
 )
 from openpyxl import Workbook
 from uuid import uuid4
@@ -1149,6 +1150,34 @@ def import_workload_plan(
     return {"sites": count}
 
 
+@app.get("/api/workload-plan/export/excel")
+def export_workload_plan_excel(session: Session = Depends(get_session)) -> Response:
+    sites = crud.list_workload_sites(session)
+    buffer = _build_workload_plan_workbook(sites)
+    return _template_response(buffer, "plan_de_charge.xlsx")
+
+
+@app.post("/api/workload-plan/import/excel")
+async def import_workload_plan_excel(
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+) -> Dict[str, int]:
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Aucun fichier sélectionné.")
+    if not file.filename.lower().endswith(ALLOWED_IMPORT_EXTENSIONS):
+        raise HTTPException(
+            status_code=400,
+            detail="Format de fichier non supporté. Merci d'utiliser un fichier Excel (.xlsx).",
+        )
+    content = await file.read()
+    try:
+        sites, cells = parse_workload_plan_excel(content)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    count = crud.replace_workload_plan(session, sites, cells)
+    return {"sites": count}
+
+
 @app.post("/filtres-courroies/filtres")
 async def create_filter_line(
     site: str = Form(...),
@@ -1516,6 +1545,42 @@ def _autofit_sheet(sheet, padding: int = 2, max_width: int = 60) -> None:
             if cell.value:
                 max_length = max(max_length, len(str(cell.value)))
         sheet.column_dimensions[column].width = min(max_length + padding, max_width)
+
+
+def _build_workload_plan_workbook(sites: Iterable) -> BytesIO:
+    workbook = Workbook()
+
+    sheet = workbook.active
+    sheet.title = "Plan de charge"
+
+    headers = ["Site"] + [f"Jour {index + 1}" for index in range(364)]
+    sheet.append(headers)
+
+    for site in sites:
+        values = [""] * 364
+        for cell in getattr(site, "cells", []) or []:
+            if cell and 0 <= getattr(cell, "day_index", -1) < 364 and cell.value:
+                values[cell.day_index] = cell.value
+        sheet.append([getattr(site, "name", "")] + values)
+
+    sheet.freeze_panes = "B2"
+    sheet.column_dimensions["A"].width = 32
+
+    legend = workbook.create_sheet("Légende")
+    legend.append(["Valeur", "Signification"])
+    legend.append(["warn", "Orange — intervention à confirmer (4 h)"])
+    legend.append(["bad", "Rouge — charge pleine (8 h)"])
+    legend.append(["ok:4", "Vert 4 h — retour au vert depuis orange"])
+    legend.append(["ok:8", "Vert 8 h — retour au vert depuis rouge"])
+    legend.append(["ok", "Vert — intervention validée"])
+    legend.append(["(vide)", "Aucune information planifiée pour ce jour."])
+    legend.freeze_panes = "A2"
+    _autofit_sheet(legend, padding=4, max_width=55)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return buffer
 
 
 def _build_client_import_template() -> BytesIO:

@@ -6,6 +6,9 @@ import unicodedata
 import re
 
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
+
+import math
 
 
 EXPECTED_FIELDS = {
@@ -140,6 +143,24 @@ BELT_COLUMN_ALIASES: Dict[str, str] = {
     "semaine_commande": "order_week",
     "order_week": "order_week",
     "semaine": "order_week",
+}
+
+
+WORKLOAD_STATE_ALIASES = {
+    "warn": "warn",
+    "warning": "warn",
+    "orange": "warn",
+    "attention": "warn",
+    "a": "warn",
+    "bad": "bad",
+    "rouge": "bad",
+    "red": "bad",
+    "critique": "bad",
+    "r": "bad",
+    "ok": "ok",
+    "vert": "ok",
+    "green": "ok",
+    "g": "ok",
 }
 
 
@@ -450,3 +471,153 @@ def parse_belt_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]:
         rows.append(record)
 
     return rows
+
+
+def _format_hours(value: float) -> str:
+    if math.isnan(value) or math.isinf(value):
+        raise ValueError("Durée invalide")
+    rounded = round(value, 4)
+    if rounded.is_integer():
+        return str(int(rounded))
+    text = f"{rounded:.2f}".rstrip("0").rstrip(".")
+    return text or str(rounded)
+
+
+def _parse_hours_value(raw: str, row_index: int, column_index: int) -> str:
+    cleaned = raw.strip().lower()
+    for suffix in ("heures", "hours", "heure", "hour", "h"):
+        if cleaned.endswith(suffix):
+            cleaned = cleaned[: -len(suffix)]
+            break
+    cleaned = cleaned.strip().replace(",", ".")
+    if not cleaned:
+        raise ValueError(_format_workload_error(raw, row_index, column_index))
+    try:
+        value = float(cleaned)
+    except ValueError:
+        raise ValueError(_format_workload_error(raw, row_index, column_index)) from None
+    if value <= 0:
+        raise ValueError(_format_workload_error(raw, row_index, column_index))
+    return _format_hours(value)
+
+
+def _format_workload_error(value: str, row_index: int, column_index: int) -> str:
+    column_letter = get_column_letter(column_index)
+    return (
+        f"Ligne {row_index}, colonne {column_letter}: valeur '{value}' invalide. "
+        "Utilisez bad, warn ou ok:4."
+    )
+
+
+def _normalize_workload_cell_value(
+    raw_value: Optional[Union[str, int, float]],
+    row_index: int,
+    column_index: int,
+) -> Optional[str]:
+    if raw_value is None:
+        return None
+    if isinstance(raw_value, float) and math.isnan(raw_value):
+        return None
+    text = str(raw_value).strip()
+    if not text:
+        return None
+    lower = text.lower()
+
+    if lower in WORKLOAD_STATE_ALIASES:
+        return WORKLOAD_STATE_ALIASES[lower]
+
+    if lower in {"4", "4h"}:
+        return "warn"
+    if lower in {"8", "8h"}:
+        return "bad"
+
+    if lower.startswith("ok"):
+        remainder = lower[2:]
+        remainder = remainder.lstrip(" :_-")
+        if not remainder:
+            return "ok"
+        return f"ok:{_parse_hours_value(remainder, row_index, column_index)}"
+
+    if ":" in lower:
+        prefix, suffix = lower.split(":", 1)
+        prefix = prefix.strip()
+        suffix = suffix.strip()
+        if prefix in WORKLOAD_STATE_ALIASES:
+            state = WORKLOAD_STATE_ALIASES[prefix]
+            if state == "ok":
+                return f"ok:{_parse_hours_value(suffix, row_index, column_index)}"
+            return state
+
+    numeric_match = re.match(r"^(\d+(?:[.,]\d+)?)\s*(h|heures|hours|heure|hour)?$", lower)
+    if numeric_match:
+        number = float(numeric_match.group(1).replace(",", "."))
+        if number <= 0:
+            raise ValueError(_format_workload_error(text, row_index, column_index))
+        if number == 4:
+            return "warn"
+        if number == 8:
+            return "bad"
+        return f"ok:{_format_hours(number)}"
+
+    raise ValueError(_format_workload_error(text, row_index, column_index))
+
+
+def parse_workload_plan_excel(
+    content: bytes,
+) -> Tuple[List[str], Dict[str, List[Optional[str]]]]:
+    try:
+        workbook = load_workbook(BytesIO(content), data_only=True)
+    except Exception as exc:
+        raise ValueError(f"Impossible de lire le fichier Excel: {exc}")
+
+    sheet = workbook.active
+    if sheet.max_row < 2:
+        raise ValueError("Le fichier ne contient aucune donnée.")
+
+    sites: List[str] = []
+    cells_map: Dict[str, List[Optional[str]]] = {}
+    seen_sites: set[str] = set()
+
+    for row_index, row in enumerate(
+        sheet.iter_rows(min_row=2, max_col=365, values_only=True), start=2
+    ):
+        if not row:
+            continue
+        row_values = list(row)
+        if not any(
+            (isinstance(value, float) and not math.isnan(value))
+            or isinstance(value, int)
+            or (isinstance(value, str) and value.strip())
+            for value in row_values
+        ):
+            continue
+
+        raw_site = row_values[0] if len(row_values) > 0 else None
+        site_name = _coerce_value(raw_site)
+        if not site_name:
+            raise ValueError(f"Ligne {row_index}: nom de site manquant.")
+        normalized_site = site_name.strip()
+        if normalized_site in seen_sites:
+            raise ValueError(
+                f"Ligne {row_index}: le site '{normalized_site}' est présent plusieurs fois."
+            )
+        seen_sites.add(normalized_site)
+        sites.append(normalized_site)
+
+        cells: List[Optional[str]] = [None] * 364
+        for day_index in range(364):
+            raw_value = row_values[day_index + 1] if day_index + 1 < len(row_values) else None
+            try:
+                normalized_value = _normalize_workload_cell_value(
+                    raw_value, row_index, day_index + 2
+                )
+            except ValueError as exc:
+                raise ValueError(str(exc))
+            cells[day_index] = normalized_value
+
+        cells_map[normalized_site] = cells
+
+    if not sites:
+        raise ValueError("Aucun site valide trouvé dans le fichier.")
+
+    return sites, cells_map
