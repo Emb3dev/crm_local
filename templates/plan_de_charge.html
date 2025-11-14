@@ -564,8 +564,8 @@
           <label for="paintMode">Peinture</label>
           <select id="paintMode" aria-label="Mode de peinture">
             <option value="ok">Vert (planifié)</option>
-            <option value="warn">Orange (à revoir)</option>
-            <option value="bad">Rouge (à planifier)</option>
+            <option value="warn">Orange (4h)</option>
+            <option value="bad">Rouge (8h)</option>
             <option value="erase">Effacer</option>
           </select>
           <span id="modeBadge" class="badge" aria-live="polite">
@@ -708,8 +708,8 @@
         paintModeSel.value = mode;
         const map = {
           ok: ['#16a34a', 'Vert (planifié)'],
-          warn: ['#fb923c', 'Orange (à revoir)'],
-          bad: ['#dc2626', 'Rouge (à planifier)'],
+          warn: ['#fb923c', 'Orange (4h)'],
+          bad: ['#dc2626', 'Rouge (8h)'],
           erase: ['#9ca3af', 'Effacer']
         };
         modeDot.style.background = map[mode][0];
