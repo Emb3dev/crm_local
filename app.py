@@ -2,6 +2,7 @@ from typing import Optional, Dict, List, Iterable, Union, Annotated
 
 import logging
 import os
+import secrets
 from datetime import datetime, timedelta
 from io import BytesIO
 from urllib.parse import quote
@@ -75,6 +76,11 @@ SESSION_COOKIE_SECURE = os.environ.get("CRM_SESSION_COOKIE_SECURE", "false").low
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
+
+
+def _generate_temporary_password(length: int = 12) -> str:
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 class Token(BaseModel):
@@ -158,6 +164,7 @@ def get_current_user(
     user = crud.get_user_by_username(session, token_data.username or "")
     if not user:
         raise credentials_exception
+    crud.touch_user_activity(session, user)
     request.state.user = user
     return user
 
@@ -847,6 +854,7 @@ def login_submit(
             },
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
+    user = crud.record_user_login(session, user)
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         {"sub": user.username}, expires_delta=access_token_expires
@@ -871,7 +879,11 @@ def login_submit(
 def logout(
     _current_user: CurrentUser,
     redirect_to: Optional[str] = Form("/login"),
+    session: Session = Depends(get_session),
 ):
+    db_user = crud.get_user_by_username(session, _current_user.username)
+    if db_user:
+        crud.record_user_logout(session, db_user)
     response = RedirectResponse(
         url=redirect_to or "/login",
         status_code=status.HTTP_303_SEE_OTHER,
@@ -958,6 +970,9 @@ def admin_users_page(
 ):
     _ensure_admin_access(_current_user)
     users = crud.list_users(session)
+    login_history = crud.get_login_history_for_users(
+        session, [user.id for user in users if user.id], limit=5
+    )
     return templates.TemplateResponse(
         "admin_users.html",
         {
@@ -967,6 +982,8 @@ def admin_users_page(
             "success": request.query_params.get("success") == "1",
             "form_values": {"username": ""},
             "focus_username": request.query_params.get("focus"),
+            "login_history": login_history,
+            "reset_result": None,
         },
     )
 
@@ -1000,6 +1017,9 @@ def admin_users_create(
 
     if errors or hashed_password is None:
         users = crud.list_users(session)
+        login_history = crud.get_login_history_for_users(
+            session, [user.id for user in users if user.id], limit=5
+        )
         return templates.TemplateResponse(
             "admin_users.html",
             {
@@ -1009,6 +1029,8 @@ def admin_users_create(
                 "success": False,
                 "form_values": {"username": trimmed_username},
                 "focus_username": None,
+                "login_history": login_history,
+                "reset_result": None,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -1020,6 +1042,55 @@ def admin_users_create(
     return RedirectResponse(
         url=f"/admin/utilisateurs?success=1&focus={quote(trimmed_username)}",
         status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@app.post(
+    "/admin/utilisateurs/{username}/reinitialiser-mot-de-passe",
+    response_class=HTMLResponse,
+)
+def admin_users_reset_password(
+    request: Request,
+    _current_user: CurrentUser,
+    username: str,
+    session: Session = Depends(get_session),
+):
+    _ensure_admin_access(_current_user)
+    errors: List[str] = []
+    reset_result: Optional[Dict[str, str]] = None
+    target_user = crud.get_user_by_username(session, username)
+    if not target_user:
+        errors.append("Utilisateur introuvable.")
+    else:
+        try:
+            temporary_password = _generate_temporary_password()
+            hashed_password = get_password_hash(temporary_password)
+        except ValueError as exc:
+            errors.append(str(exc))
+        else:
+            crud.update_user_password(session, target_user, hashed_password)
+            reset_result = {
+                "username": target_user.username,
+                "password": temporary_password,
+            }
+    users = crud.list_users(session)
+    login_history = crud.get_login_history_for_users(
+        session, [user.id for user in users if user.id], limit=5
+    )
+    status_code = status.HTTP_400_BAD_REQUEST if errors else status.HTTP_200_OK
+    return templates.TemplateResponse(
+        "admin_users.html",
+        {
+            "request": request,
+            "users": users,
+            "errors": errors or None,
+            "success": False,
+            "form_values": {"username": ""},
+            "focus_username": reset_result["username"] if reset_result else None,
+            "login_history": login_history,
+            "reset_result": reset_result,
+        },
+        status_code=status_code,
     )
 
 

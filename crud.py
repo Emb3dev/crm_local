@@ -1,6 +1,7 @@
 from typing import Dict, Iterable, List, Optional
 
 import re
+from datetime import datetime
 
 from sqlalchemy import delete, func
 from sqlalchemy.orm import selectinload
@@ -26,6 +27,7 @@ from models import (
     SubcontractedServiceUpdate,
     User,
     UserCreate,
+    UserLoginEvent,
     WorkloadCell,
     WorkloadCellUpdate,
     WorkloadSite,
@@ -656,3 +658,58 @@ def update_user_password(
     session.commit()
     session.refresh(user)
     return user
+
+
+def record_user_login(session: Session, user: User) -> User:
+    if not user.id:
+        return user
+    now = datetime.utcnow()
+    user.last_login_at = now
+    user.last_active_at = now
+    user.is_online = True
+    event = UserLoginEvent(user_id=user.id, event_type="login", occurred_at=now)
+    session.add_all([user, event])
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def record_user_logout(session: Session, user: User) -> User:
+    if not user.id:
+        return user
+    now = datetime.utcnow()
+    user.last_logout_at = now
+    user.is_online = False
+    event = UserLoginEvent(user_id=user.id, event_type="logout", occurred_at=now)
+    session.add_all([user, event])
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def touch_user_activity(session: Session, user: User) -> User:
+    if not user.id:
+        return user
+    user.last_active_at = datetime.utcnow()
+    user.is_online = True
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def get_login_history_for_users(
+    session: Session, user_ids: List[int], *, limit: int = 5
+) -> Dict[int, List[UserLoginEvent]]:
+    history: Dict[int, List[UserLoginEvent]] = {}
+    if not user_ids:
+        return history
+    for user_id in user_ids:
+        stmt = (
+            select(UserLoginEvent)
+            .where(UserLoginEvent.user_id == user_id)
+            .order_by(UserLoginEvent.occurred_at.desc())
+            .limit(limit)
+        )
+        history[user_id] = session.exec(stmt).all()
+    return history
