@@ -48,7 +48,7 @@
       <div class="absolute inset-0 bg-gradient-to-br from-white via-slate-50 to-slate-200 dark:from-midnight-900 dark:via-midnight-800/90 dark:to-slate-900"></div>
     </div>
 
-    {% set current_user = request.state.__dict__.get('user') %}
+    {% set current_user = request.scope.get('state', {}).get('user') %}
     {% set current_path = request.url.path %}
     {% set clients_active = current_path == '/' %}
     {% set prestations_active = current_path.startswith('/prestations') %}
