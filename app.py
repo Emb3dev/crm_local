@@ -19,6 +19,7 @@ from fastapi import (
     File,
     status,
 )
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -146,6 +147,21 @@ def get_token_from_request(
         detail="Authentification requise",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+
+@app.exception_handler(HTTPException)
+async def redirect_unauthenticated_users(
+    request: Request, exc: HTTPException
+):
+    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+        next_path = request.url.path
+        if request.url.query:
+            next_path = f"{next_path}?{request.url.query}"
+        return RedirectResponse(
+            url=f"/login?next={quote(next_path)}",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+    return await http_exception_handler(request, exc)
 
 
 def get_current_user(
