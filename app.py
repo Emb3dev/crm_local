@@ -724,6 +724,32 @@ def _subcontractings_context(
     }
 
 
+def _empty_subcontracted_service(
+    default_client_id: Optional[int] = None,
+) -> SimpleNamespace:
+    default_frequency = (
+        PREDEFINED_FREQUENCY_KEYS[0]
+        if PREDEFINED_FREQUENCY_KEYS
+        else CUSTOM_INTERVAL_VALUE
+    )
+    frequency_details = PREDEFINED_FREQUENCIES.get(default_frequency, {})
+    return SimpleNamespace(
+        id=None,
+        prestation_key=None,
+        prestation_label="Nouvelle prestation",
+        budget_code="",
+        budget=None,
+        frequency=default_frequency,
+        frequency_interval=frequency_details.get("interval"),
+        frequency_unit=frequency_details.get("unit"),
+        status=SUBCONTRACT_STATUS_DEFAULT,
+        realization_week=None,
+        order_week=None,
+        client_id=default_client_id,
+        client=None,
+    )
+
+
 def _extract_client_filters(
     status: Optional[str], depannage: Optional[str], astreinte: Optional[str]
 ) -> Dict[str, str]:
@@ -1437,6 +1463,41 @@ def subcontracted_service_edit_page(
             "available_prestations": available_keys,
             "clients": clients,
             "return_url": f"/prestations?focus={service.id}#service-{service.id}",
+            "form_action": f"/prestations/{service.id}/edit",
+            "is_creation": False,
+        },
+    )
+
+
+@app.get("/prestations/new", response_class=HTMLResponse)
+def subcontracted_service_create_page(
+    request: Request,
+    _current_user: CurrentUser,
+    session: Session = Depends(get_session),
+):
+    subcontracted_groups, subcontracted_lookup = _get_subcontracted_options(session)
+    clients = crud.list_client_choices(session)
+    default_client_id = clients[0].id if clients else None
+    empty_service = _empty_subcontracted_service(default_client_id)
+    available_keys = set(subcontracted_lookup.keys())
+    return templates.TemplateResponse(
+        "subcontracting_edit.html",
+        {
+            "request": request,
+            "service": empty_service,
+            "subcontracted_groups": subcontracted_groups,
+            "frequency_options": _build_frequency_labels([]),
+            "frequency_select_options": FREQUENCY_SELECT_OPTIONS,
+            "frequency_unit_options": FREQUENCY_UNIT_OPTIONS,
+            "custom_interval_value": CUSTOM_INTERVAL_VALUE,
+            "predefined_frequency_keys": PREDEFINED_FREQUENCY_KEYS,
+            "subcontract_status_options": SUBCONTRACT_STATUS_OPTIONS,
+            "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
+            "available_prestations": available_keys,
+            "clients": clients,
+            "return_url": "/prestations",
+            "form_action": "/prestations/new",
+            "is_creation": True,
         },
     )
 
@@ -1508,6 +1569,97 @@ def update_subcontracted_service(
 
     return RedirectResponse(
         url=f"/prestations?focus={service_id}#service-{service_id}",
+        status_code=303,
+    )
+
+
+def _create_subcontracted_service_from_form(
+    session: Session,
+    *,
+    client_id: int,
+    prestation: str,
+    budget: Optional[str],
+    frequency: str,
+    custom_frequency_interval: Optional[str],
+    custom_frequency_unit: Optional[str],
+    status: str,
+    realization_week: Optional[str],
+    order_week: Optional[str],
+):
+    _, subcontracted_lookup = _get_subcontracted_options(session)
+    details = subcontracted_lookup.get(prestation)
+    if not details:
+        raise HTTPException(400, "Prestation inconnue")
+
+    (
+        resolved_frequency,
+        resolved_interval,
+        resolved_unit,
+    ) = _resolve_frequency(
+        frequency, custom_frequency_interval, custom_frequency_unit
+    )
+
+    if status not in SUBCONTRACT_STATUS_OPTIONS:
+        raise HTTPException(400, "Statut inconnu")
+
+    parsed_budget = _parse_budget(budget)
+    realization_value = (
+        realization_week.strip().upper()
+        if realization_week and resolved_frequency == "prestation_ponctuelle"
+        else None
+    )
+    order_value = order_week.strip().upper() if order_week else None
+
+    created = crud.create_subcontracted_service(
+        session,
+        client_id,
+        SubcontractedServiceCreate(
+            prestation_key=prestation,
+            prestation_label=details["label"],
+            category=details["category"],
+            budget_code=details["budget_code"],
+            budget=parsed_budget,
+            frequency=resolved_frequency,
+            frequency_interval=resolved_interval,
+            frequency_unit=resolved_unit,
+            status=status,
+            realization_week=realization_value,
+            order_week=order_value,
+        ),
+    )
+    if not created:
+        raise HTTPException(404, "Client introuvable")
+    return created
+
+
+@app.post("/prestations/new")
+def create_subcontracted_service_from_view(
+    _current_user: CurrentUser,
+    prestation: str = Form(...),
+    client_id: int = Form(...),
+    budget: Optional[str] = Form(None),
+    frequency: str = Form(...),
+    custom_frequency_interval: Optional[str] = Form(None),
+    custom_frequency_unit: Optional[str] = Form(None),
+    status: str = Form(SUBCONTRACT_STATUS_DEFAULT),
+    realization_week: Optional[str] = Form(None),
+    order_week: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    created = _create_subcontracted_service_from_form(
+        session,
+        client_id=client_id,
+        prestation=prestation,
+        budget=budget,
+        frequency=frequency,
+        custom_frequency_interval=custom_frequency_interval,
+        custom_frequency_unit=custom_frequency_unit,
+        status=status,
+        realization_week=realization_week,
+        order_week=order_week,
+    )
+    return RedirectResponse(
+        url=f"/prestations?focus={created.id}#service-{created.id}",
         status_code=303,
     )
 
@@ -1664,46 +1816,18 @@ def add_subcontracted_service(
     order_week: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
-    _, subcontracted_lookup = _get_subcontracted_options(session)
-    details = subcontracted_lookup.get(prestation)
-    if not details:
-        raise HTTPException(400, "Prestation inconnue")
-    (
-        resolved_frequency,
-        resolved_interval,
-        resolved_unit,
-    ) = _resolve_frequency(frequency, custom_frequency_interval, custom_frequency_unit)
-
-    if status not in SUBCONTRACT_STATUS_OPTIONS:
-        raise HTTPException(400, "Statut inconnu")
-
-    parsed_budget = _parse_budget(budget)
-    realization_value = (
-        realization_week.strip().upper()
-        if realization_week and resolved_frequency == "prestation_ponctuelle"
-        else None
-    )
-    order_value = order_week.strip().upper() if order_week else None
-
-    created = crud.create_subcontracted_service(
+    created = _create_subcontracted_service_from_form(
         session,
-        client_id,
-        SubcontractedServiceCreate(
-            prestation_key=prestation,
-            prestation_label=details["label"],
-            category=details["category"],
-            budget_code=details["budget_code"],
-            budget=parsed_budget,
-            frequency=resolved_frequency,
-            frequency_interval=resolved_interval,
-            frequency_unit=resolved_unit,
-            status=status,
-            realization_week=realization_value,
-            order_week=order_value,
-        ),
+        client_id=client_id,
+        prestation=prestation,
+        budget=budget,
+        frequency=frequency,
+        custom_frequency_interval=custom_frequency_interval,
+        custom_frequency_unit=custom_frequency_unit,
+        status=status,
+        realization_week=realization_week,
+        order_week=order_week,
     )
-    if not created:
-        raise HTTPException(404, "Client introuvable")
     return RedirectResponse(
         url=f"/?focus={client_id}#client-{client_id}", status_code=303
     )
