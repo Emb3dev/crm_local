@@ -6,6 +6,30 @@
 {% block page_subtitle %}Visualisez toutes les prestations enregistrées, filtrez par mots-clés et identifiez rapidement les clients et budgets associés.{% endblock %}
 {% block title %}Prestations — CRM Local{% endblock %}
 {% block content %}
+{% if import_report %}
+  {% set is_success = not import_report.errors %}
+  {% set singular_label = import_report.entity_label or 'prestation' %}
+  {% set plural_label = import_report.entity_label_plural or singular_label ~ 's' %}
+  {% set use_plural = import_report.created != 1 %}
+  {% set alert_classes = 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100' if is_success else 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100' %}
+  <div class="rounded-3xl border {{ alert_classes }} p-6 shadow-xl shadow-indigo-500/20 backdrop-blur">
+    <p class="text-xs font-semibold uppercase tracking-[0.35em]">Import terminé</p>
+    <p class="mt-2 text-base">
+      {{ import_report.created }} {{ plural_label if use_plural else singular_label }} importé{{ 's' if use_plural else '' }} sur {{ import_report.total }} depuis <strong>{{ import_report.filename }}</strong>.
+    </p>
+    {% if import_report.errors %}
+      <p class="mt-3 text-sm font-medium text-amber-700 dark:text-amber-200/80">Certaines lignes n'ont pas pu être importées :</p>
+      <ul class="mt-2 space-y-1 text-sm">
+        {% for err in import_report.errors %}
+          <li class="flex items-start gap-2">
+            <span aria-hidden="true">⚠️</span>
+            <span>{{ err }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% endif %}
 <section class="space-y-10">
   <div class="{{ card_shell() }}">
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -192,6 +216,38 @@
           </tbody>
         </table>
       </div>
+    </div>
+  </div>
+</section>
+
+<section class="grid gap-8 lg:grid-cols-2">
+  <div class="{{ card_shell() }}">
+    <div class="space-y-2">
+      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Import Excel</h2>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Créez plusieurs prestations en une seule opération en partant d'un modèle préformaté.</p>
+    </div>
+    <form action="/prestations/import" method="post" enctype="multipart/form-data" class="mt-6 grid gap-4">
+      <label class="{{ form_label() }}">
+        <span>Fichier Excel (.xlsx)</span>
+        <input type="file" name="file" accept=".xlsx,.xlsm,.xltx,.xltm" required class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:file:bg-indigo-500/20 dark:file:text-white" />
+      </label>
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Importer</button>
+        <a class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:focus-visible:ring-white/40" href="/prestations/import/template">Télécharger le modèle Excel</a>
+      </div>
+      <p class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:text-slate-300">
+        Colonnes obligatoires : <strong>Prestation</strong> (clé ou libellé) et un identifiant client ou nom d'entreprise. Options prises en charge : Budget, Statut (<code class="font-mono text-indigo-600 dark:text-indigo-200">non_commence</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">en_cours</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">fait</code>), Fréquence (<code class="font-mono text-indigo-600 dark:text-indigo-200">contrat_annuel</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">prestation_ponctuelle</code>…) ainsi que les semaines de commande et de réalisation.
+      </p>
+    </form>
+  </div>
+  <div class="{{ card_shell() }}">
+    <div class="space-y-2">
+      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Référentiel des prestations</h2>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Téléchargez en un clic la liste complète des prestations et de leurs codes budgétaires.</p>
+    </div>
+    <div class="mt-6 space-y-4 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
+      <a class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" href="/prestations/referentiel/export">Télécharger l'Excel complet</a>
+      <p>Le fichier recense chaque prestation avec son libellé, sa clé interne, sa catégorie et le code budget associé. Utile pour vérifier rapidement les correspondances avant un import ou partager le catalogue.</p>
     </div>
   </div>
 </section>

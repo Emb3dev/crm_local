@@ -3,7 +3,7 @@ from typing import Dict, Iterable, List, Optional
 import re
 from datetime import datetime
 
-from sqlalchemy import delete, func
+from sqlalchemy import delete, func, or_
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
@@ -259,6 +259,33 @@ def list_client_choices(session: Session) -> List[Client]:
         .join(Entreprise)
         .order_by(Entreprise.nom.asc(), Client.name.asc())
     )
+    return session.exec(stmt).all()
+
+
+def find_clients_for_import(
+    session: Session,
+    *,
+    company_name: Optional[str] = None,
+    client_name: Optional[str] = None,
+) -> List[Client]:
+    stmt = select(Client).outerjoin(Entreprise)
+
+    filters = []
+    if company_name:
+        normalized_company = company_name.strip().lower()
+        if normalized_company:
+            filters.append(func.lower(Entreprise.nom) == normalized_company)
+            filters.append(func.lower(Client.company_name) == normalized_company)
+
+    if filters:
+        stmt = stmt.where(or_(*filters))
+
+    if client_name:
+        normalized_client = client_name.strip().lower()
+        if normalized_client:
+            stmt = stmt.where(func.lower(Client.name) == normalized_client)
+
+    stmt = stmt.options(selectinload(Client.entreprise))
     return session.exec(stmt).all()
 
 def get_client(session: Session, client_id: int) -> Optional[Client]:
