@@ -1,5 +1,7 @@
 from typing import Optional, Dict, List, Iterable, Union, Annotated, Any, Tuple
 
+from decimal import Decimal
+
 import logging
 import os
 import secrets
@@ -633,6 +635,32 @@ def _parse_budget(value: Optional[str]) -> Optional[float]:
         raise HTTPException(400, "Budget invalide") from exc
 
 
+def _normalize_budget_value(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, str):
+        normalized = value.strip().replace("€", "")
+        normalized = normalized.replace("\xa0", "").replace(" ", "")
+        normalized = normalized.replace(",", ".")
+        if not normalized:
+            return None
+        try:
+            return float(normalized)
+        except ValueError:
+            return None
+    return None
+
+
+def _format_currency_value(amount: float) -> str:
+    formatted = f"{amount:,.2f}"
+    formatted = formatted.replace(",", "\u00a0")
+    return formatted.replace(".", ",")
+
+
 def _clients_context(
     request: Request,
     clients,
@@ -684,13 +712,19 @@ def _subcontractings_context(
     category_totals: Dict[str, int] = {}
     frequency_totals: Dict[str, int] = {}
     total_budget = 0.0
+    service_budget_display: Dict[int, str] = {}
     client_ids = set()
 
     for service in services:
         category_totals[service.category] = category_totals.get(service.category, 0) + 1
         frequency_totals[service.frequency] = frequency_totals.get(service.frequency, 0) + 1
-        if service.budget is not None:
-            total_budget += float(service.budget)
+        normalized_budget = _normalize_budget_value(getattr(service, "budget", None))
+        if normalized_budget is not None:
+            total_budget += normalized_budget
+            if getattr(service, "id", None) is not None:
+                service_budget_display[service.id] = _format_currency_value(
+                    normalized_budget
+                )
         if service.client_id:
             client_ids.add(service.client_id)
 
@@ -715,8 +749,10 @@ def _subcontractings_context(
         "category_totals": category_totals,
         "frequency_totals": frequency_totals,
         "total_budget": total_budget,
+        "total_budget_formatted": _format_currency_value(total_budget),
         "total_services": len(services),
         "distinct_clients": len(client_ids),
+        "service_budget_display": service_budget_display,
         "active_filters": filters,
         "filters_definition": filters_definition,
         "focus_id": request.query_params.get("focus"),
