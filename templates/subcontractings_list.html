@@ -97,7 +97,13 @@
   <div class="{{ card_shell() }}">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Détail des prestations</h2>
-      <span class="rounded-full border border-slate-200 bg-white px-4 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">{{ total_services }} ligne{{ 's' if total_services > 1 else '' }}</span>
+      <div class="flex flex-wrap items-center gap-3">
+        <a
+          href="/prestations/new"
+          class="inline-flex items-center justify-center rounded-full border border-indigo-300 bg-indigo-500/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-700 transition hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20"
+        >Ajouter une prestation</a>
+        <span class="rounded-full border border-slate-200 bg-white px-4 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">{{ total_services }} ligne{{ 's' if total_services > 1 else '' }}</span>
+      </div>
     </div>
     <div class="mt-6 overflow-hidden rounded-3xl border border-slate-200 transition-colors duration-300 dark:border-white/10">
       <div class="overflow-x-auto">

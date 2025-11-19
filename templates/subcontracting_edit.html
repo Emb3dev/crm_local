@@ -1,32 +1,42 @@
 {% extends "base.html" %}
 {% from "_ui_macros.html" import card_shell, form_label %}
+{% set is_creation = is_creation | default(false) %}
+{% set form_action = form_action | default('') %}
+{% set current_label = service.prestation_label if service and service.prestation_label else 'Nouvelle prestation' %}
+{% set page_title_text = 'Ajouter une prestation' if is_creation else 'Modifier une prestation' %}
+{% set page_subtitle_text = 'Renseignez une nouvelle prestation externalisée et associez-la immédiatement à un client.' if is_creation else "Ajustez les informations de la prestation sélectionnée et mettez à jour les données budgétaires associées." %}
+{% set submit_label = 'Créer la prestation' if is_creation else 'Enregistrer les modifications' %}
 {% block main_classes %}space-y-10{% endblock %}
 {% block page_eyebrow %}Pilotage opérations{% endblock %}
-{% block page_title %}Modifier une prestation{% endblock %}
-{% block page_subtitle %}Ajustez les informations de la prestation sélectionnée et mettez à jour les données budgétaires associées.{% endblock %}
-{% block title %}Modifier {{ service.prestation_label }} — CRM Local{% endblock %}
+{% block page_title %}{{ page_title_text }}{% endblock %}
+{% block page_subtitle %}{{ page_subtitle_text }}{% endblock %}
+{% block title %}{{ page_title_text }} — CRM Local{% endblock %}
 {% block content %}
 <section class="space-y-10">
   <div class="{{ card_shell() }}">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="space-y-2">
-        <h2 class="font-display text-2xl text-slate-900 dark:text-white">{{ service.prestation_label }}</h2>
-        <p class="text-sm text-slate-600 dark:text-slate-300">
-          Client :
-          <strong
-            class="font-semibold text-slate-900 dark:text-white"
-            data-client-output
-          >
-            {% if service.client %}
-              {{ service.client.entreprise.nom if service.client.entreprise else service.client.company_name }}
-            {% else %}
-              —
-            {% endif %}
-            {% if service.client and service.client.name %}
-              — {{ service.client.name }}
-            {% endif %}
-          </strong>
-        </p>
+        <h2 class="font-display text-2xl text-slate-900 dark:text-white">{{ current_label }}</h2>
+        {% if is_creation %}
+          <p class="text-sm text-slate-600 dark:text-slate-300">Complétez le formulaire ci-dessous pour créer une nouvelle prestation sous-traitée.</p>
+        {% else %}
+          <p class="text-sm text-slate-600 dark:text-slate-300">
+            Client :
+            <strong
+              class="font-semibold text-slate-900 dark:text-white"
+              data-client-output
+            >
+              {% if service.client %}
+                {{ service.client.entreprise.nom if service.client.entreprise else service.client.company_name }}
+              {% else %}
+                —
+              {% endif %}
+              {% if service.client and service.client.name %}
+                — {{ service.client.name }}
+              {% endif %}
+            </strong>
+          </p>
+        {% endif %}
       </div>
       <a
         href="{{ return_url }}"
@@ -36,7 +46,7 @@
       </a>
     </div>
 
-    <form class="mt-8 space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-inner shadow-indigo-100/40 transition-colors duration-300 subcontract-form dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10" method="post">
+    <form action="{{ form_action }}" class="mt-8 space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-inner shadow-indigo-100/40 transition-colors duration-300 subcontract-form dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10" method="post">
       <div class="grid gap-4 md:grid-cols-2">
         <label class="md:col-span-2 {{ form_label() }}">
           <span>Prestation *</span>
@@ -47,7 +57,7 @@
               data-prestation-select
               class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
             >
-              <option value="" disabled>Choisir une prestation…</option>
+              <option value="" disabled {% if not service.prestation_key %}selected{% endif %}>Choisir une prestation…</option>
               {% if service.prestation_key and service.prestation_key not in available_prestations %}
                 <option value="{{ service.prestation_key }}" selected data-budget-code="{{ service.budget_code }}">{{ service.prestation_label }} (existante)</option>
               {% endif %}
@@ -75,6 +85,9 @@
               data-client-select
               class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
             >
+              {% if is_creation %}
+                <option value="" disabled {% if not service.client_id %}selected{% endif %}>Choisir un client…</option>
+              {% endif %}
               {% for client_option in clients %}
                 <option value="{{ client_option.id }}" {% if client_option.id == service.client_id %}selected{% endif %}>
                   {% set option_company = client_option.entreprise.nom if client_option.entreprise else client_option.company_name %}
@@ -94,7 +107,7 @@
           <input
             type="text"
             readonly
-            value="{{ service.budget_code }}"
+            value="{{ service.budget_code or '' }}"
             data-budget-output
             class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 dark:border-white/10 dark:bg-white/10 dark:text-white"
           />
@@ -111,7 +124,8 @@
             class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 dark:border-white/10 dark:bg-white/10 dark:text-white"
           />
         </label>
-{% set is_custom_frequency = service.frequency not in predefined_frequency_keys %}
+{% set current_frequency = service.frequency or predefined_frequency_keys[0] %}
+{% set is_custom_frequency = current_frequency not in predefined_frequency_keys %}
         <label class="{{ form_label() }}">
           <span>Fréquence</span>
           <div class="relative mt-2">
@@ -126,7 +140,7 @@
                 {% if is_custom_frequency %}
                   <option value="{{ value }}" {% if value == custom_interval_value %}selected{% endif %}>{{ label }}</option>
                 {% else %}
-                  <option value="{{ value }}" {% if value == service.frequency %}selected{% endif %}>{{ label }}</option>
+                  <option value="{{ value }}" {% if value == current_frequency %}selected{% endif %}>{{ label }}</option>
                 {% endif %}
               {% endfor %}
             </select>
@@ -183,7 +197,8 @@
             </span>
           </div>
         </label>
-        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300 subcontract-form__week {% if service.frequency != 'prestation_ponctuelle' %}hidden{% endif %}" data-week-field>
+        {% set week_field_hidden = current_frequency != 'prestation_ponctuelle' %}
+        <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300 subcontract-form__week {% if week_field_hidden %}hidden{% endif %}" data-week-field>
           <span>Semaine de réalisation</span>
           <input
             type="text"
@@ -191,7 +206,7 @@
             placeholder="S01"
             pattern="S\d{2}"
             value="{{ service.realization_week or '' }}"
-            {% if service.frequency != 'prestation_ponctuelle' %}disabled{% endif %}
+            {% if week_field_hidden %}disabled{% endif %}
             class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-white"
           />
         </label>
@@ -218,7 +233,7 @@
           type="submit"
           class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 hover:text-indigo-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:border-indigo-300 dark:hover:bg-indigo-400/20 dark:hover:text-white dark:focus-visible:ring-indigo-400"
         >
-          Enregistrer les modifications
+          {{ submit_label }}
         </button>
       </div>
     </form>
