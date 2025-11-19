@@ -614,8 +614,20 @@ def _normalize_filter_dimensions(
     return dimensions.strip()
 
 
-def list_filter_lines(session: Session) -> List[FilterLine]:
+def list_filter_lines(
+    session: Session, q: Optional[str] = None
+) -> List[FilterLine]:
     stmt = select(FilterLine).order_by(FilterLine.created_at.desc())
+    if q:
+        like = f"%{q}%"
+        stmt = stmt.where(
+            FilterLine.site.ilike(like)
+            | FilterLine.equipment.ilike(like)
+            | FilterLine.efficiency.ilike(like)
+            | FilterLine.dimensions.ilike(like)
+            | FilterLine.order_week.ilike(like)
+            | FilterLine.format_type.ilike(like)
+        )
     return session.exec(stmt).all()
 
 
@@ -673,8 +685,16 @@ def update_filter_line(
     return record
 
 
-def list_belt_lines(session: Session) -> List[BeltLine]:
+def list_belt_lines(session: Session, q: Optional[str] = None) -> List[BeltLine]:
     stmt = select(BeltLine).order_by(BeltLine.created_at.desc())
+    if q:
+        like = f"%{q}%"
+        stmt = stmt.where(
+            BeltLine.site.ilike(like)
+            | BeltLine.equipment.ilike(like)
+            | BeltLine.reference.ilike(like)
+            | BeltLine.order_week.ilike(like)
+        )
     return session.exec(stmt).all()
 
 

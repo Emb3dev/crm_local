@@ -1854,8 +1854,11 @@ def list_filters_and_belts(
     _current_user: CurrentUser,
     session: Session = Depends(get_session),
 ):
-    filters = crud.list_filter_lines(session)
-    belts = crud.list_belt_lines(session)
+    filters_q = (request.query_params.get("filters_q") or "").strip()
+    belts_q = (request.query_params.get("belts_q") or "").strip()
+
+    filters = crud.list_filter_lines(session, q=filters_q or None)
+    belts = crud.list_belt_lines(session, q=belts_q or None)
     editing_filter = None
     editing_belt = None
 
@@ -1888,6 +1891,8 @@ def list_filters_and_belts(
             "import_report": _consume_import_report(request),
             "editing_filter": editing_filter,
             "editing_belt": editing_belt,
+            "filters_q": filters_q,
+            "belts_q": belts_q,
         },
     )
 
