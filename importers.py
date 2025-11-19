@@ -88,6 +88,17 @@ ASTREINTE_CHOICES = {
     "pas_d_astreinte",
 }
 
+FREQUENCY_UNIT_ALIASES = {
+    "mois": "months",
+    "month": "months",
+    "months": "months",
+    "annee": "years",
+    "annees": "years",
+    "ans": "years",
+    "year": "years",
+    "years": "years",
+}
+
 FILTER_EXPECTED_FIELDS = {"site", "equipment", "format_type"}
 
 FILTER_COLUMN_ALIASES: Dict[str, str] = {
@@ -143,6 +154,38 @@ BELT_COLUMN_ALIASES: Dict[str, str] = {
     "semaine_commande": "order_week",
     "order_week": "order_week",
     "semaine": "order_week",
+}
+
+PRESTATION_COLUMN_ALIASES: Dict[str, str] = {
+    "company_name": "company_name",
+    "entreprise": "company_name",
+    "societe": "company_name",
+    "raison_sociale": "company_name",
+    "client": "client_name",
+    "client_name": "client_name",
+    "contact": "client_name",
+    "nom_client": "client_name",
+    "prestation": "prestation",
+    "prestation_key": "prestation",
+    "libelle": "prestation_label",
+    "prestation_label": "prestation_label",
+    "budget": "budget",
+    "montant": "budget",
+    "frequency": "frequency",
+    "frequence": "frequency",
+    "intervalle": "frequency_interval",
+    "frequency_interval": "frequency_interval",
+    "frequency_unit": "frequency_unit",
+    "unite": "frequency_unit",
+    "client_id": "client_id",
+    "status": "status",
+    "statut": "status",
+    "order_week": "order_week",
+    "commande": "order_week",
+    "semaine_commande": "order_week",
+    "realization_week": "realization_week",
+    "realisation_week": "realization_week",
+    "semaine_realisation": "realization_week",
 }
 
 
@@ -212,6 +255,10 @@ def _resolve_filter_header(header: str) -> str:
 
 def _resolve_belt_header(header: str) -> str:
     return BELT_COLUMN_ALIASES.get(header, "")
+
+
+def _resolve_prestation_header(header: str) -> str:
+    return PRESTATION_COLUMN_ALIASES.get(header, "")
 
 
 def _parse_positive_int(value: str, row_index: int, field_name: str) -> int:
@@ -331,6 +378,78 @@ def parse_clients_excel(content: bytes) -> List[Dict[str, str]]:
 
         if contacts:
             record["contacts"] = contacts
+
+        rows.append(record)
+
+    return rows
+
+
+def parse_prestations_excel(content: bytes) -> List[Dict[str, Union[str, int]]]:
+    try:
+        workbook = load_workbook(BytesIO(content), data_only=True)
+    except Exception as exc:
+        raise ValueError(f"Impossible de lire le fichier Excel: {exc}")
+
+    sheet = workbook.active
+    try:
+        header_row = next(sheet.iter_rows(max_row=1))
+    except StopIteration:
+        raise ValueError("Le fichier ne contient aucune donnée.")
+
+    headers = [
+        _resolve_prestation_header(_normalize_header(cell.value)) for cell in header_row
+    ]
+
+    if not any(headers):
+        raise ValueError("Le fichier ne contient pas d'en-têtes valides.")
+
+    rows: List[Dict[str, Union[str, int]]] = []
+    for row_index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+        record: Dict[str, Union[str, int]] = {"__row__": row_index}
+        empty = True
+        for idx, raw_value in enumerate(row):
+            header = headers[idx] if idx < len(headers) else ""
+            if not header:
+                continue
+            value = _coerce_value(raw_value)
+            if value is None:
+                continue
+            empty = False
+            if header in {"frequency", "status"}:
+                record[header] = _normalize_header(value)
+            elif header == "frequency_unit":
+                normalized_unit = _normalize_header(value)
+                record[header] = FREQUENCY_UNIT_ALIASES.get(
+                    normalized_unit, normalized_unit
+                )
+            elif header in {"company_name", "client_name", "prestation_label", "prestation"}:
+                record[header] = value.strip()
+            elif header == "client_id":
+                record[header] = _parse_positive_int(value, row_index, "identifiant client")
+            elif header == "frequency_interval":
+                record[header] = _parse_positive_int(
+                    value, row_index, "intervalle de fréquence"
+                )
+            else:
+                record[header] = value
+
+        if empty:
+            continue
+
+        if not record.get("prestation") and not record.get("prestation_label"):
+            raise ValueError(
+                f"Ligne {row_index}: veuillez renseigner la colonne prestation ou libellé."
+            )
+
+        has_client_reference = any(
+            record.get(field)
+            for field in ("client_id", "company_name", "client_name")
+        )
+        if not has_client_reference:
+            raise ValueError(
+                "Ligne {row_index}: renseignez le nom d'entreprise, le contact client ou l'identifiant client."
+                .format(row_index=row_index)
+            )
 
         rows.append(record)
 

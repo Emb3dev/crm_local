@@ -47,12 +47,14 @@ from models import (
     UserCreate,
     PrestationDefinitionCreate,
     PrestationDefinitionUpdate,
+    PrestationDefinition,
 )
 import crud
 from importers import (
     parse_belt_lines_excel,
     parse_clients_excel,
     parse_filter_lines_excel,
+    parse_prestations_excel,
     parse_workload_plan_excel,
 )
 from openpyxl import Workbook
@@ -678,6 +680,7 @@ def _subcontractings_context(
     filters: Dict[str, str],
     subcontracted_groups,
 ):
+    report = _consume_import_report(request)
     category_totals: Dict[str, int] = {}
     frequency_totals: Dict[str, int] = {}
     total_budget = 0.0
@@ -721,6 +724,7 @@ def _subcontractings_context(
         "subcontract_status_styles": SUBCONTRACT_STATUS_STYLES,
         "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
         "subcontracted_groups": subcontracted_groups,
+        "import_report": report,
     }
 
 
@@ -1632,6 +1636,91 @@ def _create_subcontracted_service_from_form(
     return created
 
 
+def _resolve_import_client_id(session: Session, row: Dict[str, Any]) -> int:
+    raw_client_id = row.get("client_id")
+    if raw_client_id:
+        client = crud.get_client(session, int(raw_client_id))
+        if not client:
+            raise ValueError(f"Client #{raw_client_id} introuvable")
+        return client.id
+
+    company_name = (row.get("company_name") or "").strip()
+    client_name = (row.get("client_name") or "").strip()
+
+    matches = crud.find_clients_for_import(
+        session,
+        company_name=company_name or None,
+        client_name=client_name or None,
+    )
+
+    if not matches:
+        if company_name and client_name:
+            raise ValueError(
+                f"Aucun client trouvé pour {company_name} / {client_name}."
+            )
+        if company_name:
+            raise ValueError(f"Aucun client trouvé pour {company_name}.")
+        raise ValueError(
+            "Aucun client correspondant au contact renseigné. Ajoutez l'identifiant client pour lever l'ambiguïté."
+        )
+
+    if len(matches) > 1:
+        raise ValueError(
+            "Plusieurs clients correspondent aux informations fournies. Précisez l'identifiant client pour lever l'ambiguïté."
+        )
+
+    return matches[0].id
+
+
+def _resolve_import_prestation_key(
+    row: Dict[str, Any], lookup: Dict[str, Dict[str, str]]
+) -> str:
+    raw_value = (row.get("prestation") or "").strip()
+    label_value = (row.get("prestation_label") or "").strip()
+
+    if raw_value:
+        if raw_value in lookup:
+            return raw_value
+        normalized_value = _slugify_identifier(raw_value)
+        if normalized_value in lookup:
+            return normalized_value
+        for key in lookup.keys():
+            if _slugify_identifier(key) == normalized_value:
+                return key
+
+    if label_value:
+        normalized_label = _slugify_identifier(label_value)
+        for key, details in lookup.items():
+            if _slugify_identifier(details.get("label", "")) == normalized_label:
+                return key
+
+    target = raw_value or label_value or "(libellé manquant)"
+    raise ValueError(f"Prestation '{target}' introuvable dans le référentiel.")
+
+
+def _prepare_import_frequency(row: Dict[str, Any]) -> Tuple[str, Optional[str], Optional[str]]:
+    raw_frequency = (row.get("frequency") or "").strip()
+    if not raw_frequency:
+        raise ValueError("La fréquence est obligatoire.")
+
+    if raw_frequency.startswith(INTERVAL_PREFIX):
+        interval, unit = _parse_interval_frequency(raw_frequency)
+        if not interval or not unit:
+            raise ValueError("Fréquence personnalisée invalide.")
+        return CUSTOM_INTERVAL_VALUE, str(interval), unit
+
+    if raw_frequency == CUSTOM_INTERVAL_VALUE:
+        interval_value = row.get("frequency_interval")
+        unit_value = row.get("frequency_unit")
+        if interval_value is None or not unit_value:
+            raise ValueError(
+                "Indiquez l'intervalle et l'unité pour la fréquence personnalisée."
+            )
+        return CUSTOM_INTERVAL_VALUE, str(interval_value), unit_value
+
+    return raw_frequency, None, None
+
+
 @app.post("/prestations/new")
 def create_subcontracted_service_from_view(
     _current_user: CurrentUser,
@@ -1661,6 +1750,108 @@ def create_subcontracted_service_from_view(
     return RedirectResponse(
         url=f"/prestations?focus={created.id}#service-{created.id}",
         status_code=303,
+    )
+
+
+@app.post("/prestations/import")
+async def import_subcontracted_services(
+    _current_user: CurrentUser,
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+):
+    if not file.filename:
+        return _store_import_report(
+            "/prestations",
+            created=0,
+            total=0,
+            errors=["Aucun fichier sélectionné."],
+            filename="Import prestations",
+            singular_label="prestation",
+            plural_label="prestations",
+        )
+
+    if not file.filename.lower().endswith(ALLOWED_IMPORT_EXTENSIONS):
+        return _store_import_report(
+            "/prestations",
+            created=0,
+            total=0,
+            errors=[
+                "Format de fichier non supporté. Merci d'utiliser un fichier Excel (.xlsx)."
+            ],
+            filename=file.filename,
+            singular_label="prestation",
+            plural_label="prestations",
+        )
+
+    content = await file.read()
+    try:
+        rows = parse_prestations_excel(content)
+    except ValueError as exc:
+        return _store_import_report(
+            "/prestations",
+            created=0,
+            total=0,
+            errors=[str(exc)],
+            filename=file.filename,
+            singular_label="prestation",
+            plural_label="prestations",
+        )
+
+    _, subcontracted_lookup = _get_subcontracted_options(session)
+    created = 0
+    errors: List[str] = []
+
+    for idx, row in enumerate(rows, start=1):
+        row_number = row.get("__row__", idx)
+        try:
+            client_id = _resolve_import_client_id(session, row)
+            prestation_key = _resolve_import_prestation_key(row, subcontracted_lookup)
+            frequency_value, custom_interval, custom_unit = _prepare_import_frequency(row)
+            status_value = row.get("status") or SUBCONTRACT_STATUS_DEFAULT
+            if status_value not in SUBCONTRACT_STATUS_OPTIONS:
+                raise ValueError(
+                    f"Statut '{row.get('status')}' inconnu. Valeurs acceptées: "
+                    + ", ".join(SUBCONTRACT_STATUS_OPTIONS.keys())
+                )
+
+            realization_week = row.get("realization_week")
+            order_week = row.get("order_week")
+
+            created_service = _create_subcontracted_service_from_form(
+                session,
+                client_id=client_id,
+                prestation=prestation_key,
+                budget=row.get("budget"),
+                frequency=frequency_value,
+                custom_frequency_interval=custom_interval,
+                custom_frequency_unit=custom_unit,
+                status=status_value,
+                realization_week=(
+                    realization_week.strip().upper()
+                    if isinstance(realization_week, str)
+                    else realization_week
+                ),
+                order_week=(
+                    order_week.strip().upper()
+                    if isinstance(order_week, str)
+                    else order_week
+                ),
+            )
+            if created_service:
+                created += 1
+        except (HTTPException, ValueError) as exc:
+            session.rollback()
+            detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
+            errors.append(f"Ligne {row_number} : {detail}")
+
+    return _store_import_report(
+        "/prestations",
+        created=created,
+        total=len(rows),
+        errors=errors,
+        filename=file.filename,
+        singular_label="prestation",
+        plural_label="prestations",
     )
 
 # Form création
@@ -2638,6 +2829,147 @@ def _build_client_import_template() -> BytesIO:
     return buffer
 
 
+def _build_prestation_import_template() -> BytesIO:
+    workbook = Workbook()
+
+    sheet = workbook.active
+    sheet.title = "Prestations"
+
+    headers = [
+        "company_name",
+        "client_name",
+        "client_id",
+        "prestation",
+        "prestation_label",
+        "budget",
+        "frequency",
+        "frequency_interval",
+        "frequency_unit",
+        "status",
+        "order_week",
+        "realization_week",
+    ]
+    sheet.append(headers)
+
+    sample_rows = [
+        {
+            "company_name": "Exemple SARL",
+            "client_name": "Alice Martin",
+            "prestation": "controle_ssi",
+            "budget": "2500",
+            "frequency": "contrat_annuel",
+            "status": "en_cours",
+            "order_week": "S05",
+        },
+        {
+            "company_name": "Solutions BTP",
+            "client_name": "Bruno Carrel",
+            "prestation": "maintenance_groupe_electrogene",
+            "budget": "4800",
+            "frequency": "contrat_trimestriel",
+            "status": "non_commence",
+        },
+        {
+            "company_name": "Collectif Horizon",
+            "client_name": "Chloé Bernard",
+            "prestation_label": "Analyse d'eau",
+            "frequency": "prestation_ponctuelle",
+            "status": "fait",
+            "realization_week": "S12",
+        },
+    ]
+
+    for row in sample_rows:
+        sheet.append([row.get(column, "") for column in headers])
+
+    sheet.freeze_panes = "A2"
+    _autofit_sheet(sheet, padding=2, max_width=40)
+
+    options_sheet = workbook.create_sheet("Options")
+    options_sheet.append(["Champ", "Valeurs autorisées", "Description"])
+    options_sheet.freeze_panes = "A2"
+
+    status_values = "\n".join(
+        f"{key} — {label}" for key, label in SUBCONTRACT_STATUS_OPTIONS.items()
+    )
+    frequency_values = "\n".join(
+        f"{key} — {data['label']}" for key, data in PREDEFINED_FREQUENCIES.items()
+    )
+
+    options_sheet.append(
+        [
+            "prestation",
+            "Clé interne du référentiel",
+            "Utilisez la colonne Prestation ou renseignez uniquement le libellé dans prestation_label.",
+        ]
+    )
+    options_sheet.append(
+        [
+            "frequency",
+            frequency_values,
+            "Utilisez custom_interval ou un format interval:unite:valeur pour les fréquences personnalisées.",
+        ]
+    )
+    options_sheet.append(
+        [
+            "status",
+            status_values,
+            "Statut opérationnel appliqué à la ligne importée.",
+        ]
+    )
+    options_sheet.append(
+        [
+            "frequency_unit",
+            "months — mois\nyears — années",
+            "Uniquement requis pour les fréquences personnalisées.",
+        ]
+    )
+
+    _autofit_sheet(options_sheet, padding=4, max_width=70)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def _build_prestation_reference_export(
+    definitions: Iterable[PrestationDefinition],
+) -> BytesIO:
+    workbook = Workbook()
+
+    sheet = workbook.active
+    sheet.title = "Référentiel"
+
+    headers = [
+        "Catégorie",
+        "Libellé prestation",
+        "Clé prestation",
+        "Code budget",
+        "Position",
+    ]
+    sheet.append(headers)
+
+    for definition in definitions:
+        sheet.append(
+            [
+                getattr(definition, "category", ""),
+                getattr(definition, "label", ""),
+                getattr(definition, "key", ""),
+                getattr(definition, "budget_code", ""),
+                getattr(definition, "position", ""),
+            ]
+        )
+
+    sheet.freeze_panes = "A2"
+    _autofit_sheet(sheet, padding=2, max_width=45)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
 def _build_filter_import_template() -> BytesIO:
     workbook = Workbook()
 
@@ -2762,6 +3094,26 @@ def _template_response(buffer: BytesIO, filename: str) -> Response:
 def download_client_import_template(_current_user: CurrentUser):
     return _template_response(
         _build_client_import_template(), "modele_import_clients.xlsx"
+    )
+
+
+@app.get("/prestations/import/template")
+@app.get("/prestations/import/template/")
+def download_prestation_import_template(_current_user: CurrentUser):
+    return _template_response(
+        _build_prestation_import_template(), "modele_import_prestations.xlsx"
+    )
+
+
+@app.get("/prestations/referentiel/export")
+@app.get("/prestations/referentiel/export/")
+def download_prestation_reference(
+    _current_user: CurrentUser, session: Session = Depends(get_session)
+):
+    definitions = crud.list_prestation_definitions(session)
+    return _template_response(
+        _build_prestation_reference_export(definitions),
+        "referentiel_prestations.xlsx",
     )
 
 
