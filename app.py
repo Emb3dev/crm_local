@@ -2942,22 +2942,26 @@ def _build_prestation_reference_export(
     sheet.title = "Référentiel"
 
     headers = [
-        "Catégorie",
         "Libellé prestation",
-        "Clé prestation",
         "Code budget",
-        "Position",
+        "Catégorie",
     ]
     sheet.append(headers)
 
-    for definition in definitions:
+    sorted_definitions = sorted(
+        definitions,
+        key=lambda definition: (
+            getattr(definition, "category", "") or "",
+            getattr(definition, "label", "") or "",
+        ),
+    )
+
+    for definition in sorted_definitions:
         sheet.append(
             [
-                getattr(definition, "category", ""),
                 getattr(definition, "label", ""),
-                getattr(definition, "key", ""),
                 getattr(definition, "budget_code", ""),
-                getattr(definition, "position", ""),
+                getattr(definition, "category", ""),
             ]
         )
 
@@ -3105,8 +3109,11 @@ def download_prestation_import_template(_current_user: CurrentUser):
     )
 
 
-@app.get("/prestations/referentiel/export")
-@app.get("/prestations/referentiel/export/")
+@app.get(
+    "/prestations/referentiel/export",
+    name="download_prestation_reference",
+)
+@app.get("/prestations/referentiel/export/", include_in_schema=False)
 def download_prestation_reference(
     _current_user: CurrentUser, session: Session = Depends(get_session)
 ):

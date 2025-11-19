@@ -246,8 +246,8 @@
       <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Téléchargez en un clic la liste complète des prestations et de leurs codes budgétaires.</p>
     </div>
     <div class="mt-6 space-y-4 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
-      <a class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" href="/prestations/referentiel/export">Télécharger l'Excel complet</a>
-      <p>Le fichier recense chaque prestation avec son libellé, sa clé interne, sa catégorie et le code budget associé. Utile pour vérifier rapidement les correspondances avant un import ou partager le catalogue.</p>
+      <a class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" href="{{ url_for('download_prestation_reference') }}">Télécharger l'Excel complet</a>
+      <p>Le fichier recense chaque prestation avec son libellé, son code budget et la catégorie associée. Idéal pour partager un extrait clair ou préparer un import.</p>
     </div>
   </div>
 </section>
