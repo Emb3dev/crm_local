@@ -141,8 +141,12 @@
             {% if is_focused %}open{% endif %}
           >
             <summary class="flex cursor-pointer flex-col gap-4 px-6 py-5 transition-colors duration-300 sm:flex-row sm:items-center sm:justify-between">
-              <div class="space-y-2">
-                <h3 class="font-display text-xl text-slate-900 transition-colors duration-300 dark:text-white">{{ service.prestation_label }}</h3>
+              <div class="space-y-3">
+                <div class="flex flex-wrap items-center gap-3">
+                  <h3 class="font-display text-xl text-slate-900 transition-colors duration-300 dark:text-white">{{ service.prestation_label }}</h3>
+                  <span class="inline-flex items-center gap-2 rounded-full border {{ status_class }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ subcontract_status_options.get(status_value, 'Statut inconnu') }}</span>
+                  <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ frequency_options.get(service.frequency, service.frequency) }}</span>
+                </div>
                 <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
                   Client :
                   {% if service.client %}
@@ -154,18 +158,28 @@
                     <span class="text-slate-400">à associer</span>
                   {% endif %}
                 </p>
-                <p class="text-xs uppercase tracking-[0.3em] text-slate-400 transition-colors duration-300 dark:text-slate-500">Créée le {{ service.created_at.strftime('%d/%m/%Y') }}</p>
+                <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">
+                  <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ service.category }}</span>
+                  <span class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-indigo-700 transition-colors duration-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    Commande : {{ service.order_week or 'Non planifiée' }}
+                  </span>
+                  <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700 transition-colors duration-300 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l3.5 3.5" />
+                    </svg>
+                    Réalisation : {{ service.realization_week or 'Non planifiée' }}
+                  </span>
+                </div>
               </div>
-              <div class="flex flex-col items-start gap-2 sm:items-end">
-                <div class="flex flex-wrap items-center gap-2">
-                  <span class="inline-flex items-center gap-2 rounded-full border {{ status_class }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ subcontract_status_options.get(status_value, 'Statut inconnu') }}</span>
-                  <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ frequency_options.get(service.frequency, service.frequency) }}</span>
-                  <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ service.category }}</span>
-                </div>
-                <div class="flex items-center gap-3 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
+              <div class="flex flex-col items-start gap-3 sm:items-end">
+                <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
                   <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold uppercase tracking-[0.3em] text-indigo-700 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-indigo-100">{{ service.budget_code or 'Code inconnu' }}</span>
-                  <span class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{% if display_budget %}{{ display_budget }} €{% else %}—{% endif %}</span>
+                  <span class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{% if display_budget %}{{ display_budget }} €{% else %}Budget à préciser{% endif %}</span>
                 </div>
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-400 transition-colors duration-300 dark:text-slate-500">Créée le {{ service.created_at.strftime('%d/%m/%Y') }}</p>
                 <span class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sm text-slate-500 transition group-open:rotate-180 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
@@ -202,14 +216,20 @@
                 <section class="space-y-3">
                   <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Planification & suivi</h4>
                   <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm text-slate-600 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-300 dark:shadow-indigo-500/10">
-                    <p class="flex items-center gap-2">
-                      <span class="font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Commande :</span>
-                      <span>{{ service.order_week or 'Non planifiée' }}</span>
-                    </p>
-                    <p class="mt-2 flex items-center gap-2">
-                      <span class="font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Réalisation :</span>
-                      <span>{{ service.realization_week or 'Non planifiée' }}</span>
-                    </p>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <p class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                        Commande : <span class="font-medium text-slate-700 dark:text-slate-200">{{ service.order_week or 'Non planifiée' }}</span>
+                      </p>
+                      <p class="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 transition-colors duration-300 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l3.5 3.5" />
+                        </svg>
+                        Réalisation : <span class="font-medium text-emerald-800 dark:text-emerald-100">{{ service.realization_week or 'Non planifiée' }}</span>
+                      </p>
+                    </div>
                     <p class="mt-3 text-xs uppercase tracking-[0.3em] text-slate-400 transition-colors duration-300 dark:text-slate-500">Dernière mise à jour : {{ service.created_at.strftime('%d/%m/%Y') }}</p>
                   </div>
                 </section>
