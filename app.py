@@ -29,6 +29,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel import Session
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from starlette.datastructures import URL
 
 from database import init_db, get_session, engine
 from defaults import DEFAULT_PRESTATION_GROUPS
@@ -763,6 +764,20 @@ def _subcontractings_context(
         session, service_ids
     )
 
+    export_base_url = request.url_for("download_subcontracted_services")
+    export_params = {
+        "q": q or "",
+        "category": filters.get("category", ""),
+        "frequency": filters.get("frequency", ""),
+        "order_status": filters.get("order_status", ""),
+    }
+    cleaned_params = {k: v for k, v in export_params.items() if v}
+    export_url = (
+        str(URL(str(export_base_url)).include_query_params(**cleaned_params))
+        if cleaned_params
+        else str(export_base_url)
+    )
+
     return {
         "request": request,
         "services": services,
@@ -788,6 +803,7 @@ def _subcontractings_context(
         "subcontracted_groups": subcontracted_groups,
         "import_report": report,
         "comments_by_service": comments_by_service,
+        "export_url": export_url,
     }
 
 
@@ -3082,6 +3098,70 @@ def _build_prestation_reference_export(
     return buffer
 
 
+def _build_subcontracted_services_export(
+    services: Iterable,
+    frequency_labels: Dict[str, str],
+) -> BytesIO:
+    workbook = Workbook()
+
+    sheet = workbook.active
+    sheet.title = "Prestations"
+
+    headers = [
+        "Libellé prestation",
+        "Client",
+        "Contact",
+        "Code budget",
+        "Budget",
+        "Catégorie",
+        "Fréquence",
+        "Statut",
+        "Semaine commande",
+        "Semaine réalisation",
+    ]
+    sheet.append(headers)
+
+    for service in services:
+        client = getattr(service, "client", None)
+        entreprise = getattr(client, "entreprise", None) if client else None
+        company_name = (
+            getattr(entreprise, "nom", None)
+            or getattr(client, "company_name", None)
+            or ""
+        )
+        contact_name = getattr(client, "name", "") if client else ""
+        budget_value = _normalize_budget_value(getattr(service, "budget", None))
+        frequency_label = frequency_labels.get(
+            getattr(service, "frequency", None), getattr(service, "frequency", "")
+        )
+        status_label = SUBCONTRACT_STATUS_OPTIONS.get(
+            getattr(service, "status", None), getattr(service, "status", "")
+        )
+
+        sheet.append(
+            [
+                getattr(service, "prestation_label", ""),
+                company_name,
+                contact_name,
+                getattr(service, "budget_code", ""),
+                budget_value,
+                getattr(service, "category", ""),
+                frequency_label,
+                status_label,
+                getattr(service, "order_week", ""),
+                getattr(service, "realization_week", ""),
+            ]
+        )
+
+    sheet.freeze_panes = "A2"
+    _autofit_sheet(sheet, padding=2, max_width=55)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
 def _build_filter_import_template() -> BytesIO:
     workbook = Workbook()
 
@@ -3214,6 +3294,43 @@ def download_client_import_template(_current_user: CurrentUser):
 def download_prestation_import_template(_current_user: CurrentUser):
     return _template_response(
         _build_prestation_import_template(), "modele_import_prestations.xlsx"
+    )
+
+
+@app.get(
+    "/prestations/export",
+    name="download_subcontracted_services",
+)
+@app.get("/prestations/export/", include_in_schema=False)
+def download_subcontracted_services(
+    _current_user: CurrentUser,
+    session: Session = Depends(get_session),
+    q: Optional[str] = None,
+    category: Optional[str] = None,
+    frequency: Optional[str] = None,
+    order_status: Optional[str] = None,
+):
+    subcontracted_groups, _ = _get_subcontracted_options(session)
+    valid_categories = [group.get("title") for group in subcontracted_groups]
+    filters = _extract_subcontracting_filters(
+        category,
+        frequency,
+        order_status,
+        valid_categories=[c for c in valid_categories if c],
+    )
+    services = crud.list_subcontracted_services(
+        session,
+        q=q,
+        filters=filters,
+        limit=5000,
+    )
+    frequency_labels = _build_frequency_labels(
+        services,
+        [filters.get("frequency")] if filters.get("frequency") else [],
+    )
+    return _template_response(
+        _build_subcontracted_services_export(services, frequency_labels),
+        "listing_prestations.xlsx",
     )
 
 
