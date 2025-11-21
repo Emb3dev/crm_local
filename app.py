@@ -143,7 +143,7 @@ def get_token_from_request(
 ) -> str:
     if token:
         return token
-    cookie_token = request.cookies.get("session_token")
+    cookie_token = request.cookies.get(SESSION_COOKIE_NAME)
     if cookie_token:
         return cookie_token
     raise HTTPException(
