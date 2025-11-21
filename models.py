@@ -210,6 +210,10 @@ class SubcontractedService(SubcontractedServiceBase, table=True):
     client_id: int = Field(foreign_key="client.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     client: Optional[Client] = Relationship(back_populates="subcontractings")
+    comments: List["SubcontractedServiceComment"] = Relationship(
+        back_populates="service",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
 
 
 class SubcontractedServiceCreate(SubcontractedServiceBase):
@@ -229,6 +233,19 @@ class SubcontractedServiceUpdate(SQLModel):
     realization_week: Optional[str] = None
     order_week: Optional[str] = None
     client_id: Optional[int] = None
+
+
+class SubcontractedServiceCommentBase(SQLModel):
+    service_id: int = Field(foreign_key="subcontractedservice.id")
+    author_name: str = Field(description="Nom ou prénom de l'auteur du commentaire")
+    author_initials: str = Field(description="Initiales de l'auteur")
+    content: str = Field(sa_column=Column("content", String, nullable=False))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SubcontractedServiceComment(SubcontractedServiceCommentBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    service: Optional[SubcontractedService] = Relationship(back_populates="comments")
 
 
 # =======================

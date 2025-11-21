@@ -522,6 +522,16 @@ def _build_category_filter_options(
     return options
 
 
+def _extract_initials(value: str) -> str:
+    cleaned = re.sub(r"\s+", " ", (value or "").strip())
+    parts = [chunk for chunk in re.split(r"[\s_-]+", cleaned) if chunk]
+    if not parts:
+        return "?"
+    if len(parts) >= 2:
+        return (parts[0][0] + parts[1][0]).upper()
+    return parts[0][:2].upper()
+
+
 def _parse_interval_frequency(value: str) -> tuple[Optional[int], Optional[str]]:
     if not value.startswith(INTERVAL_PREFIX):
         return None, None
@@ -1502,6 +1512,7 @@ def subcontracted_service_edit_page(
     subcontracted_groups, subcontracted_lookup = _get_subcontracted_options(session)
     available_keys = set(subcontracted_lookup.keys())
     clients = crud.list_client_choices(session)
+    comments = crud.list_subcontracted_service_comments(session, service_id)
     return templates.TemplateResponse(
         "subcontracting_edit.html",
         {
@@ -1517,6 +1528,7 @@ def subcontracted_service_edit_page(
             "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
             "available_prestations": available_keys,
             "clients": clients,
+            "comments": comments,
             "return_url": f"/prestations?focus={service.id}#service-{service.id}",
             "form_action": f"/prestations/{service.id}/edit",
             "is_creation": False,
@@ -1550,6 +1562,7 @@ def subcontracted_service_create_page(
             "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
             "available_prestations": available_keys,
             "clients": clients,
+            "comments": [],
             "return_url": "/prestations",
             "form_action": "/prestations/new",
             "is_creation": True,
@@ -1624,6 +1637,40 @@ def update_subcontracted_service(
 
     return RedirectResponse(
         url=f"/prestations?focus={service_id}#service-{service_id}",
+        status_code=303,
+    )
+
+
+@app.post("/prestations/{service_id}/comments")
+def add_subcontracted_service_comment(
+    _current_user: CurrentUser,
+    service_id: int,
+    message: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    normalized_message = (message or "").strip()
+    if not normalized_message:
+        raise HTTPException(400, "Le commentaire ne peut pas être vide")
+
+    service = crud.get_subcontracted_service(session, service_id)
+    if not service:
+        raise HTTPException(404, "Prestation introuvable")
+
+    author_name = _current_user.username
+    author_initials = _extract_initials(author_name)
+
+    created = crud.create_subcontracted_service_comment(
+        session,
+        service_id=service_id,
+        author_name=author_name,
+        author_initials=author_initials,
+        content=normalized_message,
+    )
+    if not created:
+        raise HTTPException(404, "Prestation introuvable")
+
+    return RedirectResponse(
+        url=f"/prestations/{service_id}/edit#comments",
         status_code=303,
     )
 
