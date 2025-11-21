@@ -61,6 +61,7 @@ from importers import (
     parse_clients_excel,
     parse_filter_lines_excel,
     parse_prestations_excel,
+    parse_suppliers_excel,
     parse_workload_plan_excel,
 )
 from openpyxl import Workbook
@@ -769,6 +770,7 @@ def _suppliers_context(
         "category_suggestions": SUPPLIER_CATEGORY_SUGGESTIONS,
         "focus_id": request.query_params.get("focus"),
         "split_categories": _split_categories,
+        "import_report": _consume_import_report(request),
     }
 
 def _subcontractings_context(
@@ -1546,6 +1548,111 @@ def suppliers_fragment(
     return templates.TemplateResponse(
         "suppliers_list.html",
         _suppliers_context(request, suppliers, q, normalized_type),
+    )
+
+
+@app.get("/fournisseurs/export/excel")
+def download_suppliers_excel(
+    _current_user: CurrentUser, session: Session = Depends(get_session)
+):
+    suppliers = crud.list_suppliers(session, limit=10000)
+    buffer = _build_supplier_export_workbook(suppliers)
+    return Response(
+        content=buffer.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=fournisseurs.xlsx"},
+    )
+
+
+@app.get("/fournisseurs/import/template")
+@app.get("/fournisseurs/import/template/")
+def download_supplier_import_template(_current_user: CurrentUser):
+    buffer = _build_supplier_import_template()
+    return Response(
+        content=buffer.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": "attachment; filename=modele_import_fournisseurs.xlsx"
+        },
+    )
+
+
+@app.post("/fournisseurs/import")
+async def import_suppliers(
+    _current_user: CurrentUser,
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+):
+    if not file.filename:
+        return _store_import_report(
+            "/fournisseurs",
+            created=0,
+            total=0,
+            errors=["Aucun fichier sélectionné."],
+            filename="Import",
+            singular_label="fournisseur",
+            plural_label="fournisseurs",
+        )
+
+    if not file.filename.lower().endswith(ALLOWED_IMPORT_EXTENSIONS):
+        return _store_import_report(
+            "/fournisseurs",
+            created=0,
+            total=0,
+            errors=[
+                "Format de fichier non supporté. Merci d'utiliser un fichier Excel (.xlsx)."
+            ],
+            filename=file.filename,
+            singular_label="fournisseur",
+            plural_label="fournisseurs",
+        )
+
+    content = await file.read()
+    try:
+        rows = parse_suppliers_excel(content)
+    except ValueError as exc:
+        return _store_import_report(
+            "/fournisseurs",
+            created=0,
+            total=0,
+            errors=[str(exc)],
+            filename=file.filename,
+            singular_label="fournisseur",
+            plural_label="fournisseurs",
+        )
+
+    created = 0
+    errors: List[str] = []
+    for idx, row in enumerate(rows, start=1):
+        contacts_raw = row.get("contacts", [])
+        contacts_payload = [SupplierContactCreate(**contact) for contact in contacts_raw]
+        payload = {
+            k: v for k, v in row.items() if not k.startswith("__") and k != "contacts"
+        }
+        payload.setdefault("supplier_type", "fournisseur")
+        row_number = row.get("__row__", idx)
+        try:
+            supplier_type = payload.get("supplier_type")
+            if supplier_type not in SUPPLIER_TYPE_OPTIONS:
+                raise ValueError("Type de fournisseur invalide")
+            crud.create_supplier(
+                session,
+                SupplierCreate(**payload),
+                contacts=contacts_payload,
+            )
+            created += 1
+        except Exception as exc:
+            session.rollback()
+            errors.append(f"Ligne {row_number} : {exc}")
+
+    return _store_import_report(
+        "/fournisseurs",
+        created=created,
+        total=len(rows),
+        errors=errors,
+        filename=file.filename,
+        singular_label="fournisseur",
+        plural_label="fournisseurs",
     )
 
 # Fragment liste (HTMX)
@@ -3174,6 +3281,131 @@ def _build_client_import_template() -> BytesIO:
     ])
 
     _autofit_sheet(options_sheet, padding=4, max_width=70)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def _build_supplier_import_template() -> BytesIO:
+    workbook = Workbook()
+
+    sheet = workbook.active
+    sheet.title = "Fournisseurs"
+
+    headers = [
+        "name",
+        "supplier_type",
+        "our_code",
+        "categories",
+        "contact_1_name",
+        "contact_1_email",
+        "contact_1_phone",
+        "contact_2_name",
+        "contact_2_email",
+        "contact_2_phone",
+    ]
+    sheet.append(headers)
+
+    sample_rows = [
+        {
+            "name": "AquaTest Labs",
+            "supplier_type": "fournisseur",
+            "our_code": "AQ-001",
+            "categories": "Analyse d'eau, Legionelles",
+            "contact_1_name": "Emma Leblanc",
+            "contact_1_email": "emma@aquatest.fr",
+            "contact_1_phone": "0144558899",
+        },
+        {
+            "name": "DetectCO Services",
+            "supplier_type": "sous_traitant",
+            "our_code": "ST-204",
+            "categories": "Détection CO, Maintenance alarmes",
+            "contact_1_name": "Karim Haddad",
+            "contact_1_email": "karim@detectco.fr",
+            "contact_1_phone": "0622334455",
+            "contact_2_name": "Support 24/7",
+            "contact_2_email": "support@detectco.fr",
+        },
+    ]
+
+    for row in sample_rows:
+        sheet.append([row.get(column, "") for column in headers])
+
+    sheet.freeze_panes = "A2"
+    _autofit_sheet(sheet, padding=2, max_width=50)
+
+    options_sheet = workbook.create_sheet("Options")
+    options_sheet.append(["Champ", "Valeurs autorisées", "Description"])
+    options_sheet.freeze_panes = "A2"
+
+    def _format_options(options: Dict[str, str]) -> str:
+        return "\n".join(f"{key} — {label}" for key, label in options.items())
+
+    options_sheet.append([
+        "supplier_type",
+        _format_options(SUPPLIER_TYPE_OPTIONS),
+        "Choisissez s'il s'agit d'un fournisseur ou d'un sous-traitant.",
+    ])
+    options_sheet.append([
+        "categories",
+        "Liste séparée par des virgules",
+        "Exemples: Analyse d'eau, Etiquettes, Détection CO…",
+    ])
+    options_sheet.append([
+        "contacts supplémentaires",
+        "contact_3_name, contact_3_email, contact_3_phone…",
+        "Dupliquez le numéro pour ajouter plus de contacts. Seul le nom est obligatoire.",
+    ])
+
+    _autofit_sheet(options_sheet, padding=4, max_width=70)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def _build_supplier_export_workbook(suppliers) -> BytesIO:
+    workbook = Workbook()
+
+    sheet = workbook.active
+    sheet.title = "Fournisseurs"
+
+    max_contacts = max((len(getattr(supplier, "contacts", []) or []) for supplier in suppliers), default=0)
+    contact_slots = max(1, max_contacts)
+    headers = ["name", "supplier_type", "our_code", "categories"]
+    for index in range(1, contact_slots + 1):
+        headers.extend([
+            f"contact_{index}_name",
+            f"contact_{index}_email",
+            f"contact_{index}_phone",
+        ])
+    sheet.append(headers)
+
+    for supplier in suppliers:
+        contact_list = sorted(getattr(supplier, "contacts", []) or [], key=lambda c: c.name or "")
+        base_row = [
+            getattr(supplier, "name", ""),
+            getattr(supplier, "supplier_type", ""),
+            getattr(supplier, "our_code", ""),
+            getattr(supplier, "categories", ""),
+        ]
+        for index in range(contact_slots):
+            contact = contact_list[index] if index < len(contact_list) else None
+            base_row.extend(
+                [
+                    getattr(contact, "name", "") if contact else "",
+                    getattr(contact, "email", "") if contact else "",
+                    getattr(contact, "phone", "") if contact else "",
+                ]
+            )
+        sheet.append(base_row)
+
+    sheet.freeze_panes = "A2"
+    _autofit_sheet(sheet, padding=2, max_width=55)
 
     buffer = BytesIO()
     workbook.save(buffer)

@@ -16,6 +16,8 @@ EXPECTED_FIELDS = {
     "name",
 }
 
+SUPPLIER_EXPECTED_FIELDS = {"name"}
+
 COLUMN_ALIASES: Dict[str, str] = {
     "company_name": "company_name",
     "entreprise": "company_name",
@@ -48,6 +50,21 @@ COLUMN_ALIASES: Dict[str, str] = {
     "statut": "status",
 }
 
+SUPPLIER_COLUMN_ALIASES: Dict[str, str] = {
+    "name": "name",
+    "nom": "name",
+    "our_code": "our_code",
+    "code": "our_code",
+    "code_interne": "our_code",
+    "code_fournisseur": "our_code",
+    "supplier_type": "supplier_type",
+    "type": "supplier_type",
+    "type_fournisseur": "supplier_type",
+    "categories": "categories",
+    "categorie": "categories",
+    "category": "categories",
+}
+
 CONTACT_FIELD_ALIASES = {
     "name": "name",
     "nom": "name",
@@ -60,6 +77,14 @@ CONTACT_FIELD_ALIASES = {
     "telephone": "phone",
     "tel": "phone",
     "mobile": "phone",
+}
+
+SUPPLIER_TYPE_ALIASES = {
+    "fournisseur": "fournisseur",
+    "fournisseurs": "fournisseur",
+    "sous_traitant": "sous_traitant",
+    "sous traitant": "sous_traitant",
+    "sous-traitant": "sous_traitant",
 }
 
 HeaderType = Union[str, Tuple[str, int, str]]
@@ -249,6 +274,19 @@ def _resolve_header(header: str) -> HeaderType:
     return ""
 
 
+def _resolve_supplier_header(header: str) -> HeaderType:
+    if header in SUPPLIER_COLUMN_ALIASES:
+        return SUPPLIER_COLUMN_ALIASES[header]
+    match = CONTACT_HEADER_RE.match(header)
+    if match:
+        index = int(match.group(1))
+        field_key = match.group(2)
+        field = CONTACT_FIELD_ALIASES.get(field_key)
+        if field:
+            return ("contact", index, field)
+    return ""
+
+
 def _resolve_filter_header(header: str) -> str:
     return FILTER_COLUMN_ALIASES.get(header, "")
 
@@ -363,6 +401,93 @@ def parse_clients_excel(content: bytes) -> List[Dict[str, str]]:
         if record.get("status") and record["status"] not in STATUS_ALIASES.values():
             raise ValueError(
                 f"Ligne {row_index}: statut inconnu '{record['status']}'. Valeurs acceptées: actif, inactif."
+            )
+
+        contacts_map = record.pop("__contacts__", {})
+        contacts: List[Dict[str, str]] = []
+        for order, data in sorted(contacts_map.items()):
+            if not data.get("name"):
+                if any(data.get(field) for field in ("email", "phone")):
+                    raise ValueError(
+                        f"Ligne {row_index}: le contact {order} doit avoir un nom."
+                    )
+                continue
+            contacts.append(data)
+
+        if contacts:
+            record["contacts"] = contacts
+
+        rows.append(record)
+
+    return rows
+
+
+def parse_suppliers_excel(content: bytes) -> List[Dict[str, str]]:
+    try:
+        workbook = load_workbook(BytesIO(content), data_only=True)
+    except Exception as exc:  # pragma: no cover - delegated to openpyxl
+        raise ValueError(f"Impossible de lire le fichier Excel: {exc}")
+
+    sheet = workbook.active
+    try:
+        header_row = next(sheet.iter_rows(max_row=1))
+    except StopIteration:
+        raise ValueError("Le fichier ne contient aucune donnée.")
+
+    headers: List[HeaderType] = [
+        _resolve_supplier_header(_normalize_header(cell.value)) for cell in header_row
+    ]
+
+    if not any(headers):
+        raise ValueError("Le fichier ne contient pas d'en-têtes valides.")
+
+    missing = SUPPLIER_EXPECTED_FIELDS - {
+        header for header in headers if isinstance(header, str) and header
+    }
+    if missing:
+        raise ValueError(
+            "Colonnes obligatoires manquantes: " + ", ".join(sorted(missing))
+        )
+
+    rows: List[Dict[str, str]] = []
+    for row_index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+        record: Dict[str, str] = {"__row__": row_index}
+        empty = True
+        for idx, raw_value in enumerate(row):
+            header = headers[idx] if idx < len(headers) else ""
+            if not header:
+                continue
+            value = _coerce_value(raw_value)
+            if value is None:
+                continue
+            empty = False
+            if isinstance(header, tuple):
+                _, contact_index, contact_field = header
+                contact_bucket = record.setdefault("__contacts__", {})
+                contact_data = contact_bucket.setdefault(contact_index, {})
+                contact_data[contact_field] = value
+                continue
+
+            key = header
+            if key == "supplier_type":
+                normalized = _normalize_header(value)
+                record[key] = SUPPLIER_TYPE_ALIASES.get(normalized)
+                if value and not record[key]:
+                    raise ValueError(
+                        f"Ligne {row_index}: type de fournisseur inconnu '{value}'."
+                    )
+            else:
+                record[key] = value
+
+        if empty:
+            continue
+
+        missing_fields = [
+            field for field in SUPPLIER_EXPECTED_FIELDS if not record.get(field)
+        ]
+        if missing_fields:
+            raise ValueError(
+                f"Ligne {row_index}: valeurs manquantes pour {', '.join(missing_fields)}"
             )
 
         contacts_map = record.pop("__contacts__", {})
