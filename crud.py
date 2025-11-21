@@ -584,8 +584,20 @@ def list_subcontracted_services(
     frequency = effective_filters.get("frequency")
     if frequency:
         stmt = stmt.where(SubcontractedService.frequency == frequency)
+    records = session.exec(stmt.limit(limit)).all()
 
-    return session.exec(stmt.limit(limit)).all()
+    if effective_filters.get("order_status") == "overdue":
+        current_week = datetime.utcnow().isocalendar().week
+        filtered = []
+        for record in records:
+            if record.status == "fait":
+                continue
+            week_number = _parse_week_number(record.order_week)
+            if week_number is not None and week_number < current_week:
+                filtered.append(record)
+        records = filtered
+
+    return records
 
 
 def get_subcontracted_service(
@@ -621,6 +633,18 @@ def _normalize_order_week(value: Optional[str]) -> Optional[str]:
         return None
     stripped = value.strip()
     return stripped.upper() if stripped else None
+
+
+def _parse_week_number(value: Optional[str]) -> Optional[int]:
+    if not value:
+        return None
+    match = re.search(r"(\d{1,2})", value)
+    if not match:
+        return None
+    week_number = int(match.group(1))
+    if 1 <= week_number <= 53:
+        return week_number
+    return None
 
 
 def _normalize_filter_dimensions(
