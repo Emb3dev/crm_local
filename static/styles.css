@@ -153,6 +153,19 @@ a:hover {
   top: 16px;
 }
 
+/* ---------- ACCESSIBILITÉ & FOCUS ---------- */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  box-shadow: var(--ring);
+  border-radius: var(--radius-sm);
+}
+
 /* ---------- LAYOUT SHELL ---------- */
 .app-shell {
   position: relative;
