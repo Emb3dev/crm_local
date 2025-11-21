@@ -128,108 +128,128 @@
         <span class="rounded-full border border-slate-200 bg-white px-4 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">{{ total_services }} ligne{{ 's' if total_services > 1 else '' }}</span>
       </div>
     </div>
-    <div class="mt-6 overflow-hidden rounded-3xl border border-slate-200 transition-colors duration-300 dark:border-white/10">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 text-xs text-slate-600 transition-colors duration-300 sm:text-sm dark:divide-white/10 dark:text-slate-200">
-          <thead class="bg-slate-50 text-[11px] uppercase tracking-[0.2em] text-slate-500 transition-colors duration-300 sm:text-xs sm:tracking-[0.3em] dark:bg-midnight-800/80 dark:text-slate-300">
-            <tr>
-              <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Prestation</th>
-              <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Client</th>
-              <th scope="col" class="hidden px-4 py-3 text-left lg:table-cell sm:px-6 sm:py-4">Catégorie</th>
-              <th scope="col" class="hidden px-4 py-3 text-left lg:table-cell sm:px-6 sm:py-4">Fréquence</th>
-              <th scope="col" class="hidden px-4 py-3 text-left lg:table-cell sm:px-6 sm:py-4">Statut</th>
-              <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Budget &amp; code</th>
-              <th scope="col" class="hidden px-4 py-3 text-left lg:table-cell sm:px-6 sm:py-4">Semaines</th>
-              <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 transition-colors duration-300 dark:divide-white/10">
-            {% if services %}
-              {% for service in services %}
-                {% set is_focused = focus_id and focus_id|int == service.id %}
-                <tr
-                  id="service-{{ service.id }}"
-                  class="bg-white transition-colors duration-300 hover:bg-indigo-50 dark:bg-midnight-800/60 dark:hover:bg-midnight-700/60 {% if is_focused %}ring-2 ring-indigo-200 dark:ring-indigo-400/70{% endif %}"
-                >
-                  <td class="px-4 py-4 align-top sm:px-6 sm:py-5">
-                    <div class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ service.prestation_label }}</div>
-                    <div class="mt-1 text-xs uppercase tracking-[0.3em] text-slate-400 transition-colors duration-300 dark:text-slate-400">Créée le {{ service.created_at.strftime('%d/%m/%Y') }}</div>
-                    <div class="mt-3 flex flex-wrap gap-2 text-[11px] leading-5 text-slate-500 transition-colors duration-300 lg:hidden dark:text-slate-300">
-                      <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold uppercase tracking-[0.3em] text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ service.category }}</span>
-                      <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold uppercase tracking-[0.3em] text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ frequency_options.get(service.frequency, service.frequency) }}</span>
-                      {% set status_value = service.status or subcontract_status_default %}
-                      {% set status_class = subcontract_status_styles.get(status_value) or 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200' %}
-                      <span class="inline-flex items-center rounded-full border {{ status_class }} px-3 py-1 font-semibold uppercase tracking-[0.3em]">{{ subcontract_status_options.get(status_value, 'Statut inconnu') }}</span>
-                      {% if service.order_week or service.realization_week %}
-                        <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold uppercase tracking-[0.3em] text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
-                          {% if service.order_week %}C: {{ service.order_week }}{% endif %}
-                          {% if service.order_week and service.realization_week %}<span class="mx-1 text-slate-400">•</span>{% endif %}
-                          {% if service.realization_week %}R: {{ service.realization_week }}{% endif %}
-                        </span>
-                      {% endif %}
+    <div class="mt-6 space-y-6" id="list">
+      {% if services %}
+        {% for service in services %}
+          {% set is_focused = focus_id and focus_id|int == service.id %}
+          {% set status_value = service.status or subcontract_status_default %}
+          {% set status_class = subcontract_status_styles.get(status_value) or 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200' %}
+          {% set display_budget = service_budget_display.get(service.id) %}
+          <details
+            id="service-{{ service.id }}"
+            class="group overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-xl shadow-indigo-500/10 transition-all focus-within:ring-2 focus-within:ring-indigo-200 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15 dark:focus-within:ring-indigo-400 {{ 'ring-2 ring-indigo-200 dark:ring-indigo-400/70' if is_focused else '' }}"
+            {% if is_focused %}open{% endif %}
+          >
+            <summary class="flex cursor-pointer flex-col gap-4 px-6 py-5 transition-colors duration-300 sm:flex-row sm:items-center sm:justify-between">
+              <div class="space-y-3">
+                <div class="flex flex-wrap items-center gap-3">
+                  <h3 class="font-display text-xl text-slate-900 transition-colors duration-300 dark:text-white">{{ service.prestation_label }}</h3>
+                  <span class="inline-flex items-center gap-2 rounded-full border {{ status_class }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ subcontract_status_options.get(status_value, 'Statut inconnu') }}</span>
+                  <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ frequency_options.get(service.frequency, service.frequency) }}</span>
+                </div>
+                <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
+                  Client :
+                  {% if service.client %}
+                    {% set entreprise = service.client.entreprise %}
+                    {% set client_company = entreprise.nom if entreprise else (service.client.company_name or 'Entreprise à identifier') %}
+                    <strong class="text-slate-900 transition-colors duration-300 dark:text-white">{{ client_company }}</strong>
+                    {% if service.client.name %}<span class="mx-2 text-slate-400">•</span>{{ service.client.name }}{% endif %}
+                  {% else %}
+                    <span class="text-slate-400">à associer</span>
+                  {% endif %}
+                </p>
+                <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">
+                  <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ service.category }}</span>
+                  <span class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-indigo-700 transition-colors duration-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    Commande : {{ service.order_week or 'Non planifiée' }}
+                  </span>
+                  <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700 transition-colors duration-300 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l3.5 3.5" />
+                    </svg>
+                    Réalisation : {{ service.realization_week or 'Non planifiée' }}
+                  </span>
+                </div>
+              </div>
+              <div class="flex flex-col items-start gap-3 sm:items-end">
+                <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
+                  <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold uppercase tracking-[0.3em] text-indigo-700 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-indigo-100">{{ service.budget_code or 'Code inconnu' }}</span>
+                  <span class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{% if display_budget %}{{ display_budget }} €{% else %}Budget à préciser{% endif %}</span>
+                </div>
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-400 transition-colors duration-300 dark:text-slate-500">Créée le {{ service.created_at.strftime('%d/%m/%Y') }}</p>
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sm text-slate-500 transition group-open:rotate-180 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
+              </div>
+            </summary>
+            <div class="space-y-6 border-t border-slate-200 bg-slate-50 px-6 py-6 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/40">
+              <div class="grid gap-6 lg:grid-cols-2">
+                <section class="space-y-3">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Informations prestation</h4>
+                  <dl class="grid gap-4 text-sm text-slate-600 transition-colors duration-300 sm:grid-cols-2 dark:text-slate-300">
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Catégorie</dt>
+                      <dd class="mt-1 text-base text-slate-900 transition-colors duration-300 dark:text-white">{{ service.category }}</dd>
                     </div>
-                  </td>
-                  <td class="px-4 py-4 align-top sm:px-6 sm:py-5">
-                    {% if service.client %}
-                      {% set entreprise = service.client.entreprise %}
-                      {% set client_company = entreprise.nom if entreprise else (service.client.company_name or 'Entreprise à identifier') %}
-                      <div class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ client_company }}</div>
-                      <div class="mt-1 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ service.client.name }}</div>
-                    {% else %}
-                      <span class="text-slate-400">—</span>
-                    {% endif %}
-                  </td>
-                  <td class="hidden px-4 py-4 align-top text-slate-600 transition-colors duration-300 lg:table-cell sm:px-6 sm:py-5 dark:text-slate-200">{{ service.category }}</td>
-                  <td class="hidden px-4 py-4 align-top lg:table-cell sm:px-6 sm:py-5">
-                    <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ frequency_options.get(service.frequency, service.frequency) }}</span>
-                  </td>
-                  {% set status_value = service.status or subcontract_status_default %}
-                  {% set status_class = subcontract_status_styles.get(status_value) or 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200' %}
-                  <td class="hidden px-4 py-4 align-top lg:table-cell sm:px-6 sm:py-5">
-                    <span class="inline-flex items-center gap-2 rounded-full border {{ status_class }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
-                      {{ subcontract_status_options.get(status_value, 'Statut inconnu') }}
-                    </span>
-                  </td>
-                  <td class="px-4 py-4 align-top sm:px-6 sm:py-5">
-                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-200">
-                      <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-700 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-indigo-100">
-                        {{ service.budget_code or 'Code inconnu' }}
-                      </span>
-                      {% set display_budget = service_budget_display.get(service.id) %}
-                      <span class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">
-                        {% if display_budget %}
-                          {{ display_budget }} €
-                        {% else %}
-                          —
-                        {% endif %}
-                      </span>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Fréquence</dt>
+                      <dd class="mt-1 text-base text-slate-900 transition-colors duration-300 dark:text-white">{{ frequency_options.get(service.frequency, service.frequency) }}</dd>
                     </div>
-                  </td>
-                  <td class="hidden px-4 py-4 align-top text-xs text-slate-500 transition-colors duration-300 lg:table-cell sm:px-6 sm:py-5 dark:text-slate-300">
-                    {% if service.order_week or service.realization_week %}
-                      {% if service.order_week %}<span class="font-semibold text-slate-700 transition-colors duration-300 dark:text-slate-200">Commande&nbsp;:</span> {{ service.order_week }}{% endif %}
-                      {% if service.order_week and service.realization_week %}<span class="mx-2 text-slate-400 transition-colors duration-300 dark:text-slate-500">•</span>{% endif %}
-                      {% if service.realization_week %}<span class="font-semibold text-slate-700 transition-colors duration-300 dark:text-slate-200">Réalisation&nbsp;:</span> {{ service.realization_week }}{% endif %}
-                    {% else %}
-                      —
-                    {% endif %}
-                  </td>
-                  <td class="px-4 py-4 align-top sm:px-6 sm:py-5">
-                    <a
-                      href="/prestations/{{ service.id }}/edit"
-                      class="inline-flex items-center justify-center rounded-full border border-indigo-300 bg-indigo-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-700 transition hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:text-white dark:hover:bg-indigo-400/20"
-                    >Modifier</a>
-                  </td>
-                </tr>
-              {% endfor %}
-            {% else %}
-              <tr>
-                <td class="px-4 py-10 text-center text-sm text-slate-500 transition-colors duration-300 sm:px-6 dark:text-slate-300" colspan="9">Aucune prestation enregistrée pour le moment.</td>
-              </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Statut</dt>
+                      <dd class="mt-2"><span class="inline-flex items-center gap-2 rounded-full border {{ status_class }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ subcontract_status_options.get(status_value, 'Statut inconnu') }}</span></dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Budget</dt>
+                      <dd class="mt-2 flex flex-wrap items-center gap-2 text-base text-slate-900 transition-colors duration-300 dark:text-white">
+                        <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-700 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-indigo-100">{{ service.budget_code or 'Code inconnu' }}</span>
+                        <span class="font-semibold">{% if display_budget %}{{ display_budget }} €{% else %}Budget à préciser{% endif %}</span>
+                      </dd>
+                    </div>
+                  </dl>
+                </section>
+                <section class="space-y-3">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Planification & suivi</h4>
+                  <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm text-slate-600 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-300 dark:shadow-indigo-500/10">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <p class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                        Commande : <span class="font-medium text-slate-700 dark:text-slate-200">{{ service.order_week or 'Non planifiée' }}</span>
+                      </p>
+                      <p class="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 transition-colors duration-300 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l3.5 3.5" />
+                        </svg>
+                        Réalisation : <span class="font-medium text-emerald-800 dark:text-emerald-100">{{ service.realization_week or 'Non planifiée' }}</span>
+                      </p>
+                    </div>
+                    <p class="mt-3 text-xs uppercase tracking-[0.3em] text-slate-400 transition-colors duration-300 dark:text-slate-500">Dernière mise à jour : {{ service.created_at.strftime('%d/%m/%Y') }}</p>
+                  </div>
+                </section>
+              </div>
+              <div class="flex flex-wrap items-center justify-between gap-4 border-t border-dashed border-slate-200 pt-4 text-sm text-slate-600 transition-colors duration-300 dark:border-white/10 dark:text-slate-300">
+                <p>
+                  <span class="font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ service.prestation_label }}</span>
+                  — gestion par {{ service.client.name if service.client and service.client.name else 'équipe à définir' }}.
+                </p>
+                <a
+                  href="/prestations/{{ service.id }}/edit"
+                  class="inline-flex items-center justify-center rounded-full border border-indigo-300 bg-indigo-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-700 transition hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:text-white dark:hover:bg-indigo-400/20"
+                >Modifier</a>
+              </div>
+            </div>
+          </details>
+        {% endfor %}
+      {% else %}
+        <p class="rounded-3xl border border-dashed border-slate-300 bg-white/70 px-5 py-6 text-center text-sm text-slate-500 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-300">Aucune prestation enregistrée pour le moment.</p>
+      {% endif %}
     </div>
   </div>
 </section>
