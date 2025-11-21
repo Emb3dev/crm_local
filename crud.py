@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Sequence
 
 import re
 from datetime import datetime
@@ -621,6 +621,28 @@ def list_subcontracted_service_comments(
         .order_by(SubcontractedServiceComment.created_at.desc())
     )
     return session.exec(stmt).all()
+
+
+def list_subcontracted_service_comments_by_service(
+    session: Session, service_ids: Sequence[int]
+) -> Dict[int, List[SubcontractedServiceComment]]:
+    if not service_ids:
+        return {}
+
+    stmt = (
+        select(SubcontractedServiceComment)
+        .where(SubcontractedServiceComment.service_id.in_(service_ids))
+        .order_by(
+            SubcontractedServiceComment.service_id.asc(),
+            SubcontractedServiceComment.created_at.desc(),
+        )
+    )
+    comments = session.exec(stmt).all()
+
+    grouped: Dict[int, List[SubcontractedServiceComment]] = {sid: [] for sid in service_ids}
+    for comment in comments:
+        grouped.setdefault(comment.service_id, []).append(comment)
+    return grouped
 
 
 def create_subcontracted_service_comment(

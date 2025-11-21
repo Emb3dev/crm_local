@@ -250,6 +250,7 @@
     </div>
 
     <form action="/prestations/{{ service.id }}/comments" method="post" class="mt-6 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
+      <input type="hidden" name="return_url" value="{{ request.url.path }}#comments" />
       <label class="{{ form_label() }}">
         <span>Tapez votre message ici</span>
         <textarea
