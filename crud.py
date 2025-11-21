@@ -26,6 +26,7 @@ from models import (
     PrestationDefinitionCreate,
     PrestationDefinitionUpdate,
     SubcontractedService,
+    SubcontractedServiceComment,
     SubcontractedServiceCreate,
     SubcontractedServiceUpdate,
     User,
@@ -609,6 +610,41 @@ def get_subcontracted_service(
         .options(selectinload(SubcontractedService.client))
     )
     return session.exec(stmt).one_or_none()
+
+
+def list_subcontracted_service_comments(
+    session: Session, service_id: int
+) -> List[SubcontractedServiceComment]:
+    stmt = (
+        select(SubcontractedServiceComment)
+        .where(SubcontractedServiceComment.service_id == service_id)
+        .order_by(SubcontractedServiceComment.created_at.desc())
+    )
+    return session.exec(stmt).all()
+
+
+def create_subcontracted_service_comment(
+    session: Session,
+    *,
+    service_id: int,
+    author_name: str,
+    author_initials: str,
+    content: str,
+) -> Optional[SubcontractedServiceComment]:
+    service = session.get(SubcontractedService, service_id)
+    if not service:
+        return None
+
+    comment = SubcontractedServiceComment(
+        service_id=service_id,
+        author_name=author_name,
+        author_initials=author_initials,
+        content=content,
+    )
+    session.add(comment)
+    session.commit()
+    session.refresh(comment)
+    return comment
 
 
 def update_subcontracted_service(
