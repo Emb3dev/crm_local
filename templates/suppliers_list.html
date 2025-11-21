@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% from "_ui_macros.html" import card_shell, form_panel, form_label, form_control, form_select %}
+{% block main_classes %}space-y-12{% endblock %}
+{% block page_eyebrow %}Réseau fournisseurs{% endblock %}
+{% block page_title %}Partenaires & sous-traitants{% endblock %}
+{% block page_subtitle %}Centralisez vos prestataires, contacts clés et domaines d'intervention pour agir plus vite.{% endblock %}
+{% block title %}Fournisseurs — CRM Local{% endblock %}
+{% block content %}
+{% set metrics = namespace(total=suppliers|length, fournisseurs=0, sous_traitants=0, contacts=0) %}
+{% for supplier in suppliers %}
+  {% if supplier.supplier_type == 'sous_traitant' %}
+    {% set metrics.sous_traitants = metrics.sous_traitants + 1 %}
+  {% else %}
+    {% set metrics.fournisseurs = metrics.fournisseurs + 1 %}
+  {% endif %}
+  {% set metrics.contacts = metrics.contacts + ((supplier.contacts or []) | length) %}
+{% endfor %}
+
+<section class="space-y-10">
+  <div class="{{ card_shell() }}">
+    <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+      <div class="space-y-4">
+        <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-200">Pilotage fournisseurs</span>
+        <h2 class="font-display text-2xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white sm:text-3xl">Une cartographie claire de vos partenaires</h2>
+        <p class="max-w-2xl text-base text-slate-600 transition-colors duration-300 dark:text-slate-300">
+          Visualisez en un coup d'œil {{ metrics.total }} fournisseurs et sous-traitants, leurs domaines d'intervention et les contacts clés associés.
+        </p>
+      </div>
+      <div class="rounded-3xl border border-indigo-200 bg-indigo-50 px-6 py-5 text-sm text-indigo-800 shadow-md shadow-indigo-200/60 transition-colors duration-300 lg:max-w-sm dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:shadow-indigo-500/20">
+        <p class="font-semibold">Pourquoi cette vue ?</p>
+        <p class="mt-2">Pour chaque besoin (analyse d'eau, détection CO, étiquettes…), vous savez immédiatement qui solliciter.</p>
+      </div>
+    </div>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <article class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg shadow-indigo-500/10 transition-colors duration-300 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15">
+        <p class="{{ form_label() }}">Total référencés</p>
+        <p class="mt-3 text-3xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ metrics.total }}</p>
+        <p class="mt-3 text-sm text-slate-500 transition-colors duration-300 dark:text-slate-400">Fournisseurs et sous-traitants suivis</p>
+      </article>
+      <article class="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-700 shadow-lg shadow-emerald-200/60 transition-colors duration-300 backdrop-blur dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100 dark:shadow-emerald-500/20">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em]">Fournisseurs</p>
+        <p class="mt-3 text-3xl font-semibold">{{ metrics.fournisseurs }}</p>
+        <p class="mt-3 text-sm">Référencés comme fournisseurs directs</p>
+      </article>
+      <article class="rounded-3xl border border-sky-200 bg-sky-50 p-6 text-sky-700 shadow-lg shadow-sky-200/60 transition-colors duration-300 backdrop-blur dark:border-sky-400/40 dark:bg-sky-500/10 dark:text-sky-100 dark:shadow-sky-500/20">
+        <p class="text-xs font-semibold uppercase tracking-[0.3em]">Sous-traitants</p>
+        <p class="mt-3 text-3xl font-semibold">{{ metrics.sous_traitants }}</p>
+        <p class="mt-3 text-sm">Partenaires d'exécution ou spécialisés</p>
+      </article>
+      <article class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg shadow-indigo-500/10 transition-colors duration-300 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15">
+        <p class="{{ form_label() }}">Contacts actifs</p>
+        <p class="mt-3 text-3xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ metrics.contacts }}</p>
+        <p class="mt-3 text-sm text-slate-500 transition-colors duration-300 dark:text-slate-400">Personnes joignables chez vos partenaires</p>
+      </article>
+    </div>
+  </div>
+
+  <section class="{{ card_shell() }}">
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+      <div class="space-y-2">
+        <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Liste des fournisseurs</h2>
+        <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Recherchez par nom, catégorie ou contact.</p>
+      </div>
+      <form class="{{ form_panel() }}" role="search" hx-get="/_fournisseurs" hx-target="#supplier-list" hx-trigger="keyup changed delay:300ms">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <label class="flex-1 {{ form_label() }}">
+            <span class="sr-only">Rechercher un fournisseur</span>
+            <input type="text" name="q" value="{{ q }}" placeholder="Rechercher (nom, catégorie, contact…)" aria-label="Rechercher un fournisseur" class="mt-1 {{ form_control('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70') }}" />
+          </label>
+          <label class="{{ form_label() }}">
+            <span class="sr-only">Filtrer par type</span>
+            <div class="relative">
+              <select name="supplier_type" class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}">
+                <option value="">Tous les types</option>
+                {% for value, label in supplier_type_options.items() %}
+                  <option value="{{ value }}" {% if supplier_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </div>
+          </label>
+        </div>
+      </form>
+    </div>
+
+    <div id="supplier-list" class="mt-8 space-y-6">
+      {% if suppliers %}
+        {% for supplier in suppliers %}
+          {% set contact_list = supplier.contacts or [] %}
+          {% set supplier_categories = split_categories(supplier.categories) %}
+          {% set is_target = focus_id and focus_id|int == supplier.id %}
+          <details class="group overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-xl shadow-indigo-500/10 transition-all focus-within:ring-2 focus-within:ring-indigo-200 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15 dark:focus-within:ring-indigo-400" id="supplier-{{ supplier.id }}" {% if is_target %}open{% endif %}>
+            <summary class="flex cursor-pointer flex-col gap-4 px-6 py-5 transition-colors duration-300 sm:flex-row sm:items-center sm:justify-between">
+              <div class="space-y-2">
+                <h3 class="font-display text-xl text-slate-900 transition-colors duration-300 dark:text-white">{{ supplier.name }}</h3>
+                <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ supplier_type_options.get(supplier.supplier_type, '—') }}</p>
+                {% if supplier_categories %}
+                  <div class="flex flex-wrap gap-2">
+                    {% for category in supplier_categories %}
+                      <span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ category }}</span>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="flex flex-col items-start gap-3 transition-colors duration-300 sm:items-end">
+                {% if supplier.our_code %}
+                  <span class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">Code : {{ supplier.our_code }}</span>
+                {% endif %}
+                <span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">{{ contact_list | length }} contact{{ 's' if contact_list | length > 1 else '' }}</span>
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sm text-slate-500 transition group-open:rotate-180 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
+              </div>
+            </summary>
+            <div class="space-y-8 border-t border-slate-200 bg-slate-50 px-6 py-6 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/40">
+              <div class="grid gap-6 lg:grid-cols-2">
+                <section class="space-y-4">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Informations fournisseur</h4>
+                  <dl class="grid gap-4 text-sm text-slate-600 transition-colors duration-300 sm:grid-cols-2 dark:text-slate-300">
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Nom</dt>
+                      <dd class="mt-1 text-base text-slate-900 transition-colors duration-300 dark:text-white">{{ supplier.name }}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Type</dt>
+                      <dd class="mt-1 text-base text-slate-700 transition-colors duration-300 dark:text-white/90">{{ supplier_type_options.get(supplier.supplier_type, '—') }}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Code interne</dt>
+                      <dd class="mt-1 text-base text-slate-700 transition-colors duration-300 dark:text-white/90">{{ supplier.our_code or '—' }}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Catégories</dt>
+                      <dd class="mt-1 text-base text-slate-700 transition-colors duration-300 dark:text-white/90">{{ supplier.categories or '—' }}</dd>
+                    </div>
+                  </dl>
+                </section>
+                <section class="space-y-4">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Contacts</h4>
+                  {% if contact_list %}
+                    <ul class="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white shadow-sm dark:divide-white/10 dark:border-white/10 dark:bg-white/5">
+                      {% for contact in contact_list | sort(attribute='name') %}
+                        <li class="flex items-center justify-between gap-4 px-4 py-3 text-sm text-slate-700 transition-colors duration-300 dark:text-slate-200">
+                          <div class="space-y-1">
+                            <p class="font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ contact.name }}</p>
+                            <p class="text-sm text-slate-500 transition-colors duration-300 dark:text-slate-300">{{ contact.email or '—' }}</p>
+                            <p class="text-sm text-slate-500 transition-colors duration-300 dark:text-slate-300">{{ contact.phone or '—' }}</p>
+                          </div>
+                          <form action="/fournisseurs/{{ supplier.id }}/contacts/{{ contact.id }}/delete" method="post" onsubmit="return confirm('Supprimer ce contact ?')">
+                            <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-50 dark:hover:bg-rose-400/20 dark:focus-visible:ring-rose-300" type="submit">Supprimer</button>
+                          </form>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <p class="text-sm text-slate-500 transition-colors duration-300 dark:text-slate-300">Aucun contact renseigné.</p>
+                  {% endif %}
+                  <form action="/fournisseurs/{{ supplier.id }}/contacts" method="post" class="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">Ajouter un contact</p>
+                    <label class="{{ form_label() }}">
+                      <span>Nom *</span>
+                      <input name="contact_name" required placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                    </label>
+                    <label class="{{ form_label() }}">
+                      <span>Email</span>
+                      <input name="contact_email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                    </label>
+                    <label class="{{ form_label() }}">
+                      <span>Téléphone</span>
+                      <input name="contact_phone" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                    </label>
+                    <div class="mt-2 flex justify-end">
+                      <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Ajouter</button>
+                    </div>
+                  </form>
+                </section>
+              </div>
+
+              <div class="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5 sm:grid-cols-2">
+                <form action="/fournisseurs/{{ supplier.id }}/edit" method="post" class="space-y-3">
+                  <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">Mettre à jour</p>
+                  <label class="{{ form_label() }}">
+                    <span>Nom *</span>
+                    <input name="name" value="{{ supplier.name }}" required class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                  </label>
+                  <label class="{{ form_label() }}">
+                    <span>Type</span>
+                    <div class="relative mt-2">
+                      <select name="supplier_type" class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}">
+                        {% for value, label in supplier_type_options.items() %}
+                          <option value="{{ value }}" {% if supplier.supplier_type == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                      <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                        </svg>
+                      </span>
+                    </div>
+                  </label>
+                  <label class="{{ form_label() }}">
+                    <span>Notre code client</span>
+                    <input name="our_code" value="{{ supplier.our_code or '' }}" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                  </label>
+                  <label class="{{ form_label() }}">
+                    <span>Catégorie(s)</span>
+                    <input name="categories" value="{{ supplier.categories or '' }}" list="categories" placeholder="Analyse d'eau, Détection CO…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                  </label>
+                  <div class="mt-2 flex justify-end">
+                    <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Enregistrer</button>
+                  </div>
+                </form>
+                <form action="/fournisseurs/{{ supplier.id }}/delete" method="post" class="flex items-end justify-end" onsubmit="return confirm('Supprimer {{ supplier.name }} ?')">
+                  <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-50 dark:hover:bg-rose-400/20 dark:focus-visible:ring-rose-300" type="submit">Supprimer</button>
+                </form>
+              </div>
+            </div>
+          </details>
+        {% endfor %}
+      {% else %}
+        <p class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:text-slate-200">Aucun fournisseur référencé pour le moment.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="{{ card_shell() }}">
+    <div class="space-y-2">
+      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Nouveau fournisseur</h2>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Ajoutez un partenaire en quelques informations clés.</p>
+    </div>
+    <form action="/fournisseurs/new" method="post" class="mt-6 grid gap-4 md:grid-cols-2">
+      <label class="{{ form_label() }}">
+        <span>Nom *</span>
+        <input name="name" required placeholder="Ex: Laboratoire Aquatest" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+      </label>
+      <label class="{{ form_label() }}">
+        <span>Type</span>
+        <div class="relative mt-2">
+          <select name="supplier_type" class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}">
+            {% for value, label in supplier_type_options.items() %}
+              <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+            </svg>
+          </span>
+        </div>
+      </label>
+      <label class="{{ form_label() }}">
+        <span>Notre code client</span>
+        <input name="our_code" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+      </label>
+      <label class="{{ form_label() }}">
+        <span>Catégorie(s)</span>
+        <input name="categories" list="categories" placeholder="Analyse d'eau, Détection CO…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+      </label>
+      <label class="{{ form_label() }}">
+        <span>Contact principal</span>
+        <input name="contact_name" placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+      </label>
+      <label class="{{ form_label() }}">
+        <span>Email du contact</span>
+        <input name="contact_email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+      </label>
+      <label class="{{ form_label() }}">
+        <span>Téléphone du contact</span>
+        <input name="contact_phone" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+      </label>
+      <div class="md:col-span-2 mt-2 flex justify-end">
+        <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Enregistrer</button>
+      </div>
+    </form>
+    <datalist id="categories">
+      {% for suggestion in category_suggestions %}
+        {% if suggestion %}<option value="{{ suggestion }}">{% endif %}
+      {% endfor %}
+    </datalist>
+  </div>
+</section>
+{% endblock %}

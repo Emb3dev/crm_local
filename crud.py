@@ -19,6 +19,11 @@ from models import (
     Entreprise,
     EntrepriseCreate,
     EntrepriseUpdate,
+    Supplier,
+    SupplierContact,
+    SupplierContactCreate,
+    SupplierCreate,
+    SupplierUpdate,
     FilterLine,
     FilterLineCreate,
     FilterLineUpdate,
@@ -353,6 +358,113 @@ def create_contact(session: Session, client_id: int, data: ContactCreate) -> Opt
 def delete_contact(session: Session, client_id: int, contact_id: int) -> bool:
     contact = session.get(Contact, contact_id)
     if not contact or contact.client_id != client_id:
+        return False
+    session.delete(contact)
+    session.commit()
+    return True
+
+
+# =======================
+# FOURNISSEURS
+# =======================
+
+
+def list_suppliers(
+    session: Session,
+    q: Optional[str] = None,
+    *,
+    supplier_type: Optional[str] = None,
+    limit: int = 100,
+) -> List[Supplier]:
+    stmt = (
+        select(Supplier)
+        .options(selectinload(Supplier.contacts))
+        .order_by(Supplier.created_at.desc())
+    )
+    if q:
+        like = f"%{q}%"
+        stmt = stmt.outerjoin(SupplierContact)
+        stmt = stmt.where(
+            (
+                Supplier.name.ilike(like)
+                | Supplier.our_code.ilike(like)
+                | Supplier.categories.ilike(like)
+                | SupplierContact.name.ilike(like)
+                | SupplierContact.email.ilike(like)
+                | SupplierContact.phone.ilike(like)
+            )
+        ).distinct()
+
+    if supplier_type:
+        stmt = stmt.where(Supplier.supplier_type == supplier_type)
+
+    return session.exec(stmt.limit(limit)).all()
+
+
+def get_supplier(session: Session, supplier_id: int) -> Optional[Supplier]:
+    return session.get(Supplier, supplier_id)
+
+
+def create_supplier(
+    session: Session,
+    data: SupplierCreate,
+    contacts: Optional[List[SupplierContactCreate]] = None,
+) -> Supplier:
+    supplier = Supplier.model_validate(data)
+    session.add(supplier)
+    session.flush()
+
+    for contact_data in contacts or []:
+        contact = SupplierContact(supplier_id=supplier.id, **contact_data.model_dump())
+        session.add(contact)
+
+    session.commit()
+    session.refresh(supplier)
+    return supplier
+
+
+def update_supplier(
+    session: Session, supplier_id: int, data: SupplierUpdate
+) -> Optional[Supplier]:
+    supplier = session.get(Supplier, supplier_id)
+    if not supplier:
+        return None
+    updates = data.model_dump(exclude_unset=True)
+    for key, value in updates.items():
+        setattr(supplier, key, value)
+    session.add(supplier)
+    session.commit()
+    session.refresh(supplier)
+    return supplier
+
+
+def delete_supplier(session: Session, supplier_id: int) -> bool:
+    supplier = session.get(Supplier, supplier_id)
+    if not supplier:
+        return False
+    session.delete(supplier)
+    session.commit()
+    return True
+
+
+def create_supplier_contact(
+    session: Session, supplier_id: int, data: SupplierContactCreate
+) -> Optional[SupplierContact]:
+    supplier = session.get(Supplier, supplier_id)
+    if not supplier:
+        return None
+    contact = SupplierContact(supplier_id=supplier_id, **data.model_dump())
+    session.add(contact)
+    session.commit()
+    session.refresh(contact)
+    return contact
+
+
+def delete_supplier_contact(
+    session: Session, supplier_id: int, contact_id: int
+) -> bool:
+    contact = session.get(SupplierContact, contact_id)
+    if not contact or contact.supplier_id != supplier_id:
         return False
     session.delete(contact)
     session.commit()

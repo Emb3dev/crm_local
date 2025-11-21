@@ -133,6 +133,66 @@ class ContactUpdate(SQLModel):
 
 
 # =======================
+# TABLE FOURNISSEUR
+# =======================
+
+
+class SupplierBase(SQLModel):
+    name: str = Field(index=True, description="Nom du fournisseur")
+    our_code: Optional[str] = Field(
+        default=None, description="Code interne utilisé pour le fournisseur"
+    )
+    supplier_type: str = Field(default="fournisseur", description="Type de partenaire")
+    categories: Optional[str] = Field(
+        default=None,
+        description="Liste de catégories associées au fournisseur",
+    )
+
+
+class Supplier(SupplierBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    contacts: List["SupplierContact"] = Relationship(
+        back_populates="supplier",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+
+
+class SupplierCreate(SupplierBase):
+    pass
+
+
+class SupplierUpdate(SQLModel):
+    name: Optional[str] = None
+    our_code: Optional[str] = None
+    supplier_type: Optional[str] = None
+    categories: Optional[str] = None
+
+
+class SupplierContactBase(SQLModel):
+    name: str = Field(index=True, description="Nom du contact fournisseur")
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class SupplierContact(SupplierContactBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    supplier_id: int = Field(foreign_key="supplier.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    supplier: Optional[Supplier] = Relationship(back_populates="contacts")
+
+
+class SupplierContactCreate(SupplierContactBase):
+    pass
+
+
+class SupplierContactUpdate(SQLModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+
+# =======================
 # TABLE PRESTATIONS SOUS-TRAITÉES / LOCATIONS (rattachée à un client)
 # =======================
 

@@ -41,6 +41,9 @@ from models import (
     ContactCreate,
     FilterLineCreate,
     FilterLineUpdate,
+    SupplierCreate,
+    SupplierContactCreate,
+    SupplierUpdate,
     SubcontractedServiceCreate,
     SubcontractedServiceUpdate,
     WorkloadCellUpdate,
@@ -249,6 +252,18 @@ STATUS_OPTIONS = {
     "inactif": "Inactif",
 }
 
+SUPPLIER_TYPE_OPTIONS = {
+    "fournisseur": "Fournisseur",
+    "sous_traitant": "Sous-traitant",
+}
+
+SUPPLIER_CATEGORY_SUGGESTIONS = sorted(
+    {
+        *(option.get("label", "") for group in DEFAULT_PRESTATION_GROUPS for option in group.get("options", [])),
+        "Etiquettes",
+    }
+)
+
 SUBCONTRACT_STATUS_DEFAULT = "non_commence"
 
 SUBCONTRACT_STATUS_OPTIONS = {
@@ -289,6 +304,26 @@ def _status_key_from_bool(value: Optional[bool]) -> str:
     if value is None:
         return ""
     return "actif" if value else "inactif"
+
+
+def _normalize_categories(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    cleaned = value.replace(";", ",")
+    items = [item.strip() for item in cleaned.split(",")]
+    unique_items = []
+    for item in items:
+        if item and item not in unique_items:
+            unique_items.append(item)
+    if not unique_items:
+        return None
+    return ", ".join(unique_items)
+
+
+def _split_categories(value: Optional[str]) -> List[str]:
+    if not value:
+        return []
+    return [part.strip() for part in value.split(",") if part.strip()]
 
 
 def _consume_import_report(request: Request):
@@ -719,6 +754,21 @@ def _clients_context(
         "focus_id": request.query_params.get("focus"),
         "active_filters": filters,
         "filters_definition": CLIENT_FILTER_DEFINITIONS,
+    }
+
+
+def _suppliers_context(
+    request: Request, suppliers, q: Optional[str], supplier_type: Optional[str]
+):
+    return {
+        "request": request,
+        "suppliers": suppliers,
+        "q": q or "",
+        "supplier_type": supplier_type or "",
+        "supplier_type_options": SUPPLIER_TYPE_OPTIONS,
+        "category_suggestions": SUPPLIER_CATEGORY_SUGGESTIONS,
+        "focus_id": request.query_params.get("focus"),
+        "split_categories": _split_categories,
     }
 
 def _subcontractings_context(
@@ -1462,6 +1512,42 @@ def clients_page(
         ),
     )
 
+
+@app.get("/fournisseurs", response_class=HTMLResponse)
+def suppliers_page(
+    request: Request,
+    _current_user: CurrentUser,
+    q: Optional[str] = None,
+    supplier_type: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
+    normalized_type = supplier_type if supplier_type in SUPPLIER_TYPE_OPTIONS else None
+    suppliers = crud.list_suppliers(
+        session, q=q, supplier_type=normalized_type, limit=200
+    )
+    return templates.TemplateResponse(
+        "suppliers_list.html",
+        _suppliers_context(request, suppliers, q, normalized_type),
+    )
+
+
+@app.get("/_fournisseurs", response_class=HTMLResponse)
+def suppliers_fragment(
+    request: Request,
+    _current_user: CurrentUser,
+    q: Optional[str] = None,
+    supplier_type: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
+    normalized_type = supplier_type if supplier_type in SUPPLIER_TYPE_OPTIONS else None
+    suppliers = crud.list_suppliers(
+        session, q=q, supplier_type=normalized_type, limit=200
+    )
+    return templates.TemplateResponse(
+        "suppliers_list.html",
+        _suppliers_context(request, suppliers, q, normalized_type),
+    )
+
 # Fragment liste (HTMX)
 @app.get("/_clients", response_class=HTMLResponse)
 def clients_fragment(
@@ -2114,6 +2200,148 @@ def remove_contact(
         raise HTTPException(404, "Contact introuvable")
     return RedirectResponse(
         url=f"/?focus={client_id}#client-{client_id}", status_code=303
+    )
+
+
+@app.post("/fournisseurs/new")
+def create_supplier(
+    _current_user: CurrentUser,
+    name: str = Form(...),
+    supplier_type: str = Form("fournisseur"),
+    our_code: Optional[str] = Form(None),
+    categories: Optional[str] = Form(None),
+    contact_name: Optional[str] = Form(None),
+    contact_email: Optional[str] = Form(None),
+    contact_phone: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    normalized_name = (name or "").strip()
+    if not normalized_name:
+        raise HTTPException(400, "Le nom du fournisseur est requis")
+
+    normalized_type = supplier_type or "fournisseur"
+    if normalized_type not in SUPPLIER_TYPE_OPTIONS:
+        raise HTTPException(400, "Type de fournisseur invalide")
+
+    contacts_payload: List[SupplierContactCreate] = []
+    has_contact_data = contact_name or contact_email or contact_phone
+    if has_contact_data:
+        normalized_contact_name = (contact_name or "").strip()
+        if not normalized_contact_name:
+            raise HTTPException(400, "Le nom du contact est requis")
+        contacts_payload.append(
+            SupplierContactCreate(
+                name=normalized_contact_name,
+                email=(contact_email or "").strip() or None,
+                phone=(contact_phone or "").strip() or None,
+            )
+        )
+
+    supplier = crud.create_supplier(
+        session,
+        SupplierCreate(
+            name=normalized_name,
+            supplier_type=normalized_type,
+            our_code=(our_code or "").strip() or None,
+            categories=_normalize_categories(categories),
+        ),
+        contacts=contacts_payload,
+    )
+    return RedirectResponse(
+        url=f"/fournisseurs?focus={supplier.id}#supplier-{supplier.id}",
+        status_code=303,
+    )
+
+
+@app.post("/fournisseurs/{supplier_id}/edit")
+def edit_supplier(
+    _current_user: CurrentUser,
+    supplier_id: int,
+    name: str = Form(...),
+    supplier_type: str = Form("fournisseur"),
+    our_code: Optional[str] = Form(None),
+    categories: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    normalized_name = (name or "").strip()
+    if not normalized_name:
+        raise HTTPException(400, "Le nom du fournisseur est requis")
+    normalized_type = supplier_type or "fournisseur"
+    if normalized_type not in SUPPLIER_TYPE_OPTIONS:
+        raise HTTPException(400, "Type de fournisseur invalide")
+
+    updated = crud.update_supplier(
+        session,
+        supplier_id,
+        SupplierUpdate(
+            name=normalized_name,
+            supplier_type=normalized_type,
+            our_code=(our_code or "").strip() or None,
+            categories=_normalize_categories(categories),
+        ),
+    )
+    if not updated:
+        raise HTTPException(404, "Fournisseur introuvable")
+    return RedirectResponse(
+        url=f"/fournisseurs?focus={supplier_id}#supplier-{supplier_id}",
+        status_code=303,
+    )
+
+
+@app.post("/fournisseurs/{supplier_id}/delete")
+def remove_supplier(
+    _current_user: CurrentUser,
+    supplier_id: int,
+    session: Session = Depends(get_session),
+):
+    ok = crud.delete_supplier(session, supplier_id)
+    if not ok:
+        raise HTTPException(404, "Fournisseur introuvable")
+    return RedirectResponse(url="/fournisseurs", status_code=303)
+
+
+@app.post("/fournisseurs/{supplier_id}/contacts")
+def add_supplier_contact(
+    _current_user: CurrentUser,
+    supplier_id: int,
+    name: str = Form(..., alias="contact_name"),
+    email: Optional[str] = Form(None, alias="contact_email"),
+    phone: Optional[str] = Form(None, alias="contact_phone"),
+    session: Session = Depends(get_session),
+):
+    normalized_name = (name or "").strip()
+    if not normalized_name:
+        raise HTTPException(400, "Le nom du contact est requis")
+    created = crud.create_supplier_contact(
+        session,
+        supplier_id,
+        SupplierContactCreate(
+            name=normalized_name,
+            email=(email or "").strip() or None,
+            phone=(phone or "").strip() or None,
+        ),
+    )
+    if not created:
+        raise HTTPException(404, "Fournisseur introuvable")
+    return RedirectResponse(
+        url=f"/fournisseurs?focus={supplier_id}#supplier-{supplier_id}",
+        status_code=303,
+    )
+
+
+@app.post("/fournisseurs/{supplier_id}/contacts/{contact_id}/delete")
+def remove_supplier_contact(
+    _current_user: CurrentUser,
+    supplier_id: int,
+    contact_id: int,
+    session: Session = Depends(get_session),
+):
+    ok = crud.delete_supplier_contact(session, supplier_id, contact_id)
+    if not ok:
+        raise HTTPException(404, "Contact introuvable")
+    return RedirectResponse(
+        url=f"/fournisseurs?focus={supplier_id}#supplier-{supplier_id}",
+        status_code=303,
     )
 
 
