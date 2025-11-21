@@ -81,41 +81,43 @@
     </div>
   </div>
 
-  <div class="{{ card_shell() }}">
-    <div class="grid gap-6 lg:grid-cols-2">
-      <form action="/fournisseurs/import" method="post" enctype="multipart/form-data" class="space-y-3 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-md dark:border-white/10 dark:bg-white/5">
-        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Import Excel</p>
+  <section class="grid gap-8 lg:grid-cols-2">
+    <div class="{{ card_shell() }}">
+      <div class="space-y-2">
+        <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Import Excel</h2>
         <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Ajoutez plusieurs fournisseurs en une seule fois (nom obligatoire, contacts optionnels).</p>
+      </div>
+      <form action="/fournisseurs/import" method="post" enctype="multipart/form-data" class="mt-6 grid gap-4">
         <label class="{{ form_label() }}">
           <span>Fichier Excel (.xlsx)</span>
-          <input type="file" name="file" required accept=".xlsx,.xlsm,.xltx,.xltm" class="mt-2 block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+          <input
+            type="file"
+            name="file"
+            required
+            accept=".xlsx,.xlsm,.xltx,.xltm"
+            class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:file:bg-indigo-500/20 dark:file:text-white"
+          />
         </label>
-        <div class="flex flex-wrap gap-3">
-          <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            Importer
-          </button>
-          <a href="/fournisseurs/import/template" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
-            Télécharger le modèle
-          </a>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Importer</button>
+          <a class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:focus-visible:ring-white/40" href="/fournisseurs/import/template">Télécharger le modèle Excel</a>
         </div>
+        <p class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:text-slate-300">
+          Colonnes obligatoires : <strong>Nom</strong> (fournisseur) et <strong>Type</strong>. Optionnel : contacts (nom, email, téléphone) et catégories.
+        </p>
       </form>
-
-      <div class="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-inner dark:border-white/10 dark:bg-midnight-800/40">
-        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:text-slate-200">Exports & partage</p>
-        <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Récupérez la liste complète pour la partager ou la réimporter après modification.</p>
-        <a href="/fournisseurs/export/excel" class="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-5 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-50 dark:hover:bg-emerald-400/20 dark:focus-visible:ring-emerald-400">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 16.5l-4.5-4.5m0 0L12 7.5m-4.5 4.5H21" />
-          </svg>
-          Exporter en Excel
-        </a>
-        <p class="text-xs text-slate-500 transition-colors duration-300 dark:text-slate-400">Inclut les contacts principaux afin de pouvoir réimporter le fichier après mise à jour.</p>
+    </div>
+    <div class="{{ card_shell() }}">
+      <div class="space-y-2">
+        <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Exporter le listing</h2>
+        <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Téléchargez en un clic le listing filtré des fournisseurs affichés ci-dessus.</p>
+      </div>
+      <div class="mt-6 space-y-4 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
+        <a class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" href="/fournisseurs/export/excel">Télécharger le listing actuel</a>
+        <p>Le fichier inclut les contacts principaux afin de pouvoir réimporter le fichier après mise à jour.</p>
       </div>
     </div>
-  </div>
+  </section>
 
   <section class="{{ card_shell() }}">
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
