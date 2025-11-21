@@ -116,25 +116,25 @@
                 {% set usage_total = usage_counts.get(definition.key, 0) %}
                 <li class="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm transition-colors duration-300 dark:border-white/10 dark:bg-white/10 {{ 'ring-2 ring-indigo-200 shadow shadow-indigo-500/20 dark:ring-indigo-400/70' if is_focus else '' }}">
                   <form method="post" action="/admin/prestations/{{ definition.id }}/update" class="grid gap-4 md:grid-cols-5">
-                    <div class="md:col-span-2">
+                    <div class="md:col-span-2 {{ form_panel() }}">
                       <label class="space-y-2 {{ form_label() }}">
                         <span>Libellé</span>
                         <input name="label" value="{{ definition.label }}" required class="{{ form_control() }}" />
                       </label>
                     </div>
-                    <div>
+                    <div class="{{ form_panel() }}">
                       <label class="space-y-2 {{ form_label() }}">
                         <span>Code budget</span>
                         <input name="budget_code" value="{{ definition.budget_code }}" required class="{{ form_control() }}" />
                       </label>
                     </div>
-                    <div>
+                    <div class="{{ form_panel() }}">
                       <label class="space-y-2 {{ form_label() }}">
                         <span>Catégorie</span>
                         <input name="category" value="{{ definition.category }}" list="categorySuggestions" required class="{{ form_control() }}" />
                       </label>
                     </div>
-                    <div>
+                    <div class="{{ form_panel() }}">
                       <label class="space-y-2 {{ form_label() }}">
                         <span>Position</span>
                         <input name="position" type="number" min="0" value="{{ definition.position or 0 }}" class="{{ form_control() }}" />
