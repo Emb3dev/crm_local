@@ -320,12 +320,12 @@
   </div>
   <div class="{{ card_shell() }}">
     <div class="space-y-2">
-      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Référentiel des prestations</h2>
-      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Téléchargez en un clic la liste complète des prestations et de leurs codes budgétaires.</p>
+      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Exporter le listing</h2>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Téléchargez en un clic le listing filtré des prestations affichées ci-dessus.</p>
     </div>
     <div class="mt-6 space-y-4 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
-      <a class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" href="{{ url_for('download_prestation_reference') }}">Télécharger l'Excel complet</a>
-      <p>Le fichier recense chaque prestation avec son libellé, son code budget et la catégorie associée. Idéal pour partager un extrait clair ou préparer un import.</p>
+      <a class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" href="{{ export_url }}">Télécharger le listing actuel</a>
+      <p>Le fichier recense les prestations de la vue courante avec le client, le budget, la fréquence et les semaines de commande et de réalisation.</p>
     </div>
   </div>
 </section>
