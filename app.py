@@ -726,6 +726,7 @@ def _subcontractings_context(
     q: Optional[str],
     filters: Dict[str, str],
     subcontracted_groups,
+    session: Session,
 ):
     report = _consume_import_report(request)
     category_totals: Dict[str, int] = {}
@@ -733,6 +734,7 @@ def _subcontractings_context(
     total_budget = 0.0
     service_budget_display: Dict[int, str] = {}
     client_ids = set()
+    service_ids = [s.id for s in services if getattr(s, "id", None) is not None]
 
     for service in services:
         category_totals[service.category] = category_totals.get(service.category, 0) + 1
@@ -756,6 +758,10 @@ def _subcontractings_context(
         {**SUBCONTRACTING_FILTER_BASE[1], "options": frequency_filter_options},
         SUBCONTRACTING_FILTER_BASE[2],
     ]
+
+    comments_by_service = crud.list_subcontracted_service_comments_by_service(
+        session, service_ids
+    )
 
     return {
         "request": request,
@@ -781,6 +787,7 @@ def _subcontractings_context(
         "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
         "subcontracted_groups": subcontracted_groups,
         "import_report": report,
+        "comments_by_service": comments_by_service,
     }
 
 
@@ -1494,6 +1501,7 @@ def subcontracted_services_page(
             q,
             filters,
             subcontracted_groups,
+            session,
         ),
     )
 
@@ -1646,6 +1654,7 @@ def add_subcontracted_service_comment(
     _current_user: CurrentUser,
     service_id: int,
     message: str = Form(...),
+    return_url: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
     normalized_message = (message or "").strip()
@@ -1669,8 +1678,9 @@ def add_subcontracted_service_comment(
     if not created:
         raise HTTPException(404, "Prestation introuvable")
 
+    redirect_target = return_url or f"/prestations/{service_id}/edit#comments"
     return RedirectResponse(
-        url=f"/prestations/{service_id}/edit#comments",
+        url=redirect_target,
         status_code=303,
     )
 

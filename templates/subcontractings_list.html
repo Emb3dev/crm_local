@@ -234,6 +234,50 @@
                   </div>
                 </section>
               </div>
+              {% set service_comments = comments_by_service.get(service.id, []) %}
+              {% set return_url = '/prestations?focus=' ~ service.id ~ '#service-' ~ service.id %}
+              <section class="space-y-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/40 dark:shadow-indigo-500/10">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Commentaires</h4>
+                  <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-300">{{ service_comments|length }} message{{ 's' if service_comments|length > 1 else '' }}</span>
+                </div>
+                <form action="/prestations/{{ service.id }}/comments" method="post" class="space-y-2">
+                  <input type="hidden" name="return_url" value="{{ return_url }}" />
+                  <label class="{{ form_label() }}">
+                    <span>Ajouter une note</span>
+                    <textarea
+                      name="message"
+                      rows="3"
+                      required
+                      placeholder="Tapez votre message ici"
+                      class="mt-2 {{ form_control('resize-none min-h-[120px]') }}"
+                    ></textarea>
+                  </label>
+                  <div class="flex justify-end">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:border-indigo-300 dark:hover:bg-indigo-400/20">Envoyer</button>
+                  </div>
+                </form>
+                <div class="space-y-2">
+                  {% for comment in service_comments %}
+                    <article class="rounded-xl border border-slate-200 bg-white/90 p-3 text-sm shadow-sm shadow-indigo-100/50 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:shadow-indigo-500/10">
+                      <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-start gap-3">
+                          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50 text-[0.7rem] font-semibold uppercase tracking-[0.25em] text-indigo-700 shadow-inner shadow-indigo-100/60 dark:bg-indigo-500/20 dark:text-indigo-100">
+                            {{ comment.author_initials }}
+                          </div>
+                          <div class="space-y-1">
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ comment.author_name }}</p>
+                            <p class="text-sm leading-relaxed text-slate-700 dark:text-slate-200 whitespace-pre-line">{{ comment.content }}</p>
+                          </div>
+                        </div>
+                        <time class="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</time>
+                      </div>
+                    </article>
+                  {% else %}
+                    <p class="rounded-xl border border-dashed border-slate-200 bg-white/70 px-3 py-4 text-center text-sm text-slate-500 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-300">Aucun commentaire pour le moment. Lancez la conversation !</p>
+                  {% endfor %}
+                </div>
+              </section>
               <div class="flex flex-wrap items-center justify-between gap-4 border-t border-dashed border-slate-200 pt-4 text-sm text-slate-600 transition-colors duration-300 dark:border-white/10 dark:text-slate-300">
                 <p>
                   <span class="font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ service.prestation_label }}</span>
