@@ -135,11 +135,11 @@
             <tr>
               <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Prestation</th>
               <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Client</th>
-              <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Catégorie</th>
-              <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Fréquence</th>
-              <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Statut</th>
+              <th scope="col" class="hidden px-4 py-3 text-left lg:table-cell sm:px-6 sm:py-4">Catégorie</th>
+              <th scope="col" class="hidden px-4 py-3 text-left lg:table-cell sm:px-6 sm:py-4">Fréquence</th>
+              <th scope="col" class="hidden px-4 py-3 text-left lg:table-cell sm:px-6 sm:py-4">Statut</th>
               <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Budget &amp; code</th>
-              <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Semaines</th>
+              <th scope="col" class="hidden px-4 py-3 text-left lg:table-cell sm:px-6 sm:py-4">Semaines</th>
               <th scope="col" class="px-4 py-3 text-left sm:px-6 sm:py-4">Actions</th>
             </tr>
           </thead>
@@ -154,6 +154,20 @@
                   <td class="px-4 py-4 align-top sm:px-6 sm:py-5">
                     <div class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ service.prestation_label }}</div>
                     <div class="mt-1 text-xs uppercase tracking-[0.3em] text-slate-400 transition-colors duration-300 dark:text-slate-400">Créée le {{ service.created_at.strftime('%d/%m/%Y') }}</div>
+                    <div class="mt-3 flex flex-wrap gap-2 text-[11px] leading-5 text-slate-500 transition-colors duration-300 lg:hidden dark:text-slate-300">
+                      <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold uppercase tracking-[0.3em] text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ service.category }}</span>
+                      <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold uppercase tracking-[0.3em] text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ frequency_options.get(service.frequency, service.frequency) }}</span>
+                      {% set status_value = service.status or subcontract_status_default %}
+                      {% set status_class = subcontract_status_styles.get(status_value) or 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200' %}
+                      <span class="inline-flex items-center rounded-full border {{ status_class }} px-3 py-1 font-semibold uppercase tracking-[0.3em]">{{ subcontract_status_options.get(status_value, 'Statut inconnu') }}</span>
+                      {% if service.order_week or service.realization_week %}
+                        <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold uppercase tracking-[0.3em] text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
+                          {% if service.order_week %}C: {{ service.order_week }}{% endif %}
+                          {% if service.order_week and service.realization_week %}<span class="mx-1 text-slate-400">•</span>{% endif %}
+                          {% if service.realization_week %}R: {{ service.realization_week }}{% endif %}
+                        </span>
+                      {% endif %}
+                    </div>
                   </td>
                   <td class="px-4 py-4 align-top sm:px-6 sm:py-5">
                     {% if service.client %}
@@ -165,13 +179,13 @@
                       <span class="text-slate-400">—</span>
                     {% endif %}
                   </td>
-                  <td class="px-4 py-4 align-top text-slate-600 transition-colors duration-300 sm:px-6 sm:py-5 dark:text-slate-200">{{ service.category }}</td>
-                  <td class="px-4 py-4 align-top sm:px-6 sm:py-5">
+                  <td class="hidden px-4 py-4 align-top text-slate-600 transition-colors duration-300 lg:table-cell sm:px-6 sm:py-5 dark:text-slate-200">{{ service.category }}</td>
+                  <td class="hidden px-4 py-4 align-top lg:table-cell sm:px-6 sm:py-5">
                     <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ frequency_options.get(service.frequency, service.frequency) }}</span>
                   </td>
                   {% set status_value = service.status or subcontract_status_default %}
                   {% set status_class = subcontract_status_styles.get(status_value) or 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-200' %}
-                  <td class="px-4 py-4 align-top sm:px-6 sm:py-5">
+                  <td class="hidden px-4 py-4 align-top lg:table-cell sm:px-6 sm:py-5">
                     <span class="inline-flex items-center gap-2 rounded-full border {{ status_class }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
                       {{ subcontract_status_options.get(status_value, 'Statut inconnu') }}
                     </span>
@@ -191,7 +205,7 @@
                       </span>
                     </div>
                   </td>
-                  <td class="px-4 py-4 align-top text-xs text-slate-500 transition-colors duration-300 sm:px-6 sm:py-5 dark:text-slate-300">
+                  <td class="hidden px-4 py-4 align-top text-xs text-slate-500 transition-colors duration-300 lg:table-cell sm:px-6 sm:py-5 dark:text-slate-300">
                     {% if service.order_week or service.realization_week %}
                       {% if service.order_week %}<span class="font-semibold text-slate-700 transition-colors duration-300 dark:text-slate-200">Commande&nbsp;:</span> {{ service.order_week }}{% endif %}
                       {% if service.order_week and service.realization_week %}<span class="mx-2 text-slate-400 transition-colors duration-300 dark:text-slate-500">•</span>{% endif %}
