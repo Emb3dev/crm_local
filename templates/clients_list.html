@@ -417,7 +417,27 @@
           </details>
         {% endfor %}
       {% else %}
-        <p class="rounded-3xl border border-dashed border-white/20 bg-white/5 px-6 py-12 text-center text-sm text-slate-300">Aucun résultat</p>
+        <div class="flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-slate-300/80 bg-white/70 px-8 py-12 text-center shadow-inner shadow-indigo-100/40 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:shadow-indigo-500/10">
+          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-2xl">📭</div>
+          <div class="space-y-2">
+            <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white">Aucun client enregistré</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300">Importez vos premiers comptes ou créez une fiche manuellement pour démarrer le suivi.</p>
+          </div>
+          <div class="flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="/clients/import"
+              class="inline-flex items-center gap-2 rounded-full border border-indigo-300 bg-indigo-500/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-700 transition hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:text-white dark:hover:bg-indigo-400/20"
+            >
+              Importer un fichier
+            </a>
+            <a
+              href="/clients/new"
+              class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/20"
+            >
+              Ajouter un client
+            </a>
+          </div>
+        </div>
       {% endif %}
     </div>
   </section>
