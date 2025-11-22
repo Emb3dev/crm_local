@@ -258,13 +258,6 @@ SUPPLIER_TYPE_OPTIONS = {
     "sous_traitant": "Sous-traitant",
 }
 
-SUPPLIER_CATEGORY_SUGGESTIONS = sorted(
-    {
-        *(option.get("label", "") for group in DEFAULT_PRESTATION_GROUPS for option in group.get("options", [])),
-        "Etiquettes",
-    }
-)
-
 SUBCONTRACT_STATUS_DEFAULT = "non_commence"
 
 SUBCONTRACT_STATUS_OPTIONS = {
@@ -759,7 +752,11 @@ def _clients_context(
 
 
 def _suppliers_context(
-    request: Request, suppliers, q: Optional[str], supplier_type: Optional[str]
+    request: Request,
+    suppliers,
+    q: Optional[str],
+    supplier_type: Optional[str],
+    supplier_categories,
 ):
     return {
         "request": request,
@@ -767,7 +764,8 @@ def _suppliers_context(
         "q": q or "",
         "supplier_type": supplier_type or "",
         "supplier_type_options": SUPPLIER_TYPE_OPTIONS,
-        "category_suggestions": SUPPLIER_CATEGORY_SUGGESTIONS,
+        "category_suggestions": [category.label for category in supplier_categories],
+        "supplier_categories": supplier_categories,
         "focus_id": request.query_params.get("focus"),
         "split_categories": _split_categories,
         "import_report": _consume_import_report(request),
@@ -1527,9 +1525,12 @@ def suppliers_page(
     suppliers = crud.list_suppliers(
         session, q=q, supplier_type=normalized_type, limit=200
     )
+    supplier_categories = crud.list_supplier_categories(session)
     return templates.TemplateResponse(
         "suppliers_list.html",
-        _suppliers_context(request, suppliers, q, normalized_type),
+        _suppliers_context(
+            request, suppliers, q, normalized_type, supplier_categories
+        ),
     )
 
 
@@ -1545,9 +1546,12 @@ def suppliers_fragment(
     suppliers = crud.list_suppliers(
         session, q=q, supplier_type=normalized_type, limit=200
     )
+    supplier_categories = crud.list_supplier_categories(session)
     return templates.TemplateResponse(
         "suppliers_list.html",
-        _suppliers_context(request, suppliers, q, normalized_type),
+        _suppliers_context(
+            request, suppliers, q, normalized_type, supplier_categories
+        ),
     )
 
 
@@ -1654,6 +1658,20 @@ async def import_suppliers(
         singular_label="fournisseur",
         plural_label="fournisseurs",
     )
+
+
+@app.post("/fournisseurs/categories")
+def create_supplier_category(
+    _current_user: CurrentUser,
+    label: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    try:
+        crud.create_supplier_category(session, label)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+    return RedirectResponse(url="/fournisseurs", status_code=303)
 
 # Fragment liste (HTMX)
 @app.get("/_clients", response_class=HTMLResponse)

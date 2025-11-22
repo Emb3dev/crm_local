@@ -24,6 +24,7 @@ from models import (
     SupplierContactCreate,
     SupplierCreate,
     SupplierUpdate,
+    SupplierCategory,
     FilterLine,
     FilterLineCreate,
     FilterLineUpdate,
@@ -469,6 +470,31 @@ def delete_supplier_contact(
     session.delete(contact)
     session.commit()
     return True
+
+
+def list_supplier_categories(session: Session) -> List[SupplierCategory]:
+    stmt = select(SupplierCategory).order_by(SupplierCategory.label.asc())
+    return session.exec(stmt).all()
+
+
+def create_supplier_category(session: Session, label: str) -> SupplierCategory:
+    normalized_label = (label or "").strip()
+    if not normalized_label:
+        raise ValueError("Le nom de la catégorie est requis")
+
+    existing = session.exec(
+        select(SupplierCategory).where(
+            func.lower(SupplierCategory.label) == normalized_label.lower()
+        )
+    ).first()
+    if existing:
+        raise ValueError("Une catégorie portant ce nom existe déjà.")
+
+    category = SupplierCategory(label=normalized_label)
+    session.add(category)
+    session.commit()
+    session.refresh(category)
+    return category
 
 
 def create_subcontracted_service(
