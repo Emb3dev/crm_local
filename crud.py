@@ -393,6 +393,7 @@ def list_suppliers(
                 | SupplierContact.name.ilike(like)
                 | SupplierContact.email.ilike(like)
                 | SupplierContact.phone.ilike(like)
+                | SupplierContact.description.ilike(like)
             )
         ).distinct()
 

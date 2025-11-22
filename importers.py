@@ -77,6 +77,9 @@ CONTACT_FIELD_ALIASES = {
     "telephone": "phone",
     "tel": "phone",
     "mobile": "phone",
+    "description": "description",
+    "notes": "description",
+    "commentaire": "description",
 }
 
 SUPPLIER_TYPE_ALIASES = {

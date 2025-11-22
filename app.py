@@ -791,6 +791,7 @@ def _suppliers_context(
         "contact_name": "",
         "contact_email": "",
         "contact_phone": "",
+        "contact_description": "",
     }
     merged_form_values = {**default_form_values, **(form_values or {})}
 
@@ -2420,6 +2421,7 @@ def create_supplier(
     contact_name: Optional[str] = Form(None),
     contact_email: Optional[str] = Form(None),
     contact_phone: Optional[str] = Form(None),
+    contact_description: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
     normalized_name = (name or "").strip()
@@ -2436,7 +2438,7 @@ def create_supplier(
         errors.append("Type de fournisseur invalide.")
 
     contacts_payload: List[SupplierContactCreate] = []
-    has_contact_data = contact_name or contact_email or contact_phone
+    has_contact_data = contact_name or contact_email or contact_phone or contact_description
     if has_contact_data:
         normalized_contact_name = (contact_name or "").strip()
         if not normalized_contact_name:
@@ -2447,6 +2449,7 @@ def create_supplier(
                     name=normalized_contact_name,
                     email=(contact_email or "").strip() or None,
                     phone=(contact_phone or "").strip() or None,
+                    description=(contact_description or "").strip() or None,
                 )
             )
 
@@ -2470,6 +2473,7 @@ def create_supplier(
                 "contact_name": (contact_name or "").strip(),
                 "contact_email": (contact_email or "").strip(),
                 "contact_phone": (contact_phone or "").strip(),
+                "contact_description": (contact_description or "").strip(),
             },
         )
         return templates.TemplateResponse(
@@ -2554,6 +2558,7 @@ def add_supplier_contact(
     name: str = Form(..., alias="contact_name"),
     email: Optional[str] = Form(None, alias="contact_email"),
     phone: Optional[str] = Form(None, alias="contact_phone"),
+    description: Optional[str] = Form(None, alias="contact_description"),
     session: Session = Depends(get_session),
 ):
     normalized_name = (name or "").strip()
@@ -2566,6 +2571,7 @@ def add_supplier_contact(
             name=normalized_name,
             email=(email or "").strip() or None,
             phone=(phone or "").strip() or None,
+            description=(description or "").strip() or None,
         ),
     )
     if not created:

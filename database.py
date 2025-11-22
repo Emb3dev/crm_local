@@ -3,7 +3,14 @@ from sqlalchemy.exc import OperationalError
 from sqlmodel import SQLModel, create_engine, Session, select
 
 from defaults import DEFAULT_PRESTATION_GROUPS
-from models import Client, Entreprise, PrestationDefinition, Supplier, SupplierCategory
+from models import (
+    Client,
+    Entreprise,
+    PrestationDefinition,
+    Supplier,
+    SupplierCategory,
+    SupplierContact,
+)
 
 engine = create_engine("sqlite:///./crm.db", connect_args={"check_same_thread": False})
 
@@ -156,6 +163,14 @@ def init_db():
         if "is_online" not in user_cols:
             conn.exec_driver_sql(
                 "ALTER TABLE user ADD COLUMN is_online BOOLEAN DEFAULT 0"
+            )
+        supplier_contact_cols = {
+            row[1]
+            for row in conn.exec_driver_sql("PRAGMA table_info('suppliercontact')")
+        }
+        if "description" not in supplier_contact_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE suppliercontact ADD COLUMN description VARCHAR"
             )
     with Session(engine) as session:
         clients_without = session.exec(
