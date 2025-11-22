@@ -125,12 +125,22 @@
             Nouvelle catégorie
           </button>
         </div>
-        <form class="{{ form_panel() }}" role="search" hx-get="/_fournisseurs" hx-target="#supplier-list" hx-trigger="keyup changed delay:300ms">
+        <form class="{{ form_panel() }}" role="search" hx-get="/_fournisseurs" hx-target="#supplier-list" hx-trigger="keyup changed delay:300ms, submit">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <label class="flex-1 {{ form_label() }}">
               <span class="sr-only">Rechercher un fournisseur</span>
               <input type="text" name="q" value="{{ q }}" placeholder="Rechercher (nom, catégorie, contact…)" aria-label="Rechercher un fournisseur" class="mt-1 {{ form_control('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70') }}" />
             </label>
+            <div class="flex flex-wrap items-center gap-3 sm:w-auto">
+              <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-300 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20">
+                Filtrer
+              </button>
+              <a href="/fournisseurs" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:focus-visible:ring-white/40">
+                Réinitialiser
+              </a>
+            </div>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2">
             <label class="{{ form_label() }}">
               <span class="sr-only">Filtrer par type</span>
               <div class="relative">
