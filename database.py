@@ -3,7 +3,7 @@ from sqlalchemy.exc import OperationalError
 from sqlmodel import SQLModel, create_engine, Session, select
 
 from defaults import DEFAULT_PRESTATION_GROUPS
-from models import Client, Entreprise, PrestationDefinition
+from models import Client, Entreprise, PrestationDefinition, Supplier, SupplierCategory
 
 engine = create_engine("sqlite:///./crm.db", connect_args={"check_same_thread": False})
 
@@ -206,6 +206,20 @@ def init_db():
                         position=option.get("position", 0),
                     )
                     session.add(definition)
+            session.commit()
+        supplier_category_count = session.exec(
+            select(func.count(SupplierCategory.id))
+        ).one()
+        if supplier_category_count == 0:
+            existing_categories = set()
+            for supplier in session.exec(select(Supplier)).all():
+                raw_categories = (supplier.categories or "").replace(";", ",")
+                for part in raw_categories.split(","):
+                    label = part.strip()
+                    if label:
+                        existing_categories.add(label)
+            for label in sorted(existing_categories):
+                session.add(SupplierCategory(label=label))
             session.commit()
     SQLModel.metadata.create_all(engine)
 

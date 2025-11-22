@@ -192,6 +192,14 @@ class SupplierContactUpdate(SQLModel):
     phone: Optional[str] = None
 
 
+class SupplierCategory(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("label"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    label: str = Field(index=True, description="Nom de la catégorie fournisseur")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 # =======================
 # TABLE PRESTATIONS SOUS-TRAITÉES / LOCATIONS (rattachée à un client)
 # =======================
