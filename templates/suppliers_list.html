@@ -143,10 +143,31 @@
         <span>Notre code client</span>
         <input name="our_code" value="{{ form_values.our_code }}" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <label class="{{ form_label() }}">
+      <div class="{{ form_label() }} space-y-2" data-category-tags>
         <span>Catégorie(s)</span>
-        <input name="categories" value="{{ form_values.categories }}" list="categories" placeholder="Analyse d'eau, Détection CO…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
+        <input type="hidden" name="categories" value="{{ form_values.categories }}" />
+        <div class="mt-1 flex flex-wrap gap-2" data-selected-tags></div>
+        <div class="flex flex-wrap gap-2" data-tag-suggestions>
+          {% for suggestion in category_suggestions %}
+            <button
+              type="button"
+              data-tag-value="{{ suggestion }}"
+              class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition-colors duration-200 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:border-indigo-400/50 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-100"
+            >
+              {{ suggestion }}
+            </button>
+          {% endfor %}
+        </div>
+        <input
+          data-tag-entry
+          name="categories-entry"
+          list="supplier-category-suggestions"
+          value=""
+          placeholder="Ajouter une catégorie et appuyer sur Entrée"
+          class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
+        />
+        <p class="text-xs text-slate-500 dark:text-slate-400">Sélectionnez une catégorie existante ou saisissez un nouveau tag.</p>
+      </div>
       <label class="{{ form_label() }}">
         <span>Contact principal</span>
         <input name="contact_name" value="{{ form_values.contact_name }}" placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
@@ -167,7 +188,7 @@
         </button>
       </div>
     </form>
-    <datalist id="categories">
+    <datalist id="supplier-category-suggestions">
       {% for suggestion in category_suggestions %}
         {% if suggestion %}<option value="{{ suggestion }}">{% endif %}
       {% endfor %}
@@ -194,6 +215,116 @@
           categoryForm?.querySelector('input[name="label"]')?.focus();
         }
       });
+
+      const parseTags = (value) =>
+        (value || '')
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+      const setSuggestionState = (button, isSelected) => {
+        const activeClasses = [
+          'border-indigo-200',
+          'bg-indigo-50',
+          'text-indigo-700',
+          'dark:border-indigo-400/50',
+          'dark:bg-indigo-500/10',
+          'dark:text-indigo-100',
+        ];
+        const inactiveClasses = [
+          'border-slate-200',
+          'bg-slate-100',
+          'text-slate-700',
+          'dark:border-white/10',
+          'dark:bg-white/10',
+          'dark:text-white',
+        ];
+        activeClasses.forEach((cls) => button.classList.toggle(cls, isSelected));
+        inactiveClasses.forEach((cls) => button.classList.toggle(cls, !isSelected));
+      };
+
+      const setupCategoryTags = (root) => {
+        const hiddenInput = root.querySelector('input[name="categories"][type="hidden"]');
+        const entryInput = root.querySelector('[data-tag-entry]');
+        const selectedContainer = root.querySelector('[data-selected-tags]');
+        const suggestionButtons = root.querySelectorAll('[data-tag-value]');
+
+        if (!hiddenInput || !entryInput || !selectedContainer) {
+          return;
+        }
+
+        const tags = parseTags(hiddenInput.value);
+
+        const renderTags = () => {
+          selectedContainer.innerHTML = '';
+          tags.forEach((label) => {
+            const tag = document.createElement('span');
+            tag.className =
+              'inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100';
+            const text = document.createElement('span');
+            text.textContent = label;
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className =
+              'text-indigo-500 transition hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:text-indigo-100 dark:hover:text-white dark:focus-visible:ring-indigo-400';
+            removeBtn.setAttribute('aria-label', `Supprimer ${label}`);
+            removeBtn.textContent = '×';
+            removeBtn.addEventListener('click', () => {
+              const idx = tags.indexOf(label);
+              if (idx >= 0) {
+                tags.splice(idx, 1);
+                renderTags();
+              }
+            });
+            tag.appendChild(text);
+            tag.appendChild(removeBtn);
+            selectedContainer.appendChild(tag);
+          });
+          hiddenInput.value = tags.join(', ');
+          suggestionButtons.forEach((button) => {
+            const label = button.getAttribute('data-tag-value');
+            setSuggestionState(button, !!label && tags.includes(label));
+          });
+        };
+
+        const addTag = (value) => {
+          const normalized = (value || '').trim();
+          if (!normalized || tags.includes(normalized)) {
+            return;
+          }
+          tags.push(normalized);
+          renderTags();
+        };
+
+        entryInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ',') {
+            event.preventDefault();
+            addTag(entryInput.value);
+            entryInput.value = '';
+          }
+        });
+
+        entryInput.addEventListener('blur', () => {
+          if (entryInput.value.trim()) {
+            addTag(entryInput.value);
+            entryInput.value = '';
+          }
+        });
+
+        suggestionButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            const label = button.getAttribute('data-tag-value');
+            addTag(label);
+            entryInput.focus();
+          });
+        });
+
+        renderTags();
+      };
+
+      document
+        .querySelectorAll('[data-category-tags]')
+        .forEach((element) => setupCategoryTags(element));
     </script>
   </div>
 
@@ -427,10 +558,31 @@
                     <span>Notre code client</span>
                     <input name="our_code" value="{{ supplier.our_code or '' }}" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                   </label>
-                  <label class="{{ form_label() }}">
+                  <div class="{{ form_label() }} space-y-2" data-category-tags>
                     <span>Catégorie(s)</span>
-                    <input name="categories" value="{{ supplier.categories or '' }}" list="categories" placeholder="Analyse d'eau, Détection CO…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                  </label>
+                    <input type="hidden" name="categories" value="{{ supplier.categories or '' }}" />
+                    <div class="mt-1 flex flex-wrap gap-2" data-selected-tags></div>
+                    <div class="flex flex-wrap gap-2" data-tag-suggestions>
+                      {% for suggestion in category_suggestions %}
+                        <button
+                          type="button"
+                          data-tag-value="{{ suggestion }}"
+                          class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition-colors duration-200 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:border-indigo-400/50 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-100"
+                        >
+                          {{ suggestion }}
+                        </button>
+                      {% endfor %}
+                    </div>
+                    <input
+                      data-tag-entry
+                      name="categories-entry"
+                      list="supplier-category-suggestions"
+                      value=""
+                      placeholder="Ajouter une catégorie et appuyer sur Entrée"
+                      class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
+                    />
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Sélectionnez une catégorie existante ou saisissez un nouveau tag.</p>
+                  </div>
                   <div class="mt-2 flex justify-end">
                     <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Enregistrer</button>
                   </div>
