@@ -233,38 +233,37 @@
                   </div>
                   <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors duration-300 dark:border-white/10 dark:bg-white/5">
                     {% if contact_list %}
-                      <div class="space-y-4">
+                      <ul class="space-y-3">
                         {% for contact in contact_list | sort(attribute='name') %}
-                          <div class="flex flex-col gap-2 rounded-2xl bg-slate-50 p-4 transition-colors duration-300 dark:bg-midnight-800/60 sm:flex-row sm:items-center sm:justify-between">
-                            <div class="space-y-1">
-                              <p class="font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ contact.name }}</p>
-                              <p class="text-sm text-slate-500 transition-colors duration-300 dark:text-slate-300">
-                                {% if contact.email %}
-                                  <a href="mailto:{{ contact.email }}" class="text-indigo-600 transition hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">{{ contact.email }}</a>
-                                {% else %}
-                                  —
+                          <li class="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div>
+                                <p class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ contact.name }}</p>
+                                <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
+                                  {% if contact.email %}
+                                    <a class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/70 px-3 py-1 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/10 dark:hover:border-indigo-300 dark:hover:text-white" href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+                                  {% endif %}
+                                  {% if contact.phone %}
+                                    {% set sanitized_phone = contact.phone | replace(' ', '') | replace('.', '') | replace('-', '') %}
+                                    <a class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/70 px-3 py-1 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/10 dark:hover:border-indigo-300 dark:hover:text-white" href="tel:{{ sanitized_phone }}">{{ contact.phone }}</a>
+                                  {% endif %}
+                                  {% if not contact.email and not contact.phone %}
+                                    <span class="text-slate-500 dark:text-slate-400">Coordonnées à renseigner</span>
+                                  {% endif %}
+                                </div>
+                                {% if contact.description %}
+                                  <p class="mt-2 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ contact.description }}</p>
                                 {% endif %}
-                              </p>
-                              <p class="text-sm text-slate-500 transition-colors duration-300 dark:text-slate-300">
-                                {% if contact.phone %}
-                                  {% set sanitized_phone = contact.phone | replace(' ', '') | replace('.', '') | replace('-', '') %}
-                                  <a href="tel:{{ sanitized_phone }}" class="text-indigo-600 transition hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">{{ contact.phone }}</a>
-                                {% else %}
-                                  —
-                                {% endif %}
-                              </p>
-                              {% if contact.description %}
-                                <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ contact.description }}</p>
-                              {% endif %}
+                              </div>
+                              <form action="/fournisseurs/{{ supplier.id }}/contacts/{{ contact.id }}/delete" method="post" onsubmit="return confirm('Supprimer ce contact ?')" class="flex justify-end">
+                                <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" type="submit" title="Supprimer le contact">🗑️</button>
+                              </form>
                             </div>
-                            <form action="/fournisseurs/{{ supplier.id }}/contacts/{{ contact.id }}/delete" method="post" onsubmit="return confirm('Supprimer ce contact ?')">
-                              <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-50 dark:hover:bg-rose-400/20 dark:focus-visible:ring-rose-300" type="submit">Supprimer</button>
-                            </form>
-                          </div>
+                          </li>
                         {% endfor %}
-                      </div>
+                      </ul>
                     {% else %}
-                      <p class="text-sm text-slate-500 transition-colors duration-300 dark:text-slate-300">Aucun contact renseigné.</p>
+                      <p class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 transition-colors duration-300 dark:border-white/20 dark:bg-white/5 dark:text-slate-300">Aucun contact pour le moment.</p>
                     {% endif %}
                     <div class="mt-4 flex justify-end">
                       <button
