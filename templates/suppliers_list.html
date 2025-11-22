@@ -43,6 +43,27 @@
 {% endfor %}
 
 <section class="space-y-10">
+  {% if success %}
+    <div class="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-700 shadow-lg shadow-emerald-200/40 transition-colors duration-300 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100 dark:shadow-emerald-500/20">
+      <p class="text-xs font-semibold uppercase tracking-[0.35em]">Nouveau partenaire</p>
+      <p class="mt-2 text-sm">Le fournisseur a été ajouté avec succès. Vous pouvez retrouver ses contacts et catégories ci-dessous.</p>
+    </div>
+  {% endif %}
+
+  {% if errors %}
+    <div class="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-amber-800 shadow-lg shadow-amber-200/40 transition-colors duration-300 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100 dark:shadow-amber-500/20">
+      <p class="text-xs font-semibold uppercase tracking-[0.35em]">Veuillez corriger le formulaire</p>
+      <ul class="mt-3 space-y-2 text-sm">
+        {% for error in errors %}
+          <li class="flex items-start gap-2">
+            <span aria-hidden="true">⚠️</span>
+            <span>{{ error }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
   <div class="{{ card_shell() }}">
     <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
       <div class="space-y-4">
@@ -82,21 +103,22 @@
   </div>
 
   <div class="{{ card_shell() }}">
-    <div class="space-y-2">
-      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Nouveau fournisseur</h2>
-      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Ajoutez un partenaire en quelques informations clés.</p>
+    <div class="space-y-3">
+      <span class="inline-flex w-fit items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100">Ajouter un fournisseur</span>
+      <h2 class="font-display text-2xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Créer une nouvelle entrée</h2>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Renseignez le nom, le type et un éventuel contact principal. Les informations sont immédiatement disponibles dans la liste ci-dessous.</p>
     </div>
     <form action="/fournisseurs/new" method="post" class="mt-6 grid gap-4 md:grid-cols-2">
       <label class="{{ form_label() }}">
         <span>Nom *</span>
-        <input name="name" required placeholder="Ex: Laboratoire Aquatest" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+        <input name="name" value="{{ form_values.name }}" required placeholder="Ex: Laboratoire Aquatest" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
       <label class="{{ form_label() }}">
         <span>Type</span>
         <div class="relative mt-2">
           <select name="supplier_type" class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}">
             {% for value, label in supplier_type_options.items() %}
-              <option value="{{ value }}">{{ label }}</option>
+              <option value="{{ value }}" {% if form_values.supplier_type == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
           <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
@@ -108,26 +130,30 @@
       </label>
       <label class="{{ form_label() }}">
         <span>Notre code client</span>
-        <input name="our_code" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+        <input name="our_code" value="{{ form_values.our_code }}" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
       <label class="{{ form_label() }}">
         <span>Catégorie(s)</span>
-        <input name="categories" list="categories" placeholder="Analyse d'eau, Détection CO…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+        <input name="categories" value="{{ form_values.categories }}" list="categories" placeholder="Analyse d'eau, Détection CO…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
       <label class="{{ form_label() }}">
         <span>Contact principal</span>
-        <input name="contact_name" placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+        <input name="contact_name" value="{{ form_values.contact_name }}" placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
       <label class="{{ form_label() }}">
         <span>Email du contact</span>
-        <input name="contact_email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+        <input name="contact_email" value="{{ form_values.contact_email }}" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
       <label class="{{ form_label() }}">
         <span>Téléphone du contact</span>
-        <input name="contact_phone" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+        <input name="contact_phone" value="{{ form_values.contact_phone }}" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <div class="md:col-span-2 mt-2 flex justify-end">
-        <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Enregistrer</button>
+      <div class="md:col-span-2 mt-2 flex flex-wrap items-center justify-between gap-4">
+        <p class="text-xs text-slate-500 transition-colors duration-300 dark:text-slate-400">Les fournisseurs ajoutés apparaîtront immédiatement dans la liste ci-dessous.</p>
+        <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">
+          <span aria-hidden="true">➕</span>
+          Enregistrer le fournisseur
+        </button>
       </div>
     </form>
     <datalist id="categories">
