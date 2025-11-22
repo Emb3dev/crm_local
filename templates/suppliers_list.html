@@ -325,6 +325,27 @@
       document
         .querySelectorAll('[data-category-tags]')
         .forEach((element) => setupCategoryTags(element));
+
+      const bindToggle = (dataAttribute, idPrefix, focusSelector) => {
+        document.querySelectorAll(`[${dataAttribute}]`).forEach((button) => {
+          const targetId = button.getAttribute(dataAttribute);
+          const target = document.getElementById(`${idPrefix}${targetId}`);
+
+          if (!target) return;
+
+          button.addEventListener('click', () => {
+            const isHidden = target.classList.contains('hidden');
+            target.classList.toggle('hidden');
+            button.setAttribute('aria-expanded', String(isHidden));
+            if (isHidden && focusSelector) {
+              target.querySelector(focusSelector)?.focus();
+            }
+          });
+        });
+      };
+
+      bindToggle('data-toggle-contact-form', 'contact-form-', 'input[name="contact_name"]');
+      bindToggle('data-toggle-edit-form', 'edit-form-', 'input[name="name"]');
     </script>
   </div>
 
@@ -515,17 +536,18 @@
                     {% else %}
                       <p class="text-sm text-slate-500 transition-colors duration-300 dark:text-slate-300">Aucun contact renseigné.</p>
                     {% endif %}
-                  </div>
-                  <details class="group rounded-2xl border border-slate-200 bg-white/80 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
-                    <summary class="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:text-indigo-200 dark:hover:text-indigo-100 dark:focus-visible:ring-indigo-400">
-                      Ajouter un contact
-                      <span class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-indigo-100 bg-indigo-50 text-indigo-500 transition-transform duration-300 group-open:rotate-180 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
-                        </svg>
-                      </span>
-                    </summary>
-                    <div class="border-t border-slate-200 px-4 py-4 transition-colors duration-300 dark:border-white/10">
+                    <div class="mt-4 flex justify-end">
+                      <button
+                        type="button"
+                        class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+                        data-toggle-contact-form="{{ supplier.id }}"
+                        aria-controls="contact-form-{{ supplier.id }}"
+                        aria-expanded="false"
+                      >
+                        Ajouter un contact
+                      </button>
+                    </div>
+                    <div id="contact-form-{{ supplier.id }}" class="mt-4 hidden border-t border-slate-200 pt-4 transition-colors duration-300 dark:border-white/10">
                       <form action="/fournisseurs/{{ supplier.id }}/contacts" method="post" class="grid gap-3">
                         <label class="{{ form_label() }}">
                           <span>Nom *</span>
@@ -544,21 +566,25 @@
                         </div>
                       </form>
                     </div>
-                  </details>
+                  </div>
                 </section>
               </div>
 
                 <div class="grid gap-4 sm:grid-cols-2">
-                  <details class="group rounded-2xl border border-slate-200 bg-white/80 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
-                    <summary class="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:text-indigo-200 dark:hover:text-indigo-100 dark:focus-visible:ring-indigo-400">
-                      Modifier le fournisseur
-                      <span class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-indigo-100 bg-indigo-50 text-indigo-500 transition-transform duration-300 group-open:rotate-180 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
-                        </svg>
-                      </span>
-                    </summary>
-                    <div class="border-t border-slate-200 px-4 py-4 transition-colors duration-300 dark:border-white/10">
+                  <div class="rounded-2xl border border-slate-200 bg-white/80 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
+                    <div class="flex items-center justify-between gap-3 px-4 py-3">
+                      <p class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Modifier le fournisseur</p>
+                      <button
+                        type="button"
+                        class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+                        data-toggle-edit-form="{{ supplier.id }}"
+                        aria-controls="edit-form-{{ supplier.id }}"
+                        aria-expanded="false"
+                      >
+                        Modifier
+                      </button>
+                    </div>
+                    <div id="edit-form-{{ supplier.id }}" class="border-t border-slate-200 px-4 py-4 transition-colors duration-300 dark:border-white/10 hidden">
                       <form action="/fournisseurs/{{ supplier.id }}/edit" method="post" class="grid gap-4 md:grid-cols-2">
                         <label class="{{ form_label() }}">
                           <span>Nom *</span>
@@ -613,7 +639,7 @@
                         </div>
                       </form>
                     </div>
-                  </details>
+                  </div>
                   <form action="/fournisseurs/{{ supplier.id }}/delete" method="post" class="flex items-end justify-end" onsubmit="return confirm('Supprimer {{ supplier.name }} ?')">
                     <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-50 dark:hover:bg-rose-400/20 dark:focus-visible:ring-rose-300" type="submit">Supprimer</button>
                   </form>
