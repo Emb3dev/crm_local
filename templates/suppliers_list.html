@@ -194,28 +194,6 @@
       {% endfor %}
     </datalist>
     <script>
-      const toggleSupplierForm = document.getElementById('toggleSupplierForm');
-      const supplierForm = document.getElementById('newSupplierForm');
-      toggleSupplierForm?.addEventListener('click', () => {
-        const isExpanded = toggleSupplierForm.getAttribute('aria-expanded') === 'true';
-        toggleSupplierForm.setAttribute('aria-expanded', String(!isExpanded));
-        supplierForm?.classList.toggle('hidden');
-        if (!isExpanded) {
-          supplierForm?.querySelector('input[name="name"]')?.focus();
-        }
-      });
-
-      const toggleCategoryForm = document.getElementById('toggleCategoryForm');
-      const categoryForm = document.getElementById('newCategoryForm');
-      toggleCategoryForm?.addEventListener('click', () => {
-        const isExpanded = toggleCategoryForm.getAttribute('aria-expanded') === 'true';
-        toggleCategoryForm.setAttribute('aria-expanded', String(!isExpanded));
-        categoryForm?.classList.toggle('hidden');
-        if (!isExpanded) {
-          categoryForm?.querySelector('input[name="label"]')?.focus();
-        }
-      });
-
       const parseTags = (value) =>
         (value || '')
           .split(',')
@@ -244,6 +222,9 @@
       };
 
       const setupCategoryTags = (root) => {
+        if (root.dataset.tagsInitialized === 'true') return;
+        root.dataset.tagsInitialized = 'true';
+
         const hiddenInput = root.querySelector('input[name="categories"][type="hidden"]');
         const entryInput = root.querySelector('[data-tag-entry]');
         const selectedContainer = root.querySelector('[data-selected-tags]');
@@ -322,14 +303,13 @@
         renderTags();
       };
 
-      document
-        .querySelectorAll('[data-category-tags]')
-        .forEach((element) => setupCategoryTags(element));
+      const bindToggle = (root, dataAttribute, idPrefix, focusSelector) => {
+        root.querySelectorAll(`[${dataAttribute}]`).forEach((button) => {
+          if (button.dataset.toggleBound === 'true') return;
+          button.dataset.toggleBound = 'true';
 
-      const bindToggle = (dataAttribute, idPrefix, focusSelector) => {
-        document.querySelectorAll(`[${dataAttribute}]`).forEach((button) => {
           const targetId = button.getAttribute(dataAttribute);
-          const target = document.getElementById(`${idPrefix}${targetId}`);
+          const target = root.getElementById ? root.getElementById(`${idPrefix}${targetId}`) : document.getElementById(`${idPrefix}${targetId}`);
 
           if (!target) return;
 
@@ -344,8 +324,52 @@
         });
       };
 
-      bindToggle('data-toggle-contact-form', 'contact-form-', 'input[name="contact_name"]');
-      bindToggle('data-toggle-edit-form', 'edit-form-', 'input[name="name"]');
+      const initializeSupplierPage = (root = document) => {
+        const toggleSupplierForm = root.getElementById('toggleSupplierForm');
+        const supplierForm = root.getElementById('newSupplierForm');
+        if (toggleSupplierForm && supplierForm && toggleSupplierForm.dataset.toggleBound !== 'true') {
+          toggleSupplierForm.dataset.toggleBound = 'true';
+          toggleSupplierForm.addEventListener('click', () => {
+            const isExpanded = toggleSupplierForm.getAttribute('aria-expanded') === 'true';
+            toggleSupplierForm.setAttribute('aria-expanded', String(!isExpanded));
+            supplierForm.classList.toggle('hidden');
+            if (!isExpanded) {
+              supplierForm.querySelector('input[name="name"]')?.focus();
+            }
+          });
+        }
+
+        const toggleCategoryForm = root.getElementById('toggleCategoryForm');
+        const categoryForm = root.getElementById('newCategoryForm');
+        if (toggleCategoryForm && categoryForm && toggleCategoryForm.dataset.toggleBound !== 'true') {
+          toggleCategoryForm.dataset.toggleBound = 'true';
+          toggleCategoryForm.addEventListener('click', () => {
+            const isExpanded = toggleCategoryForm.getAttribute('aria-expanded') === 'true';
+            toggleCategoryForm.setAttribute('aria-expanded', String(!isExpanded));
+            categoryForm.classList.toggle('hidden');
+            if (!isExpanded) {
+              categoryForm.querySelector('input[name="label"]')?.focus();
+            }
+          });
+        }
+
+        root
+          .querySelectorAll('[data-category-tags]')
+          .forEach((element) => setupCategoryTags(element));
+
+        bindToggle(root, 'data-toggle-contact-form', 'contact-form-', 'input[name="contact_name"]');
+        bindToggle(root, 'data-toggle-edit-form', 'edit-form-', 'input[name="name"]');
+      };
+
+      document.addEventListener('DOMContentLoaded', () => {
+        initializeSupplierPage();
+      });
+
+      document.body.addEventListener('htmx:afterSettle', (event) => {
+        if (event.target?.id === 'supplier-list') {
+          initializeSupplierPage(event.target);
+        }
+      });
     </script>
   </div>
 
