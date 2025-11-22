@@ -497,6 +497,37 @@ def create_supplier_category(session: Session, label: str) -> SupplierCategory:
     return category
 
 
+def ensure_supplier_categories(session: Session, labels: List[str]) -> None:
+    normalized_labels = []
+    for label in labels:
+        cleaned = (label or "").strip()
+        if cleaned and cleaned not in normalized_labels:
+            normalized_labels.append(cleaned)
+
+    if not normalized_labels:
+        return
+
+    lowered = [label.lower() for label in normalized_labels]
+    existing_labels = {
+        category.label.lower()
+        for category in session.exec(
+            select(SupplierCategory).where(func.lower(SupplierCategory.label).in_(lowered))
+        )
+    }
+
+    new_categories = [
+        SupplierCategory(label=label)
+        for label in normalized_labels
+        if label.lower() not in existing_labels
+    ]
+
+    if not new_categories:
+        return
+
+    session.add_all(new_categories)
+    session.commit()
+
+
 def create_subcontracted_service(
     session: Session, client_id: int, data: SubcontractedServiceCreate
 ) -> Optional[SubcontractedService]:

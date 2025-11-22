@@ -314,6 +314,12 @@ def _normalize_categories(value: Optional[str]) -> Optional[str]:
     return ", ".join(unique_items)
 
 
+def _ensure_supplier_categories(session: Session, categories: Optional[str]) -> None:
+    if not categories:
+        return
+    crud.ensure_supplier_categories(session, _split_categories(categories))
+
+
 def _split_categories(value: Optional[str]) -> List[str]:
     if not value:
         return []
@@ -1661,11 +1667,13 @@ async def import_suppliers(
             k: v for k, v in row.items() if not k.startswith("__") and k != "contacts"
         }
         payload.setdefault("supplier_type", "fournisseur")
+        payload["categories"] = _normalize_categories(payload.get("categories"))
         row_number = row.get("__row__", idx)
         try:
             supplier_type = payload.get("supplier_type")
             if supplier_type not in SUPPLIER_TYPE_OPTIONS:
                 raise ValueError("Type de fournisseur invalide")
+            _ensure_supplier_categories(session, payload.get("categories"))
             crud.create_supplier(
                 session,
                 SupplierCreate(**payload),
@@ -2422,6 +2430,7 @@ def create_supplier(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
+    _ensure_supplier_categories(session, normalized_categories)
     supplier = crud.create_supplier(
         session,
         SupplierCreate(
@@ -2455,6 +2464,8 @@ def edit_supplier(
     if normalized_type not in SUPPLIER_TYPE_OPTIONS:
         raise HTTPException(400, "Type de fournisseur invalide")
 
+    normalized_categories = _normalize_categories(categories)
+    _ensure_supplier_categories(session, normalized_categories)
     updated = crud.update_supplier(
         session,
         supplier_id,
@@ -2462,7 +2473,7 @@ def edit_supplier(
             name=normalized_name,
             supplier_type=normalized_type,
             our_code=(our_code or "").strip() or None,
-            categories=_normalize_categories(categories),
+            categories=normalized_categories,
         ),
     )
     if not updated:
