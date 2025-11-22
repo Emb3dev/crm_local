@@ -571,77 +571,75 @@
               </div>
 
                 <div class="grid gap-4 sm:grid-cols-2">
-                  <div class="rounded-2xl border border-slate-200 bg-white/80 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
-                    <div class="flex items-center justify-end px-4 py-3">
-                      <button
-                        type="button"
-                        class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
-                        data-toggle-edit-form="{{ supplier.id }}"
-                        aria-controls="edit-form-{{ supplier.id }}"
-                        aria-expanded="false"
-                      >
-                        Modifier
-                      </button>
-                    </div>
-                    <div id="edit-form-{{ supplier.id }}" class="border-t border-slate-200 px-4 py-4 transition-colors duration-300 dark:border-white/10 hidden">
-                      <form action="/fournisseurs/{{ supplier.id }}/edit" method="post" class="grid gap-4 md:grid-cols-2">
-                        <label class="{{ form_label() }}">
-                          <span>Nom *</span>
-                          <input name="name" value="{{ supplier.name }}" required class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                        </label>
-                        <label class="{{ form_label() }}">
-                          <span>Type</span>
-                          <div class="relative mt-2">
-                            <select name="supplier_type" class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}">
-                              {% for value, label in supplier_type_options.items() %}
-                                <option value="{{ value }}" {% if supplier.supplier_type == value %}selected{% endif %}>{{ label }}</option>
-                              {% endfor %}
-                            </select>
-                            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                              </svg>
-                            </span>
-                          </div>
-                        </label>
-                        <label class="{{ form_label() }}">
-                          <span>Notre code client</span>
-                          <input name="our_code" value="{{ supplier.our_code or '' }}" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                        </label>
-                        <div class="{{ form_label() }} space-y-2" data-category-tags>
-                          <span>Catégorie(s)</span>
-                          <input type="hidden" name="categories" value="{{ supplier.categories or '' }}" />
-                          <div class="mt-1 flex flex-wrap gap-2" data-selected-tags></div>
-                          <div class="flex flex-wrap gap-2" data-tag-suggestions>
-                            {% for suggestion in category_suggestions %}
-                              <button
-                                type="button"
-                                data-tag-value="{{ suggestion }}"
-                                class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition-colors duration-200 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:border-indigo-400/50 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-100"
-                              >
-                                {{ suggestion }}
-                              </button>
-                            {% endfor %}
-                          </div>
-                          <input
-                            data-tag-entry
-                            name="categories-entry"
-                            list="supplier-category-suggestions"
-                            value=""
-                            placeholder="Ajouter une catégorie et appuyer sur Entrée"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
-                          />
-                          <p class="text-xs text-slate-500 dark:text-slate-400">Sélectionnez une catégorie existante ou saisissez un nouveau tag.</p>
-                        </div>
-                        <div class="md:col-span-2 mt-2 flex justify-end">
-                          <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Enregistrer</button>
-                        </div>
-                      </form>
-                    </div>
+                  <div class="sm:col-span-2 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+                      data-toggle-edit-form="{{ supplier.id }}"
+                      aria-controls="edit-form-{{ supplier.id }}"
+                      aria-expanded="false"
+                    >
+                      Modifier
+                    </button>
+                    <form action="/fournisseurs/{{ supplier.id }}/delete" method="post" class="flex" onsubmit="return confirm('Supprimer {{ supplier.name }} ?')">
+                      <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-50 dark:hover:bg-rose-400/20 dark:focus-visible:ring-rose-300" type="submit">Supprimer</button>
+                    </form>
                   </div>
-                  <form action="/fournisseurs/{{ supplier.id }}/delete" method="post" class="flex items-end justify-end" onsubmit="return confirm('Supprimer {{ supplier.name }} ?')">
-                    <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-50 dark:hover:bg-rose-400/20 dark:focus-visible:ring-rose-300" type="submit">Supprimer</button>
-                  </form>
+                  <div id="edit-form-{{ supplier.id }}" class="sm:col-span-2 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10 hidden">
+                    <form action="/fournisseurs/{{ supplier.id }}/edit" method="post" class="grid gap-4 md:grid-cols-2">
+                      <label class="{{ form_label() }}">
+                        <span>Nom *</span>
+                        <input name="name" value="{{ supplier.name }}" required class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                      </label>
+                      <label class="{{ form_label() }}">
+                        <span>Type</span>
+                        <div class="relative mt-2">
+                          <select name="supplier_type" class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}">
+                            {% for value, label in supplier_type_options.items() %}
+                              <option value="{{ value }}" {% if supplier.supplier_type == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                          </select>
+                          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                            </svg>
+                          </span>
+                        </div>
+                      </label>
+                      <label class="{{ form_label() }}">
+                        <span>Notre code client</span>
+                        <input name="our_code" value="{{ supplier.our_code or '' }}" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                      </label>
+                      <div class="{{ form_label() }} space-y-2" data-category-tags>
+                        <span>Catégorie(s)</span>
+                        <input type="hidden" name="categories" value="{{ supplier.categories or '' }}" />
+                        <div class="mt-1 flex flex-wrap gap-2" data-selected-tags></div>
+                        <div class="flex flex-wrap gap-2" data-tag-suggestions>
+                          {% for suggestion in category_suggestions %}
+                            <button
+                              type="button"
+                              data-tag-value="{{ suggestion }}"
+                              class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition-colors duration-200 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:border-indigo-400/50 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-100"
+                            >
+                              {{ suggestion }}
+                            </button>
+                          {% endfor %}
+                        </div>
+                        <input
+                          data-tag-entry
+                          name="categories-entry"
+                          list="supplier-category-suggestions"
+                          value=""
+                          placeholder="Ajouter une catégorie et appuyer sur Entrée"
+                          class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
+                        />
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Sélectionnez une catégorie existante ou saisissez un nouveau tag.</p>
+                      </div>
+                      <div class="md:col-span-2 mt-2 flex justify-end">
+                        <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Enregistrer</button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
             </div>
           </details>
