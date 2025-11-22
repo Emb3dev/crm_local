@@ -1,4 +1,4 @@
-from typing import Optional, Dict, List, Iterable, Union, Annotated, Any, Tuple
+from typing import Optional, Dict, List, Iterable, Union, Annotated, Any, Tuple, Sequence
 
 from decimal import Decimal
 
@@ -300,15 +300,29 @@ def _status_key_from_bool(value: Optional[bool]) -> str:
     return "actif" if value else "inactif"
 
 
-def _normalize_categories(value: Optional[str]) -> Optional[str]:
+def _normalize_categories(
+    value: Optional[Union[str, Sequence[str]]]
+) -> Optional[str]:
     if value is None:
         return None
-    cleaned = value.replace(";", ",")
-    items = [item.strip() for item in cleaned.split(",")]
-    unique_items = []
-    for item in items:
-        if item and item not in unique_items:
-            unique_items.append(item)
+
+    if isinstance(value, str):
+        raw_items: Sequence[str] = value.replace(";", ",").split(",")
+    else:
+        raw_items = value
+
+    unique_items: List[str] = []
+    seen: set[str] = set()
+    for item in raw_items:
+        cleaned = (item or "").strip()
+        if not cleaned:
+            continue
+        canonical = cleaned.lower()
+        if canonical in seen:
+            continue
+        seen.add(canonical)
+        unique_items.append(cleaned)
+
     if not unique_items:
         return None
     return ", ".join(unique_items)
@@ -323,7 +337,8 @@ def _ensure_supplier_categories(session: Session, categories: Optional[str]) -> 
 def _split_categories(value: Optional[str]) -> List[str]:
     if not value:
         return []
-    return [part.strip() for part in value.split(",") if part.strip()]
+    cleaned = value.replace(";", ",")
+    return [part.strip() for part in cleaned.split(",") if part.strip()]
 
 
 def _consume_import_report(request: Request):
@@ -1708,6 +1723,36 @@ def create_supplier_category(
 
     return RedirectResponse(url="/fournisseurs", status_code=303)
 
+
+@app.get("/_fournisseurs/categories", response_class=HTMLResponse)
+def supplier_category_suggestions(
+    request: Request,
+    _current_user: CurrentUser,
+    q: Optional[str] = None,
+    selected_categories: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
+    search = (q or "").strip().lower()
+    selected_set = {item.lower() for item in _split_categories(selected_categories)}
+    categories = []
+    for category in crud.list_supplier_categories(session):
+        label = category.label
+        if selected_set and label.lower() in selected_set:
+            continue
+        if search and search not in label.lower():
+            continue
+        categories.append(label)
+
+    context = {
+        "request": request,
+        "categories": categories[:12],
+        "selected_categories": _split_categories(selected_categories),
+        "query": q or "",
+    }
+    return templates.TemplateResponse(
+        "_supplier_category_suggestions.html", context
+    )
+
 # Fragment liste (HTMX)
 @app.get("/_clients", response_class=HTMLResponse)
 def clients_fragment(
@@ -2371,6 +2416,7 @@ def create_supplier(
     supplier_type: str = Form("fournisseur"),
     our_code: Optional[str] = Form(None),
     categories: Optional[str] = Form(None),
+    categories_list: Optional[List[str]] = Form(None),
     contact_name: Optional[str] = Form(None),
     contact_email: Optional[str] = Form(None),
     contact_phone: Optional[str] = Form(None),
@@ -2378,7 +2424,9 @@ def create_supplier(
 ):
     normalized_name = (name or "").strip()
     normalized_type = supplier_type or "fournisseur"
-    normalized_categories = _normalize_categories(categories)
+    normalized_categories = _normalize_categories(
+        (categories_list or []) + _split_categories(categories)
+    )
 
     errors: List[str] = []
     if not normalized_name:
@@ -2455,6 +2503,7 @@ def edit_supplier(
     supplier_type: str = Form("fournisseur"),
     our_code: Optional[str] = Form(None),
     categories: Optional[str] = Form(None),
+    categories_list: Optional[List[str]] = Form(None),
     session: Session = Depends(get_session),
 ):
     normalized_name = (name or "").strip()
@@ -2464,7 +2513,9 @@ def edit_supplier(
     if normalized_type not in SUPPLIER_TYPE_OPTIONS:
         raise HTTPException(400, "Type de fournisseur invalide")
 
-    normalized_categories = _normalize_categories(categories)
+    normalized_categories = _normalize_categories(
+        (categories_list or []) + _split_categories(categories)
+    )
     _ensure_supplier_categories(session, normalized_categories)
     updated = crud.update_supplier(
         session,
