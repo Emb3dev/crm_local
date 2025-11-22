@@ -183,15 +183,37 @@
           supplierForm?.querySelector('input[name="name"]')?.focus();
         }
       });
+
+      const toggleCategoryForm = document.getElementById('toggleCategoryForm');
+      const categoryForm = document.getElementById('newCategoryForm');
+      toggleCategoryForm?.addEventListener('click', () => {
+        const isExpanded = toggleCategoryForm.getAttribute('aria-expanded') === 'true';
+        toggleCategoryForm.setAttribute('aria-expanded', String(!isExpanded));
+        categoryForm?.classList.toggle('hidden');
+        if (!isExpanded) {
+          categoryForm?.querySelector('input[name="label"]')?.focus();
+        }
+      });
     </script>
   </div>
 
   <div class="{{ card_shell() }}">
-    <div class="space-y-2">
-      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Catégories fournisseur</h2>
-      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Créez des mots-clés dédiés aux partenaires (différents des familles de prestations) pour faciliter vos recherches.</p>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="space-y-2">
+        <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Catégories fournisseur</h2>
+        <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Créez des mots-clés dédiés aux partenaires (différents des familles de prestations) pour faciliter vos recherches.</p>
+      </div>
+      <button
+        id="toggleCategoryForm"
+        type="button"
+        aria-expanded="false"
+        class="inline-flex items-center gap-2 self-start rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/10 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+      >
+        <span aria-hidden="true">➕</span>
+        Nouvelle catégorie
+      </button>
     </div>
-    <form action="/fournisseurs/categories" method="post" class="mt-6 grid gap-4 md:grid-cols-[2fr,1fr] md:items-end">
+    <form id="newCategoryForm" action="/fournisseurs/categories" method="post" class="mt-6 hidden grid gap-4 md:grid-cols-[2fr,1fr] md:items-end">
       <label class="{{ form_label() }}">
         <span>Nom de la catégorie *</span>
         <input name="label" required placeholder="Ex: Analyses eau" class="mt-2 {{ form_control('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70') }}" />
