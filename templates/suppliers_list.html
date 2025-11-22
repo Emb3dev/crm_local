@@ -102,304 +102,6 @@
     </div>
   </div>
 
-  <div class="{{ card_shell() }}">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div class="space-y-1">
-        <span class="inline-flex w-fit items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100">Ajouter un fournisseur</span>
-        <h2 class="font-display text-2xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Créer une nouvelle entrée</h2>
-        <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Renseignez le nom, le type et un éventuel contact principal. Les informations sont immédiatement disponibles dans la liste ci-dessous.</p>
-      </div>
-      <button
-        id="toggleSupplierForm"
-        type="button"
-        aria-expanded="false"
-        class="inline-flex items-center gap-2 self-start rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/10 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
-      >
-        <span aria-hidden="true">➕</span>
-        Nouveau fournisseur
-      </button>
-    </div>
-    <form id="newSupplierForm" action="/fournisseurs/new" method="post" class="mt-6 grid hidden gap-4 md:grid-cols-2">
-      <label class="{{ form_label() }}">
-        <span>Nom *</span>
-        <input name="name" value="{{ form_values.name }}" required placeholder="Ex: Laboratoire Aquatest" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Type</span>
-        <div class="relative mt-2">
-          <select name="supplier_type" class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}">
-            {% for value, label in supplier_type_options.items() %}
-              <option value="{{ value }}" {% if form_values.supplier_type == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-            </svg>
-          </span>
-        </div>
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Notre code client</span>
-        <input name="our_code" value="{{ form_values.our_code }}" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
-      {% set selected_categories = split_categories(form_values.categories) %}
-      <div class="{{ form_label() }} space-y-2" data-category-picker data-suggestions-url="/_fournisseurs/categories">
-        <span>Catégorie(s)</span>
-        <input type="hidden" name="categories" value="{{ form_values.categories }}" data-category-input />
-        <input type="hidden" name="selected_categories" data-selected-values value="{{ form_values.categories }}" />
-        <div data-selected-inputs class="hidden"></div>
-        <div class="mt-1 flex flex-wrap gap-2" data-selected-tags></div>
-        <div class="relative">
-          <input
-            data-category-search
-            name="q"
-            type="search"
-            autocomplete="off"
-            placeholder="Rechercher ou ajouter une catégorie"
-            hx-get="/_fournisseurs/categories"
-            hx-target="#category-suggestions-new"
-            hx-trigger="input changed delay:250ms, focus"
-            hx-include="[data-selected-values]"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
-          />
-          <div id="category-suggestions-new" class="mt-2" data-category-suggestions>
-            {% include "_supplier_category_suggestions.html" %}
-          </div>
-        </div>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Sélectionnez une catégorie existante ou saisissez un nouveau tag.</p>
-      </div>
-      <label class="{{ form_label() }}">
-        <span>Contact principal</span>
-        <input name="contact_name" value="{{ form_values.contact_name }}" placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Email du contact</span>
-        <input name="contact_email" value="{{ form_values.contact_email }}" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Téléphone du contact</span>
-        <input name="contact_phone" value="{{ form_values.contact_phone }}" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
-      <div class="md:col-span-2 mt-2 flex flex-wrap items-center justify-between gap-4">
-        <p class="text-xs text-slate-500 transition-colors duration-300 dark:text-slate-400">Les fournisseurs ajoutés apparaîtront immédiatement dans la liste ci-dessous.</p>
-        <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">
-          <span aria-hidden="true">➕</span>
-          Enregistrer le fournisseur
-        </button>
-      </div>
-    </form>
-    <script>
-      const parseCategoryInput = (value) =>
-        (value || '')
-          .split(/[;,]/)
-          .map((item) => item.trim())
-          .filter(Boolean);
-
-      const setupCategoryPicker = (root) => {
-        if (root.dataset.categoryPickerInitialized === 'true') return;
-        root.dataset.categoryPickerInitialized = 'true';
-
-        const hiddenInput = root.querySelector('[data-category-input]');
-        const selectedContainer = root.querySelector('[data-selected-tags]');
-        const searchInput = root.querySelector('[data-category-search]');
-        const suggestions = root.querySelector('[data-category-suggestions]');
-        const selectedValuesInput = root.querySelector('[data-selected-values]');
-        const selectedInputsContainer = root.querySelector('[data-selected-inputs]');
-
-        if (!hiddenInput || !selectedContainer || !searchInput || !suggestions || !selectedValuesInput || !selectedInputsContainer) {
-          return;
-        }
-
-        const selected = parseCategoryInput(hiddenInput.value);
-
-        const refreshSuggestions = () => {
-          if (window.htmx && searchInput) {
-            window.htmx.trigger(searchInput, 'input');
-          }
-        };
-
-        const renderSelected = () => {
-          selectedContainer.innerHTML = '';
-          selectedInputsContainer.innerHTML = '';
-          selected.forEach((label) => {
-            const chip = document.createElement('span');
-            chip.className =
-              'inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100';
-            const text = document.createElement('span');
-            text.textContent = label;
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.className =
-              'text-indigo-500 transition hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:text-indigo-100 dark:hover:text-white dark:focus-visible:ring-indigo-400';
-            removeBtn.setAttribute('aria-label', `Supprimer ${label}`);
-            removeBtn.textContent = '×';
-            removeBtn.addEventListener('click', () => {
-              const idx = selected.findIndex((item) => item.toLowerCase() === label.toLowerCase());
-              if (idx >= 0) {
-                selected.splice(idx, 1);
-                renderSelected();
-              }
-            });
-            chip.appendChild(text);
-            chip.appendChild(removeBtn);
-            selectedContainer.appendChild(chip);
-
-            const hidden = document.createElement('input');
-            hidden.type = 'hidden';
-            hidden.name = 'categories_list';
-            hidden.value = label;
-            selectedInputsContainer.appendChild(hidden);
-          });
-          const serialized = selected.join(', ');
-          hiddenInput.value = serialized;
-          selectedValuesInput.value = serialized;
-          refreshSuggestions();
-        };
-
-        const addCategory = (value) => {
-          const cleaned = (value || '').trim();
-          if (!cleaned) return;
-          const exists = selected.some((item) => item.toLowerCase() === cleaned.toLowerCase());
-          if (exists) return;
-          selected.push(cleaned);
-          renderSelected();
-        };
-
-        root.addEventListener('click', (event) => {
-          const option = event.target.closest('[data-category-option]');
-          if (option && root.contains(option)) {
-            event.preventDefault();
-            addCategory(option.getAttribute('data-category-option') || option.textContent);
-            searchInput.value = '';
-          }
-        });
-
-        searchInput.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            addCategory(searchInput.value);
-            searchInput.value = '';
-          }
-        });
-
-        searchInput.addEventListener('blur', () => {
-          if (searchInput.value.trim()) {
-            addCategory(searchInput.value);
-            searchInput.value = '';
-          }
-        });
-
-        renderSelected();
-      };
-
-      const bindToggle = (root, dataAttribute, idPrefix, focusSelector) => {
-        root.querySelectorAll(`[${dataAttribute}]`).forEach((button) => {
-          if (button.dataset.toggleBound === 'true') return;
-          button.dataset.toggleBound = 'true';
-
-          const targetId = button.getAttribute(dataAttribute);
-          const target = root.getElementById ? root.getElementById(`${idPrefix}${targetId}`) : document.getElementById(`${idPrefix}${targetId}`);
-
-          if (!target) return;
-
-          button.addEventListener('click', () => {
-            const isHidden = target.classList.contains('hidden');
-            target.classList.toggle('hidden');
-            button.setAttribute('aria-expanded', String(isHidden));
-            if (isHidden && focusSelector) {
-              target.querySelector(focusSelector)?.focus();
-            }
-          });
-        });
-      };
-
-      const initializeSupplierPage = (root = document) => {
-        const toggleSupplierForm = root.getElementById('toggleSupplierForm');
-        const supplierForm = root.getElementById('newSupplierForm');
-        if (toggleSupplierForm && supplierForm && toggleSupplierForm.dataset.toggleBound !== 'true') {
-          toggleSupplierForm.dataset.toggleBound = 'true';
-          toggleSupplierForm.addEventListener('click', () => {
-            const isExpanded = toggleSupplierForm.getAttribute('aria-expanded') === 'true';
-            toggleSupplierForm.setAttribute('aria-expanded', String(!isExpanded));
-            supplierForm.classList.toggle('hidden');
-            if (!isExpanded) {
-              supplierForm.querySelector('input[name="name"]')?.focus();
-            }
-          });
-        }
-
-        const toggleCategoryForm = root.getElementById('toggleCategoryForm');
-        const categoryForm = root.getElementById('newCategoryForm');
-        if (toggleCategoryForm && categoryForm && toggleCategoryForm.dataset.toggleBound !== 'true') {
-          toggleCategoryForm.dataset.toggleBound = 'true';
-          toggleCategoryForm.addEventListener('click', () => {
-            const isExpanded = toggleCategoryForm.getAttribute('aria-expanded') === 'true';
-            toggleCategoryForm.setAttribute('aria-expanded', String(!isExpanded));
-            categoryForm.classList.toggle('hidden');
-            if (!isExpanded) {
-              categoryForm.querySelector('input[name="label"]')?.focus();
-            }
-          });
-        }
-
-        root.querySelectorAll('[data-category-picker]').forEach((element) => setupCategoryPicker(element));
-
-        bindToggle(root, 'data-toggle-contact-form', 'contact-form-', 'input[name="contact_name"]');
-        bindToggle(root, 'data-toggle-edit-form', 'edit-form-', 'input[name="name"]');
-      };
-
-      document.addEventListener('DOMContentLoaded', () => {
-        initializeSupplierPage();
-      });
-
-      document.body.addEventListener('htmx:afterSettle', (event) => {
-        if (event.target?.id === 'supplier-list') {
-          initializeSupplierPage(event.target);
-        }
-      });
-    </script>
-  </div>
-
-  <div class="{{ card_shell() }}">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div class="space-y-2">
-        <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Catégories fournisseur</h2>
-        <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Créez des mots-clés dédiés aux partenaires (différents des familles de prestations) pour faciliter vos recherches.</p>
-      </div>
-      <button
-        id="toggleCategoryForm"
-        type="button"
-        aria-expanded="false"
-        class="inline-flex items-center gap-2 self-start rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/10 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
-      >
-        <span aria-hidden="true">➕</span>
-        Nouvelle catégorie
-      </button>
-    </div>
-    <form id="newCategoryForm" action="/fournisseurs/categories" method="post" class="mt-6 hidden grid gap-4 md:grid-cols-[2fr,1fr] md:items-end">
-      <label class="{{ form_label() }}">
-        <span>Nom de la catégorie *</span>
-        <input name="label" required placeholder="Ex: Analyses eau" class="mt-2 {{ form_control('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70') }}" />
-      </label>
-      <div class="flex justify-end md:justify-start">
-        <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Créer la catégorie</button>
-      </div>
-    </form>
-    {% if supplier_categories %}
-      <div class="mt-6">
-        <p class="{{ form_label() }}">Catégories existantes</p>
-        <div class="mt-3 flex flex-wrap gap-2">
-          {% for category in supplier_categories %}
-            <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-white">{{ category.label }}</span>
-          {% endfor %}
-        </div>
-      </div>
-    {% else %}
-      <p class="mt-6 text-sm text-slate-500 transition-colors duration-300 dark:text-slate-300">Aucune catégorie définie pour le moment.</p>
-    {% endif %}
-  </div>
-
   <section class="grid gap-8 lg:grid-cols-2">
     <div class="{{ card_shell() }}">
       <div class="space-y-2">
@@ -444,30 +146,48 @@
         <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Liste des fournisseurs</h2>
         <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Recherchez par nom, catégorie ou contact.</p>
       </div>
-      <form class="{{ form_panel() }}" role="search" hx-get="/_fournisseurs" hx-target="#supplier-list" hx-trigger="keyup changed delay:300ms">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <label class="flex-1 {{ form_label() }}">
-            <span class="sr-only">Rechercher un fournisseur</span>
-            <input type="text" name="q" value="{{ q }}" placeholder="Rechercher (nom, catégorie, contact…)" aria-label="Rechercher un fournisseur" class="mt-1 {{ form_control('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70') }}" />
-          </label>
-          <label class="{{ form_label() }}">
-            <span class="sr-only">Filtrer par type</span>
-            <div class="relative">
-              <select name="supplier_type" class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}">
-                <option value="">Tous les types</option>
-                {% for value, label in supplier_type_options.items() %}
-                  <option value="{{ value }}" {% if supplier_type == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                </svg>
-              </span>
-            </div>
-          </label>
+      <div class="flex w-full flex-col gap-4 lg:max-w-2xl">
+        <div class="flex flex-wrap justify-end gap-3">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 self-start rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/10 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+          >
+            <span aria-hidden="true">➕</span>
+            Nouveau fournisseur
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 self-start rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/10 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+          >
+            <span aria-hidden="true">➕</span>
+            Nouvelle catégorie
+          </button>
         </div>
-      </form>
+        <form class="{{ form_panel() }}" role="search" hx-get="/_fournisseurs" hx-target="#supplier-list" hx-trigger="keyup changed delay:300ms">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label class="flex-1 {{ form_label() }}">
+              <span class="sr-only">Rechercher un fournisseur</span>
+              <input type="text" name="q" value="{{ q }}" placeholder="Rechercher (nom, catégorie, contact…)" aria-label="Rechercher un fournisseur" class="mt-1 {{ form_control('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70') }}" />
+            </label>
+            <label class="{{ form_label() }}">
+              <span class="sr-only">Filtrer par type</span>
+              <div class="relative">
+                <select name="supplier_type" class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}">
+                  <option value="">Tous les types</option>
+                  {% for value, label in supplier_type_options.items() %}
+                    <option value="{{ value }}" {% if supplier_type == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            </label>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div id="supplier-list" class="mt-8 space-y-6">
@@ -672,6 +392,149 @@
       {% endif %}
     </div>
   </section>
+
+  <script>
+    const parseCategoryInput = (value) =>
+      (value || '')
+        .split(/[;,]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+    const setupCategoryPicker = (root) => {
+      if (root.dataset.categoryPickerInitialized === 'true') return;
+      root.dataset.categoryPickerInitialized = 'true';
+
+      const hiddenInput = root.querySelector('[data-category-input]');
+      const selectedContainer = root.querySelector('[data-selected-tags]');
+      const searchInput = root.querySelector('[data-category-search]');
+      const suggestions = root.querySelector('[data-category-suggestions]');
+      const selectedValuesInput = root.querySelector('[data-selected-values]');
+      const selectedInputsContainer = root.querySelector('[data-selected-inputs]');
+
+      if (!hiddenInput || !selectedContainer || !searchInput || !suggestions || !selectedValuesInput || !selectedInputsContainer) {
+        return;
+      }
+
+      const selected = parseCategoryInput(hiddenInput.value);
+
+      const refreshSuggestions = () => {
+        if (window.htmx && searchInput) {
+          window.htmx.trigger(searchInput, 'input');
+        }
+      };
+
+      const renderSelected = () => {
+        selectedContainer.innerHTML = '';
+        selectedInputsContainer.innerHTML = '';
+        selected.forEach((label) => {
+          const chip = document.createElement('span');
+          chip.className =
+            'inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100';
+          const text = document.createElement('span');
+          text.textContent = label;
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className =
+            'text-indigo-500 transition hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:text-indigo-100 dark:hover:text-white dark:focus-visible:ring-indigo-400';
+          removeBtn.setAttribute('aria-label', `Supprimer ${label}`);
+          removeBtn.textContent = '×';
+          removeBtn.addEventListener('click', () => {
+            const idx = selected.findIndex((item) => item.toLowerCase() === label.toLowerCase());
+            if (idx >= 0) {
+              selected.splice(idx, 1);
+              renderSelected();
+            }
+          });
+          chip.appendChild(text);
+          chip.appendChild(removeBtn);
+          selectedContainer.appendChild(chip);
+
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = 'categories_list';
+          hidden.value = label;
+          selectedInputsContainer.appendChild(hidden);
+        });
+        const serialized = selected.join(', ');
+        hiddenInput.value = serialized;
+        selectedValuesInput.value = serialized;
+        refreshSuggestions();
+      };
+
+      const addCategory = (value) => {
+        const cleaned = (value || '').trim();
+        if (!cleaned) return;
+        const exists = selected.some((item) => item.toLowerCase() === cleaned.toLowerCase());
+        if (exists) return;
+        selected.push(cleaned);
+        renderSelected();
+      };
+
+      root.addEventListener('click', (event) => {
+        const option = event.target.closest('[data-category-option]');
+        if (option && root.contains(option)) {
+          event.preventDefault();
+          addCategory(option.getAttribute('data-category-option') || option.textContent);
+          searchInput.value = '';
+        }
+      });
+
+      searchInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          addCategory(searchInput.value);
+          searchInput.value = '';
+        }
+      });
+
+      searchInput.addEventListener('blur', () => {
+        if (searchInput.value.trim()) {
+          addCategory(searchInput.value);
+          searchInput.value = '';
+        }
+      });
+
+      renderSelected();
+    };
+
+    const bindToggle = (root, dataAttribute, idPrefix, focusSelector) => {
+      root.querySelectorAll(`[${dataAttribute}]`).forEach((button) => {
+        if (button.dataset.toggleBound === 'true') return;
+        button.dataset.toggleBound = 'true';
+
+        const targetId = button.getAttribute(dataAttribute);
+        const target = root.getElementById ? root.getElementById(`${idPrefix}${targetId}`) : document.getElementById(`${idPrefix}${targetId}`);
+
+        if (!target) return;
+
+        button.addEventListener('click', () => {
+          const isHidden = target.classList.contains('hidden');
+          target.classList.toggle('hidden');
+          button.setAttribute('aria-expanded', String(isHidden));
+          if (isHidden && focusSelector) {
+            target.querySelector(focusSelector)?.focus();
+          }
+        });
+      });
+    };
+
+    const initializeSupplierPage = (root = document) => {
+      root.querySelectorAll('[data-category-picker]').forEach((element) => setupCategoryPicker(element));
+
+      bindToggle(root, 'data-toggle-contact-form', 'contact-form-', 'input[name="contact_name"]');
+      bindToggle(root, 'data-toggle-edit-form', 'edit-form-', 'input[name="name"]');
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeSupplierPage();
+    });
+
+    document.body.addEventListener('htmx:afterSettle', (event) => {
+      if (event.target?.id === 'supplier-list') {
+        initializeSupplierPage(event.target);
+      }
+    });
+  </script>
 
 </section>
 {% endblock %}
