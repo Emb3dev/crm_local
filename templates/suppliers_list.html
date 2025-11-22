@@ -143,29 +143,30 @@
         <span>Notre code client</span>
         <input name="our_code" value="{{ form_values.our_code }}" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
       </label>
-      <div class="{{ form_label() }} space-y-2" data-category-tags>
+      {% set selected_categories = split_categories(form_values.categories) %}
+      <div class="{{ form_label() }} space-y-2" data-category-picker data-suggestions-url="/_fournisseurs/categories">
         <span>Catégorie(s)</span>
-        <input type="hidden" name="categories" value="{{ form_values.categories }}" />
+        <input type="hidden" name="categories" value="{{ form_values.categories }}" data-category-input />
+        <input type="hidden" name="selected_categories" data-selected-values value="{{ form_values.categories }}" />
+        <div data-selected-inputs class="hidden"></div>
         <div class="mt-1 flex flex-wrap gap-2" data-selected-tags></div>
-        <div class="flex flex-wrap gap-2" data-tag-suggestions>
-          {% for suggestion in category_suggestions %}
-            <button
-              type="button"
-              data-tag-value="{{ suggestion }}"
-              class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition-colors duration-200 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:border-indigo-400/50 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-100"
-            >
-              {{ suggestion }}
-            </button>
-          {% endfor %}
+        <div class="relative">
+          <input
+            data-category-search
+            name="q"
+            type="search"
+            autocomplete="off"
+            placeholder="Rechercher ou ajouter une catégorie"
+            hx-get="/_fournisseurs/categories"
+            hx-target="#category-suggestions-new"
+            hx-trigger="input changed delay:250ms, focus"
+            hx-include="[data-selected-values]"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
+          />
+          <div id="category-suggestions-new" class="mt-2" data-category-suggestions>
+            {% include "_supplier_category_suggestions.html" with categories=category_suggestions, selected_categories=selected_categories %}
+          </div>
         </div>
-        <input
-          data-tag-entry
-          name="categories-entry"
-          list="supplier-category-suggestions"
-          value=""
-          placeholder="Ajouter une catégorie et appuyer sur Entrée"
-          class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
-        />
         <p class="text-xs text-slate-500 dark:text-slate-400">Sélectionnez une catégorie existante ou saisissez un nouveau tag.</p>
       </div>
       <label class="{{ form_label() }}">
@@ -188,59 +189,42 @@
         </button>
       </div>
     </form>
-    <datalist id="supplier-category-suggestions">
-      {% for suggestion in category_suggestions %}
-        {% if suggestion %}<option value="{{ suggestion }}">{% endif %}
-      {% endfor %}
-    </datalist>
     <script>
-      const parseTags = (value) =>
+      const parseCategoryInput = (value) =>
         (value || '')
-          .split(',')
+          .split(/[;,]/)
           .map((item) => item.trim())
           .filter(Boolean);
 
-      const setSuggestionState = (button, isSelected) => {
-        const activeClasses = [
-          'border-indigo-200',
-          'bg-indigo-50',
-          'text-indigo-700',
-          'dark:border-indigo-400/50',
-          'dark:bg-indigo-500/10',
-          'dark:text-indigo-100',
-        ];
-        const inactiveClasses = [
-          'border-slate-200',
-          'bg-slate-100',
-          'text-slate-700',
-          'dark:border-white/10',
-          'dark:bg-white/10',
-          'dark:text-white',
-        ];
-        activeClasses.forEach((cls) => button.classList.toggle(cls, isSelected));
-        inactiveClasses.forEach((cls) => button.classList.toggle(cls, !isSelected));
-      };
+      const setupCategoryPicker = (root) => {
+        if (root.dataset.categoryPickerInitialized === 'true') return;
+        root.dataset.categoryPickerInitialized = 'true';
 
-      const setupCategoryTags = (root) => {
-        if (root.dataset.tagsInitialized === 'true') return;
-        root.dataset.tagsInitialized = 'true';
-
-        const hiddenInput = root.querySelector('input[name="categories"][type="hidden"]');
-        const entryInput = root.querySelector('[data-tag-entry]');
+        const hiddenInput = root.querySelector('[data-category-input]');
         const selectedContainer = root.querySelector('[data-selected-tags]');
-        const suggestionButtons = root.querySelectorAll('[data-tag-value]');
+        const searchInput = root.querySelector('[data-category-search]');
+        const suggestions = root.querySelector('[data-category-suggestions]');
+        const selectedValuesInput = root.querySelector('[data-selected-values]');
+        const selectedInputsContainer = root.querySelector('[data-selected-inputs]');
 
-        if (!hiddenInput || !entryInput || !selectedContainer) {
+        if (!hiddenInput || !selectedContainer || !searchInput || !suggestions || !selectedValuesInput || !selectedInputsContainer) {
           return;
         }
 
-        const tags = parseTags(hiddenInput.value);
+        const selected = parseCategoryInput(hiddenInput.value);
 
-        const renderTags = () => {
+        const refreshSuggestions = () => {
+          if (window.htmx && searchInput) {
+            window.htmx.trigger(searchInput, 'input');
+          }
+        };
+
+        const renderSelected = () => {
           selectedContainer.innerHTML = '';
-          tags.forEach((label) => {
-            const tag = document.createElement('span');
-            tag.className =
+          selectedInputsContainer.innerHTML = '';
+          selected.forEach((label) => {
+            const chip = document.createElement('span');
+            chip.className =
               'inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100';
             const text = document.createElement('span');
             text.textContent = label;
@@ -251,56 +235,62 @@
             removeBtn.setAttribute('aria-label', `Supprimer ${label}`);
             removeBtn.textContent = '×';
             removeBtn.addEventListener('click', () => {
-              const idx = tags.indexOf(label);
+              const idx = selected.findIndex((item) => item.toLowerCase() === label.toLowerCase());
               if (idx >= 0) {
-                tags.splice(idx, 1);
-                renderTags();
+                selected.splice(idx, 1);
+                renderSelected();
               }
             });
-            tag.appendChild(text);
-            tag.appendChild(removeBtn);
-            selectedContainer.appendChild(tag);
+            chip.appendChild(text);
+            chip.appendChild(removeBtn);
+            selectedContainer.appendChild(chip);
+
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'categories_list';
+            hidden.value = label;
+            selectedInputsContainer.appendChild(hidden);
           });
-          hiddenInput.value = tags.join(', ');
-          suggestionButtons.forEach((button) => {
-            const label = button.getAttribute('data-tag-value');
-            setSuggestionState(button, !!label && tags.includes(label));
-          });
+          const serialized = selected.join(', ');
+          hiddenInput.value = serialized;
+          selectedValuesInput.value = serialized;
+          refreshSuggestions();
         };
 
-        const addTag = (value) => {
-          const normalized = (value || '').trim();
-          if (!normalized || tags.includes(normalized)) {
-            return;
-          }
-          tags.push(normalized);
-          renderTags();
+        const addCategory = (value) => {
+          const cleaned = (value || '').trim();
+          if (!cleaned) return;
+          const exists = selected.some((item) => item.toLowerCase() === cleaned.toLowerCase());
+          if (exists) return;
+          selected.push(cleaned);
+          renderSelected();
         };
 
-        entryInput.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter' || event.key === ',') {
+        root.addEventListener('click', (event) => {
+          const option = event.target.closest('[data-category-option]');
+          if (option && root.contains(option)) {
             event.preventDefault();
-            addTag(entryInput.value);
-            entryInput.value = '';
+            addCategory(option.getAttribute('data-category-option') || option.textContent);
+            searchInput.value = '';
           }
         });
 
-        entryInput.addEventListener('blur', () => {
-          if (entryInput.value.trim()) {
-            addTag(entryInput.value);
-            entryInput.value = '';
+        searchInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            addCategory(searchInput.value);
+            searchInput.value = '';
           }
         });
 
-        suggestionButtons.forEach((button) => {
-          button.addEventListener('click', () => {
-            const label = button.getAttribute('data-tag-value');
-            addTag(label);
-            entryInput.focus();
-          });
+        searchInput.addEventListener('blur', () => {
+          if (searchInput.value.trim()) {
+            addCategory(searchInput.value);
+            searchInput.value = '';
+          }
         });
 
-        renderTags();
+        renderSelected();
       };
 
       const bindToggle = (root, dataAttribute, idPrefix, focusSelector) => {
@@ -353,9 +343,7 @@
           });
         }
 
-        root
-          .querySelectorAll('[data-category-tags]')
-          .forEach((element) => setupCategoryTags(element));
+        root.querySelectorAll('[data-category-picker]').forEach((element) => setupCategoryPicker(element));
 
         bindToggle(root, 'data-toggle-contact-form', 'contact-form-', 'input[name="contact_name"]');
         bindToggle(root, 'data-toggle-edit-form', 'edit-form-', 'input[name="name"]');
@@ -644,29 +632,30 @@
                         <span>Notre code client</span>
                         <input name="our_code" value="{{ supplier.our_code or '' }}" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
                       </label>
-                      <div class="{{ form_label() }} space-y-2" data-category-tags>
+                      {% set selected_categories = supplier_categories %}
+                      <div class="{{ form_label() }} space-y-2" data-category-picker data-suggestions-url="/_fournisseurs/categories">
                         <span>Catégorie(s)</span>
-                        <input type="hidden" name="categories" value="{{ supplier.categories or '' }}" />
+                        <input type="hidden" name="categories" value="{{ supplier.categories or '' }}" data-category-input />
+                        <input type="hidden" name="selected_categories" data-selected-values value="{{ supplier.categories or '' }}" />
+                        <div data-selected-inputs class="hidden"></div>
                         <div class="mt-1 flex flex-wrap gap-2" data-selected-tags></div>
-                        <div class="flex flex-wrap gap-2" data-tag-suggestions>
-                          {% for suggestion in category_suggestions %}
-                            <button
-                              type="button"
-                              data-tag-value="{{ suggestion }}"
-                              class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 transition-colors duration-200 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:border-indigo-400/50 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-100"
-                            >
-                              {{ suggestion }}
-                            </button>
-                          {% endfor %}
+                        <div class="relative">
+                          <input
+                            data-category-search
+                            name="q"
+                            type="search"
+                            autocomplete="off"
+                            placeholder="Rechercher ou ajouter une catégorie"
+                            hx-get="/_fournisseurs/categories"
+                            hx-target="#category-suggestions-{{ supplier.id }}"
+                            hx-trigger="input changed delay:250ms, focus"
+                            hx-include="[data-selected-values]"
+                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
+                          />
+                          <div id="category-suggestions-{{ supplier.id }}" class="mt-2" data-category-suggestions>
+                            {% include "_supplier_category_suggestions.html" with categories=category_suggestions, selected_categories=selected_categories %}
+                          </div>
                         </div>
-                        <input
-                          data-tag-entry
-                          name="categories-entry"
-                          list="supplier-category-suggestions"
-                          value=""
-                          placeholder="Ajouter une catégorie et appuyer sur Entrée"
-                          class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
-                        />
                         <p class="text-xs text-slate-500 dark:text-slate-400">Sélectionnez une catégorie existante ou saisissez un nouveau tag.</p>
                       </div>
                       <div class="md:col-span-2 mt-2 flex justify-end">
