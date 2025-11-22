@@ -103,12 +103,23 @@
   </div>
 
   <div class="{{ card_shell() }}">
-    <div class="space-y-3">
-      <span class="inline-flex w-fit items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100">Ajouter un fournisseur</span>
-      <h2 class="font-display text-2xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Créer une nouvelle entrée</h2>
-      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Renseignez le nom, le type et un éventuel contact principal. Les informations sont immédiatement disponibles dans la liste ci-dessous.</p>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="space-y-1">
+        <span class="inline-flex w-fit items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100">Ajouter un fournisseur</span>
+        <h2 class="font-display text-2xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Créer une nouvelle entrée</h2>
+        <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Renseignez le nom, le type et un éventuel contact principal. Les informations sont immédiatement disponibles dans la liste ci-dessous.</p>
+      </div>
+      <button
+        id="toggleSupplierForm"
+        type="button"
+        aria-expanded="false"
+        class="inline-flex items-center gap-2 self-start rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/10 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+      >
+        <span aria-hidden="true">➕</span>
+        Nouveau fournisseur
+      </button>
     </div>
-    <form action="/fournisseurs/new" method="post" class="mt-6 grid gap-4 md:grid-cols-2">
+    <form id="newSupplierForm" action="/fournisseurs/new" method="post" class="mt-6 grid hidden gap-4 md:grid-cols-2">
       <label class="{{ form_label() }}">
         <span>Nom *</span>
         <input name="name" value="{{ form_values.name }}" required placeholder="Ex: Laboratoire Aquatest" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
@@ -161,14 +172,48 @@
         {% if suggestion %}<option value="{{ suggestion }}">{% endif %}
       {% endfor %}
     </datalist>
+    <script>
+      const toggleSupplierForm = document.getElementById('toggleSupplierForm');
+      const supplierForm = document.getElementById('newSupplierForm');
+      toggleSupplierForm?.addEventListener('click', () => {
+        const isExpanded = toggleSupplierForm.getAttribute('aria-expanded') === 'true';
+        toggleSupplierForm.setAttribute('aria-expanded', String(!isExpanded));
+        supplierForm?.classList.toggle('hidden');
+        if (!isExpanded) {
+          supplierForm?.querySelector('input[name="name"]')?.focus();
+        }
+      });
+
+      const toggleCategoryForm = document.getElementById('toggleCategoryForm');
+      const categoryForm = document.getElementById('newCategoryForm');
+      toggleCategoryForm?.addEventListener('click', () => {
+        const isExpanded = toggleCategoryForm.getAttribute('aria-expanded') === 'true';
+        toggleCategoryForm.setAttribute('aria-expanded', String(!isExpanded));
+        categoryForm?.classList.toggle('hidden');
+        if (!isExpanded) {
+          categoryForm?.querySelector('input[name="label"]')?.focus();
+        }
+      });
+    </script>
   </div>
 
   <div class="{{ card_shell() }}">
-    <div class="space-y-2">
-      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Catégories fournisseur</h2>
-      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Créez des mots-clés dédiés aux partenaires (différents des familles de prestations) pour faciliter vos recherches.</p>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="space-y-2">
+        <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Catégories fournisseur</h2>
+        <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Créez des mots-clés dédiés aux partenaires (différents des familles de prestations) pour faciliter vos recherches.</p>
+      </div>
+      <button
+        id="toggleCategoryForm"
+        type="button"
+        aria-expanded="false"
+        class="inline-flex items-center gap-2 self-start rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/10 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+      >
+        <span aria-hidden="true">➕</span>
+        Nouvelle catégorie
+      </button>
     </div>
-    <form action="/fournisseurs/categories" method="post" class="mt-6 grid gap-4 md:grid-cols-[2fr,1fr] md:items-end">
+    <form id="newCategoryForm" action="/fournisseurs/categories" method="post" class="mt-6 hidden grid gap-4 md:grid-cols-[2fr,1fr] md:items-end">
       <label class="{{ form_label() }}">
         <span>Nom de la catégorie *</span>
         <input name="label" required placeholder="Ex: Analyses eau" class="mt-2 {{ form_control('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70') }}" />
