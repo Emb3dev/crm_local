@@ -173,6 +173,9 @@ class SupplierContactBase(SQLModel):
     name: str = Field(index=True, description="Nom du contact fournisseur")
     email: Optional[str] = None
     phone: Optional[str] = None
+    description: Optional[str] = Field(
+        default=None, description="Informations complémentaires sur le contact"
+    )
 
 
 class SupplierContact(SupplierContactBase, table=True):
@@ -190,6 +193,7 @@ class SupplierContactUpdate(SQLModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    description: Optional[str] = None
 
 
 class SupplierCategory(SQLModel, table=True):
