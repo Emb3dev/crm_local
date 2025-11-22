@@ -164,7 +164,7 @@
             class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
           />
           <div id="category-suggestions-new" class="mt-2" data-category-suggestions>
-            {% include "_supplier_category_suggestions.html" with categories=category_suggestions, selected_categories=selected_categories %}
+            {% include "_supplier_category_suggestions.html" %}
           </div>
         </div>
         <p class="text-xs text-slate-500 dark:text-slate-400">Sélectionnez une catégorie existante ou saisissez un nouveau tag.</p>
@@ -653,7 +653,7 @@
                             class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
                           />
                           <div id="category-suggestions-{{ supplier.id }}" class="mt-2" data-category-suggestions>
-                            {% include "_supplier_category_suggestions.html" with categories=category_suggestions, selected_categories=selected_categories %}
+                            {% include "_supplier_category_suggestions.html" %}
                           </div>
                         </div>
                         <p class="text-xs text-slate-500 dark:text-slate-400">Sélectionnez une catégorie existante ou saisissez un nouveau tag.</p>
