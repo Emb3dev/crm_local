@@ -498,6 +498,42 @@ def create_supplier_category(session: Session, label: str) -> SupplierCategory:
     return category
 
 
+def update_supplier_category(
+    session: Session, category_id: int, label: str
+) -> SupplierCategory:
+    normalized_label = (label or "").strip()
+    if not normalized_label:
+        raise ValueError("Le nom de la catégorie est requis")
+
+    category = session.get(SupplierCategory, category_id)
+    if not category:
+        raise ValueError("Catégorie introuvable")
+
+    existing = session.exec(
+        select(SupplierCategory)
+        .where(func.lower(SupplierCategory.label) == normalized_label.lower())
+        .where(SupplierCategory.id != category_id)
+    ).first()
+    if existing:
+        raise ValueError("Une catégorie portant ce nom existe déjà.")
+
+    category.label = normalized_label
+    session.add(category)
+    session.commit()
+    session.refresh(category)
+    return category
+
+
+def delete_supplier_category(session: Session, category_id: int) -> bool:
+    category = session.get(SupplierCategory, category_id)
+    if not category:
+        return False
+
+    session.delete(category)
+    session.commit()
+    return True
+
+
 def ensure_supplier_categories(session: Session, labels: List[str]) -> None:
     normalized_labels = []
     for label in labels:
