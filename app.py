@@ -960,7 +960,26 @@ def _empty_subcontracted_service(
         order_week=None,
         client_id=default_client_id,
         client=None,
+        supplier_id=None,
+        supplier=None,
     )
+
+
+def _resolve_supplier_id(
+    session: Session, raw_supplier_id: Optional[str]
+) -> Optional[int]:
+    if not raw_supplier_id:
+        return None
+
+    try:
+        supplier_value = int(raw_supplier_id)
+    except (TypeError, ValueError):
+        raise HTTPException(400, "Fournisseur invalide")
+
+    if not crud.get_supplier(session, supplier_value):
+        raise HTTPException(400, "Fournisseur inconnu")
+
+    return supplier_value
 
 
 def _extract_client_filters(
@@ -1969,6 +1988,7 @@ def subcontracted_service_edit_page(
     subcontracted_groups, subcontracted_lookup = _get_subcontracted_options(session)
     available_keys = set(subcontracted_lookup.keys())
     clients = crud.list_client_choices(session)
+    suppliers = crud.list_suppliers(session, limit=300)
     comments = crud.list_subcontracted_service_comments(session, service_id)
     return templates.TemplateResponse(
         "subcontracting_edit.html",
@@ -1985,6 +2005,7 @@ def subcontracted_service_edit_page(
             "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
             "available_prestations": available_keys,
             "clients": clients,
+            "suppliers": suppliers,
             "comments": comments,
             "return_url": f"/prestations?focus={service.id}#service-{service.id}",
             "form_action": f"/prestations/{service.id}/edit",
@@ -2001,6 +2022,7 @@ def subcontracted_service_create_page(
 ):
     subcontracted_groups, subcontracted_lookup = _get_subcontracted_options(session)
     clients = crud.list_client_choices(session)
+    suppliers = crud.list_suppliers(session, limit=300)
     default_client_id = clients[0].id if clients else None
     empty_service = _empty_subcontracted_service(default_client_id)
     available_keys = set(subcontracted_lookup.keys())
@@ -2019,6 +2041,7 @@ def subcontracted_service_create_page(
             "subcontract_status_default": SUBCONTRACT_STATUS_DEFAULT,
             "available_prestations": available_keys,
             "clients": clients,
+            "suppliers": suppliers,
             "comments": [],
             "return_url": "/prestations",
             "form_action": "/prestations/new",
@@ -2033,6 +2056,7 @@ def update_subcontracted_service(
     service_id: int,
     prestation: str = Form(...),
     client_id: int = Form(...),
+    supplier_id: Optional[str] = Form(None),
     budget: Optional[str] = Form(None),
     frequency: str = Form(...),
     custom_frequency_interval: Optional[str] = Form(None),
@@ -2048,6 +2072,8 @@ def update_subcontracted_service(
 
     if not crud.get_client(session, client_id):
         raise HTTPException(400, "Client inconnu")
+
+    supplier_value = _resolve_supplier_id(session, supplier_id)
 
     (
         resolved_frequency,
@@ -2086,6 +2112,7 @@ def update_subcontracted_service(
         realization_week=realization_value,
         order_week=order_value,
         client_id=client_id,
+        supplier_id=supplier_value,
     )
 
     updated = crud.update_subcontracted_service(session, service_id, update_payload)
@@ -2139,6 +2166,7 @@ def _create_subcontracted_service_from_form(
     *,
     client_id: int,
     prestation: str,
+    supplier_id: Optional[int] = None,
     budget: Optional[str],
     frequency: str,
     custom_frequency_interval: Optional[str],
@@ -2186,6 +2214,7 @@ def _create_subcontracted_service_from_form(
             status=status,
             realization_week=realization_value,
             order_week=order_value,
+            supplier_id=supplier_id,
         ),
     )
     if not created:
@@ -2283,6 +2312,7 @@ def create_subcontracted_service_from_view(
     _current_user: CurrentUser,
     prestation: str = Form(...),
     client_id: int = Form(...),
+    supplier_id: Optional[str] = Form(None),
     budget: Optional[str] = Form(None),
     frequency: str = Form(...),
     custom_frequency_interval: Optional[str] = Form(None),
@@ -2292,10 +2322,12 @@ def create_subcontracted_service_from_view(
     order_week: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
+    supplier_value = _resolve_supplier_id(session, supplier_id)
     created = _create_subcontracted_service_from_form(
         session,
         client_id=client_id,
         prestation=prestation,
+        supplier_id=supplier_value,
         budget=budget,
         frequency=frequency,
         custom_frequency_interval=custom_frequency_interval,
@@ -2770,6 +2802,7 @@ def add_subcontracted_service(
     _current_user: CurrentUser,
     client_id: int,
     prestation: str = Form(...),
+    supplier_id: Optional[str] = Form(None),
     budget: Optional[str] = Form(None),
     frequency: str = Form(...),
     custom_frequency_interval: Optional[str] = Form(None),
@@ -2779,10 +2812,12 @@ def add_subcontracted_service(
     order_week: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
+    supplier_value = _resolve_supplier_id(session, supplier_id)
     created = _create_subcontracted_service_from_form(
         session,
         client_id=client_id,
         prestation=prestation,
+        supplier_id=supplier_value,
         budget=budget,
         frequency=frequency,
         custom_frequency_interval=custom_frequency_interval,

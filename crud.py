@@ -832,7 +832,8 @@ def list_subcontracted_services(
     stmt = (
         select(SubcontractedService)
         .options(
-            selectinload(SubcontractedService.client).selectinload(Client.entreprise)
+            selectinload(SubcontractedService.client).selectinload(Client.entreprise),
+            selectinload(SubcontractedService.supplier),
         )
         .order_by(SubcontractedService.created_at.desc())
     )
@@ -880,7 +881,10 @@ def get_subcontracted_service(
     stmt = (
         select(SubcontractedService)
         .where(SubcontractedService.id == service_id)
-        .options(selectinload(SubcontractedService.client))
+        .options(
+            selectinload(SubcontractedService.client),
+            selectinload(SubcontractedService.supplier),
+        )
     )
     return session.exec(stmt).one_or_none()
 

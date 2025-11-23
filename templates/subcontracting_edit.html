@@ -103,6 +103,27 @@
           </div>
         </label>
         <label class="{{ form_label() }}">
+          <span>Fournisseur (optionnel)</span>
+          <div class="relative mt-2">
+            <select
+              name="supplier_id"
+              class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
+            >
+              <option value="" {% if not service.supplier_id %}selected{% endif %}>Sans fournisseur</option>
+              {% for supplier in suppliers %}
+                <option value="{{ supplier.id }}" {% if supplier.id == service.supplier_id %}selected{% endif %}>
+                  {{ supplier.name }}{% if supplier.our_code %} — {{ supplier.our_code }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 peer-hover:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+              </svg>
+            </span>
+          </div>
+        </label>
+        <label class="{{ form_label() }}">
           <span>Code budget</span>
           <input
             type="text"
