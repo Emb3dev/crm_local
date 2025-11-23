@@ -26,7 +26,7 @@
   {% if category_success %}
     <div class="rounded-3xl border border-sky-200 bg-sky-50 p-6 text-sky-800 shadow-lg shadow-sky-200/40 transition-colors duration-300 dark:border-sky-400/40 dark:bg-sky-500/10 dark:text-sky-100 dark:shadow-sky-500/20">
       <p class="text-xs font-semibold uppercase tracking-[0.35em]">Catégorie ajoutée</p>
-      <p class="mt-2 text-sm">La catégorie est désormais disponible dans les formulaires de sélection.</p>
+      <p class="mt-2 text-sm">Les catégories ont été mises à jour et seront disponibles dans les formulaires de sélection.</p>
     </div>
   {% endif %}
 
@@ -164,18 +164,34 @@
           <span>Nom de la catégorie *</span>
           <input name="label" value="{{ category_form_values.label }}" required placeholder="Ex: Vérification CO" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
         </label>
-        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 transition-colors duration-300 dark:text-slate-400">
-          <span class="font-semibold uppercase tracking-[0.25em]">Suggestions</span>
-          <div class="flex flex-wrap gap-2">
-            {% for suggestion in category_suggestions %}
-              <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 shadow-sm transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ suggestion }}</span>
-            {% endfor %}
-          </div>
-        </div>
         <div class="flex justify-end">
           <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Ajouter la catégorie</button>
         </div>
       </form>
+
+      <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition-colors duration-300 dark:border-white/10 dark:bg-white/5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-600 dark:text-slate-200">Catégories existantes</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Modifiez ou supprimez les catégories partagées.</p>
+        </div>
+        <div class="mt-3 space-y-2">
+          {% for category in supplier_categories %}
+            <form action="/fournisseurs/categories/{{ category.id }}/update" method="post" class="grid gap-2 rounded-xl border border-slate-200 bg-white/80 p-3 shadow-sm transition-colors duration-300 dark:border-white/10 dark:bg-white/5 md:grid-cols-[1fr_auto] md:items-center">
+              <input type="hidden" name="redirect_to" value="/fournisseurs/new" />
+              <label class="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-200">
+                <span class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500 dark:text-slate-300">Libellé</span>
+                <input name="label" value="{{ category.label }}" required class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+              </label>
+              <div class="flex flex-wrap justify-end gap-2 md:justify-start">
+                <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400">Mettre à jour</button>
+                <button type="submit" formmethod="post" formaction="/fournisseurs/categories/{{ category.id }}/delete" class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-rose-600 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-400/20 dark:focus-visible:ring-rose-400">Supprimer</button>
+              </div>
+            </form>
+          {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">Aucune catégorie n'est encore configurée.</p>
+          {% endfor %}
+        </div>
+      </div>
     </div>
   </section>
 
