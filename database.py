@@ -144,6 +144,10 @@ def init_db():
             conn.exec_driver_sql(
                 "ALTER TABLE subcontractedservice ADD COLUMN frequency_unit VARCHAR"
             )
+        if "supplier_id" not in service_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE subcontractedservice ADD COLUMN supplier_id INTEGER REFERENCES supplier(id)"
+            )
         user_cols = {
             row[1]
             for row in conn.exec_driver_sql("PRAGMA table_info('user')")
