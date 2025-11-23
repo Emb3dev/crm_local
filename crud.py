@@ -833,7 +833,7 @@ def list_subcontracted_services(
         select(SubcontractedService)
         .options(
             selectinload(SubcontractedService.client).selectinload(Client.entreprise),
-            selectinload(SubcontractedService.supplier),
+            selectinload(SubcontractedService.supplier).selectinload(Supplier.contacts),
         )
         .order_by(SubcontractedService.created_at.desc())
     )

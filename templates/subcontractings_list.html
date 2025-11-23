@@ -197,6 +197,40 @@
             <div class="space-y-6 border-t border-slate-200 bg-slate-50 px-6 py-6 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/40">
               {% set service_comments = comments_by_service.get(service.id, []) %}
               {% set return_url = '/prestations?focus=' ~ service.id ~ '#service-' ~ service.id %}
+              {% if service.supplier %}
+                {% set supplier_contacts = service.supplier.contacts or [] %}
+                <section class="space-y-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/40 dark:shadow-indigo-500/10">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Contacts prestataire</h4>
+                    <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-300">{{ supplier_contacts|length }} contact{{ 's' if supplier_contacts|length > 1 else '' }}</span>
+                  </div>
+                  {% if supplier_contacts %}
+                    <ul class="space-y-3">
+                      {% for contact in supplier_contacts | sort(attribute='name') %}
+                        <li class="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
+                          <div class="space-y-2">
+                            <p class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ contact.name }}{% if contact.description %} — {{ contact.description }}{% endif %}</p>
+                            <div class="flex flex-wrap items-center gap-3 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
+                              {% if contact.email %}
+                                <a class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/70 px-3 py-1 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/10 dark:hover:border-indigo-300 dark:hover:text-white" href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+                              {% endif %}
+                              {% if contact.phone %}
+                                {% set sanitized_phone = contact.phone | replace(' ', '') | replace('.', '') | replace('-', '') %}
+                                <a class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/70 px-3 py-1 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/10 dark:hover:border-indigo-300 dark:hover:text-white" href="tel:{{ sanitized_phone }}">{{ contact.phone }}</a>
+                              {% endif %}
+                              {% if not contact.email and not contact.phone %}
+                                <span class="text-slate-500 dark:text-slate-400">Coordonnées à renseigner</span>
+                              {% endif %}
+                            </div>
+                          </div>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <p class="rounded-xl border border-dashed border-slate-200 bg-white/70 px-3 py-4 text-center text-sm text-slate-500 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-300">Aucun contact associé pour le moment.</p>
+                  {% endif %}
+                </section>
+              {% endif %}
               <section class="space-y-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/40 dark:shadow-indigo-500/10">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Commentaires</h4>
