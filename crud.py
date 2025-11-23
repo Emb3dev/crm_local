@@ -509,6 +509,8 @@ def update_supplier_category(
     if not category:
         raise ValueError("Catégorie introuvable")
 
+    previous_label = category.label
+
     existing = session.exec(
         select(SupplierCategory)
         .where(func.lower(SupplierCategory.label) == normalized_label.lower())
@@ -521,7 +523,72 @@ def update_supplier_category(
     session.add(category)
     session.commit()
     session.refresh(category)
+
+    _propagate_supplier_category_update(
+        session, previous_label=previous_label, new_label=normalized_label
+    )
     return category
+
+
+def _split_categories(value: Optional[str]) -> List[str]:
+    if not value:
+        return []
+    cleaned = value.replace(";", ",")
+    return [part.strip() for part in cleaned.split(",") if part.strip()]
+
+
+def _normalize_categories(value: Sequence[str]) -> Optional[str]:
+    unique_items: List[str] = []
+    seen: set[str] = set()
+    for item in value:
+        cleaned = (item or "").strip()
+        if not cleaned:
+            continue
+        canonical = cleaned.lower()
+        if canonical in seen:
+            continue
+        seen.add(canonical)
+        unique_items.append(cleaned)
+
+    if not unique_items:
+        return None
+    return ", ".join(unique_items)
+
+
+def _propagate_supplier_category_update(
+    session: Session, *, previous_label: Optional[str], new_label: str
+) -> None:
+    if not previous_label:
+        return
+
+    lower_previous = previous_label.lower()
+    suppliers = session.exec(
+        select(Supplier).where(Supplier.categories.is_not(None))
+    ).all()
+
+    updated = False
+    for supplier in suppliers:
+        categories = _split_categories(supplier.categories)
+        if not categories:
+            continue
+
+        updated_categories = []
+        changed = False
+        for item in categories:
+            if item.lower() == lower_previous:
+                updated_categories.append(new_label)
+                changed = True
+            else:
+                updated_categories.append(item)
+
+        normalized = _normalize_categories(updated_categories)
+        if changed and normalized != supplier.categories:
+            supplier.categories = normalized
+            session.add(supplier)
+            updated = True
+
+    if updated:
+        session.commit()
 
 
 def delete_supplier_category(session: Session, category_id: int) -> bool:
