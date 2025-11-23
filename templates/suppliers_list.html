@@ -109,21 +109,14 @@
         <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Recherchez par nom, catégorie ou contact.</p>
       </div>
       <div class="flex w-full flex-col gap-4">
-        <div class="flex flex-wrap justify-end gap-3">
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 self-start rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/10 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+        <div class="flex flex-wrap justify-end">
+          <a
+            href="/fournisseurs/new"
+            class="inline-flex items-center gap-3 self-start rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/10 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
           >
             <span aria-hidden="true">➕</span>
-            Nouveau fournisseur
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 self-start rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/10 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
-          >
-            <span aria-hidden="true">➕</span>
-            Nouvelle catégorie
-          </button>
+            Nouvelle prestation / catégorie
+          </a>
         </div>
         <form class="{{ form_panel() }}" role="search" hx-get="/_fournisseurs" hx-target="#supplier-list" hx-trigger="keyup changed delay:300ms, submit">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -383,8 +376,25 @@
     </div>
   </section>
 
-  <section class="grid gap-8 lg:grid-cols-2">
-    <div class="{{ card_shell() }}">
+  <section class="grid gap-8 lg:grid-cols-3">
+    <div class="{{ card_shell() }} lg:col-span-1">
+      <div class="space-y-3">
+        <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Créer un partenaire</h2>
+        <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Accédez à une vue dédiée pour ajouter un fournisseur ou une catégorie, avec une présentation similaire à l'ajout d'une prestation.</p>
+        <div class="flex flex-wrap gap-3">
+          <a href="/fournisseurs/new" class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-500/10 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400">
+            <span aria-hidden="true">➕</span>
+            Ajouter un fournisseur
+          </a>
+          <a href="/fournisseurs/new#new-category" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/40">
+            <span aria-hidden="true">🏷️</span>
+            Ajouter une catégorie
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="{{ card_shell() }} lg:col-span-1">
       <div class="space-y-2">
         <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Import Excel</h2>
         <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Ajoutez plusieurs fournisseurs en une seule fois (nom obligatoire, contacts optionnels).</p>
@@ -409,7 +419,7 @@
         </p>
       </form>
     </div>
-    <div class="{{ card_shell() }}">
+    <div class="{{ card_shell() }} lg:col-span-1">
       <div class="space-y-2">
         <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Exporter le listing</h2>
         <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Téléchargez en un clic le listing filtré des fournisseurs affichés ci-dessus.</p>
