@@ -811,6 +811,46 @@ def _suppliers_context(
         "form_values": merged_form_values,
     }
 
+
+def _supplier_creation_context(
+    request: Request,
+    supplier_categories,
+    *,
+    form_values: Optional[dict] = None,
+    category_form_values: Optional[dict] = None,
+    errors: Optional[List[str]] = None,
+    category_errors: Optional[List[str]] = None,
+    success: bool = False,
+    category_success: bool = False,
+):
+    default_form_values = {
+        "name": "",
+        "supplier_type": "fournisseur",
+        "our_code": "",
+        "categories": "",
+        "contact_name": "",
+        "contact_email": "",
+        "contact_phone": "",
+        "contact_description": "",
+    }
+
+    merged_form_values = {**default_form_values, **(form_values or {})}
+    merged_category_form_values = {"label": "", **(category_form_values or {})}
+
+    return {
+        "request": request,
+        "supplier_type_options": SUPPLIER_TYPE_OPTIONS,
+        "category_suggestions": [category.label for category in supplier_categories],
+        "supplier_categories": supplier_categories,
+        "split_categories": _split_categories,
+        "form_values": merged_form_values,
+        "category_form_values": merged_category_form_values,
+        "errors": errors,
+        "category_errors": category_errors,
+        "success": success,
+        "category_success": category_success,
+    }
+
 def _subcontractings_context(
     request: Request,
     services,
@@ -1579,6 +1619,24 @@ def suppliers_page(
     )
 
 
+@app.get("/fournisseurs/new", response_class=HTMLResponse)
+def new_supplier_page(
+    request: Request,
+    _current_user: CurrentUser,
+    session: Session = Depends(get_session),
+):
+    supplier_categories = crud.list_supplier_categories(session)
+    return templates.TemplateResponse(
+        "supplier_create.html",
+        _supplier_creation_context(
+            request,
+            supplier_categories,
+            success=request.query_params.get("success") == "1",
+            category_success=request.query_params.get("category_success") == "1",
+        ),
+    )
+
+
 @app.get("/_fournisseurs", response_class=HTMLResponse)
 def suppliers_fragment(
     request: Request,
@@ -1713,15 +1771,38 @@ async def import_suppliers(
 
 @app.post("/fournisseurs/categories")
 def create_supplier_category(
+    request: Request,
     _current_user: CurrentUser,
     label: str = Form(...),
+    redirect_to: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
+    redirect_target = (
+        redirect_to
+        if redirect_to and redirect_to.startswith("/fournisseurs/new")
+        else None
+    )
+
     try:
         crud.create_supplier_category(session, label)
     except ValueError as exc:
+        if redirect_target:
+            supplier_categories = crud.list_supplier_categories(session)
+            context = _supplier_creation_context(
+                request,
+                supplier_categories,
+                category_errors=[str(exc)],
+                category_form_values={"label": (label or "").strip()},
+            )
+            return templates.TemplateResponse(
+                "supplier_create.html",
+                context,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
         raise HTTPException(400, str(exc)) from exc
 
+    if redirect_target:
+        return RedirectResponse(url=f"{redirect_target}?category_success=1", status_code=303)
     return RedirectResponse(url="/fournisseurs", status_code=303)
 
 
@@ -2422,12 +2503,18 @@ def create_supplier(
     contact_email: Optional[str] = Form(None),
     contact_phone: Optional[str] = Form(None),
     contact_description: Optional[str] = Form(None),
+    redirect_to: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
     normalized_name = (name or "").strip()
     normalized_type = supplier_type or "fournisseur"
     normalized_categories = _normalize_categories(
         (categories_list or []) + _split_categories(categories)
+    )
+    redirect_target = (
+        redirect_to
+        if redirect_to and redirect_to.startswith("/fournisseurs/new")
+        else None
     )
 
     errors: List[str] = []
@@ -2454,10 +2541,33 @@ def create_supplier(
             )
 
     if errors:
+        supplier_categories = crud.list_supplier_categories(session)
+        context_values = {
+            "name": normalized_name,
+            "supplier_type": normalized_type,
+            "our_code": (our_code or "").strip(),
+            "categories": normalized_categories or "",
+            "contact_name": (contact_name or "").strip(),
+            "contact_email": (contact_email or "").strip(),
+            "contact_phone": (contact_phone or "").strip(),
+            "contact_description": (contact_description or "").strip(),
+        }
+        if redirect_target:
+            context = _supplier_creation_context(
+                request,
+                supplier_categories,
+                errors=errors,
+                form_values=context_values,
+            )
+            return templates.TemplateResponse(
+                "supplier_create.html",
+                context,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
         suppliers = crud.list_suppliers(
             session, q=None, supplier_type=None, limit=200
         )
-        supplier_categories = crud.list_supplier_categories(session)
         context = _suppliers_context(
             request,
             suppliers,
@@ -2465,16 +2575,7 @@ def create_supplier(
             None,
             supplier_categories,
             errors=errors,
-            form_values={
-                "name": normalized_name,
-                "supplier_type": normalized_type,
-                "our_code": (our_code or "").strip(),
-                "categories": normalized_categories or "",
-                "contact_name": (contact_name or "").strip(),
-                "contact_email": (contact_email or "").strip(),
-                "contact_phone": (contact_phone or "").strip(),
-                "contact_description": (contact_description or "").strip(),
-            },
+            form_values=context_values,
         )
         return templates.TemplateResponse(
             "suppliers_list.html",
@@ -2493,6 +2594,12 @@ def create_supplier(
         ),
         contacts=contacts_payload,
     )
+    if redirect_target:
+        return RedirectResponse(
+            url=f"{redirect_target}?success=1",
+            status_code=303,
+        )
+
     return RedirectResponse(
         url=f"/fournisseurs?success=1&focus={supplier.id}#supplier-{supplier.id}",
         status_code=303,
