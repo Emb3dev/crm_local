@@ -156,6 +156,9 @@ class Supplier(SupplierBase, table=True):
         back_populates="supplier",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
+    subcontracted_services: List["SubcontractedService"] = Relationship(
+        back_populates="supplier"
+    )
 
 
 class SupplierCreate(SupplierBase):
@@ -275,6 +278,9 @@ class SubcontractedServiceBase(SQLModel):
     order_week: Optional[str] = Field(
         default=None, description="Semaine de commande (format S01, S02…)"
     )
+    supplier_id: Optional[int] = Field(
+        default=None, foreign_key="supplier.id", description="Fournisseur lié"
+    )
 
 
 class SubcontractedService(SubcontractedServiceBase, table=True):
@@ -282,6 +288,7 @@ class SubcontractedService(SubcontractedServiceBase, table=True):
     client_id: int = Field(foreign_key="client.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     client: Optional[Client] = Relationship(back_populates="subcontractings")
+    supplier: Optional[Supplier] = Relationship(back_populates="subcontracted_services")
     comments: List["SubcontractedServiceComment"] = Relationship(
         back_populates="service",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
@@ -305,6 +312,7 @@ class SubcontractedServiceUpdate(SQLModel):
     realization_week: Optional[str] = None
     order_week: Optional[str] = None
     client_id: Optional[int] = None
+    supplier_id: Optional[int] = None
 
 
 class SubcontractedServiceCommentBase(SQLModel):

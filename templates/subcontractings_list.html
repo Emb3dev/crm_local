@@ -158,6 +158,13 @@
                     <span class="text-slate-400">à associer</span>
                   {% endif %}
                 </p>
+                {% if service.supplier %}
+                  <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
+                    Fournisseur :
+                    <strong class="text-slate-900 transition-colors duration-300 dark:text-white">{{ service.supplier.name }}</strong>
+                    {% if service.supplier.our_code %}<span class="mx-2 text-slate-400">•</span>{{ service.supplier.our_code }}{% endif %}
+                  </p>
+                {% endif %}
                 <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">
                   <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">{{ service.category }}</span>
                   <span class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-indigo-700 transition-colors duration-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100">
