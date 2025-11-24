@@ -97,6 +97,22 @@
               </span>
             </div>
           </label>
+          <label
+            class="space-y-2 {{ form_label() }} {% if not (is_editing_filter and editing_filter.format_type == 'poche') %}hidden{% endif %}"
+            data-pocket-count-field
+            data-pocket-form="filters-form"
+          >
+            Nombre de poches
+            <input
+              name="pocket_count"
+              type="number"
+              min="1"
+              step="1"
+              value="{{ editing_filter.pocket_count if is_editing_filter else '' }}"
+              {% if is_editing_filter and editing_filter.format_type == 'poche' %}required{% endif %}
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
+            />
+          </label>
           <label class="space-y-2 {{ form_label() }}">
             Quantité
             <input name="quantity" type="number" min="1" step="1" value="{{ editing_filter.quantity if is_editing_filter else 1 }}" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
@@ -155,7 +171,7 @@
           <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/60 dark:bg-indigo-500/90 dark:hover:bg-indigo-400">Importer</button>
         </form>
         <div class="space-y-2 text-xs text-slate-500 transition-colors duration-300 dark:text-slate-400">
-          <p>Colonnes attendues : <code class="font-mono text-indigo-600 dark:text-indigo-200">site</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">equipment</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">format_type</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">efficiency</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">dimensions</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">quantity</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">order_week</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">included_in_contract</code> (Oui/Non), <code class="font-mono text-indigo-600 dark:text-indigo-200">ordered</code> (Oui/Non).</p>
+          <p>Colonnes attendues : <code class="font-mono text-indigo-600 dark:text-indigo-200">site</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">equipment</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">format_type</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">efficiency</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">dimensions</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">pocket_count</code> (si format poche), <code class="font-mono text-indigo-600 dark:text-indigo-200">quantity</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">order_week</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">included_in_contract</code> (Oui/Non), <code class="font-mono text-indigo-600 dark:text-indigo-200">ordered</code> (Oui/Non).</p>
           <a class="inline-flex items-center gap-2 text-indigo-600 underline-offset-4 transition hover:underline dark:text-indigo-200" href="/filtres-courroies/filtres/import/template">Télécharger le modèle Excel</a>
         </div>
       </div>
@@ -239,6 +255,7 @@
             <th class="py-3 pr-4">Site</th>
             <th class="py-3 pr-4">Équipement</th>
             <th class="py-3 pr-4">Format</th>
+            <th class="py-3 pr-4">Nb poches</th>
             <th class="py-3 pr-4">Efficacité</th>
             <th class="py-3 pr-4">Dimensions</th>
             <th class="py-3 pr-4">Quantité</th>
@@ -300,6 +317,22 @@
                         </svg>
                       </span>
                     </div>
+                  </td>
+                  <td
+                    class="py-3 pr-4 {% if editing_filter.format_type != 'poche' %}hidden{% endif %}"
+                    data-pocket-count-field
+                    data-pocket-form="filter-inline-{{ line.id }}"
+                  >
+                    <input
+                      form="filter-inline-{{ line.id }}"
+                      name="pocket_count"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value="{{ editing_filter.pocket_count or '' }}"
+                      {% if editing_filter.format_type == 'poche' %}required{% endif %}
+                      class="{{ form_control('border-indigo-200 bg-white shadow-sm focus:border-indigo-400 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:shadow-indigo-500/20 dark:focus:border-indigo-200') }}"
+                    />
                   </td>
                   <td class="py-3 pr-4">
                     <input
@@ -405,6 +438,13 @@
                   <td id="filter-{{ line.id }}" class="py-3 pr-4 font-medium text-slate-900 dark:text-white">{{ line.site }}</td>
                   <td class="py-3 pr-4">{{ line.equipment }}</td>
                   <td class="py-3 pr-4">{{ filter_format_labels.get(line.format_type, line.format_type) }}</td>
+                  <td class="py-3 pr-4">
+                    {% if line.format_type == 'poche' and line.pocket_count is not none %}
+                      {{ line.pocket_count }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
                   <td class="py-3 pr-4">{{ line.efficiency or '—' }}</td>
                   <td class="py-3 pr-4">{{ line.dimensions or '—' }}</td>
                   <td class="py-3 pr-4">{{ line.quantity }}</td>
@@ -449,7 +489,7 @@
             {% endfor %}
           {% else %}
             <tr>
-              <td colspan="10" class="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
+              <td colspan="12" class="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
                 {% if filters_q %}
                   Aucun filtre ne correspond à « {{ filters_q }} ».
                 {% else %}
@@ -858,9 +898,39 @@
     (() => {
       const SHELL_ID = "consumables-shell";
 
+      function togglePocketField(select, root = document) {
+        const formId = select.getAttribute("form") || select.form?.id;
+        const pocketSelector = formId
+          ? `[data-pocket-count-field][data-pocket-form="${formId}"]`
+          : "[data-pocket-count-field]:not([data-pocket-form])";
+        const pocketField = root.querySelector(pocketSelector) || document.querySelector(pocketSelector);
+        if (!pocketField) return;
+
+        const input = pocketField.querySelector('input[name="pocket_count"]');
+        const isPocket = select.value === "poche";
+        pocketField.classList.toggle("hidden", !isPocket);
+        if (input) {
+          input.required = isPocket;
+          if (!isPocket) {
+            input.value = "";
+          }
+        }
+      }
+
+      function bindPocketFields(context = document) {
+        context.querySelectorAll('select[name="format_type"]').forEach((select) => {
+          if (select.dataset.pocketBound === "true") return;
+          select.dataset.pocketBound = "true";
+          togglePocketField(select, context);
+          select.addEventListener("change", () => togglePocketField(select, context));
+        });
+      }
+
       function enhanceForms() {
         const shell = document.getElementById(SHELL_ID);
         if (!shell) return;
+
+        bindPocketFields(shell);
 
         shell.querySelectorAll("form").forEach((form) => {
           if (form.dataset.ajaxBound === "true") return;
