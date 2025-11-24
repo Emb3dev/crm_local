@@ -3004,10 +3004,7 @@ def _validate_pocket_count(
     if format_type != "poche":
         return None
     if pocket_count is None:
-        raise HTTPException(
-            status_code=400,
-            detail="Merci d'indiquer le nombre de poches pour un filtre au format poche.",
-        )
+        return None
     if pocket_count < 1:
         raise HTTPException(
             status_code=400,
