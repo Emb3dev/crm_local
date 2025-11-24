@@ -1014,10 +1014,34 @@
         debugCopyLog("Attempting to write to clipboard", { preferNavigator: Boolean(navigator.clipboard?.writeText) });
 
         if (navigator.clipboard?.writeText) {
-          return navigator.clipboard.writeText(text);
+          return navigator.clipboard.writeText(text).catch((error) => {
+            debugCopyLog("Navigator clipboard failed, falling back", { error });
+            return fallbackCopyToClipboard(text);
+          });
         }
 
         return fallbackCopyToClipboard(text);
+      }
+
+      function collectCheckedBoxes(group, formId = "") {
+        const baseSelector = `input[data-bulk-group="${group}"][name="line_ids"]:checked`;
+        const selectors = [baseSelector];
+
+        if (formId) {
+          selectors.push(`input[data-bulk-group="${group}"][name="line_ids"][form="${formId}"]:checked`);
+          selectors.push(`#${formId} ${baseSelector}`);
+        }
+
+        debugCopyLog("Checkbox selectors", selectors);
+
+        const checkboxes = selectors
+          .map((selector) => Array.from(document.querySelectorAll(selector)))
+          .flat();
+
+        const uniqueCheckboxes = Array.from(new Set(checkboxes));
+        debugCopyLog("Found checkboxes", { count: uniqueCheckboxes.length });
+
+        return uniqueCheckboxes;
       }
 
       function copyConsultation(form) {
@@ -1027,21 +1051,7 @@
         const group = form.dataset.bulkGroup;
         const isFilters = group === "filters";
         const formId = form.id;
-        const checkboxSelectors = [`#${formId} input[data-bulk-group="${group}"]:checked`];
-
-        if (formId) {
-          checkboxSelectors.push(
-            `input[data-bulk-group="${group}"][form="${formId}"]:checked`,
-            `input[data-bulk-group="${group}"][form='${formId}']:checked`,
-          );
-        }
-
-        const checkboxes = checkboxSelectors
-          .map((selector) => Array.from(document.querySelectorAll(selector)))
-          .flat();
-
-        debugCopyLog("Checkbox selectors", checkboxSelectors);
-        debugCopyLog("Found checkboxes", { count: checkboxes.length });
+        const checkboxes = collectCheckedBoxes(group, formId);
 
         if (!checkboxes.length) {
           alert("Sélectionnez au moins une ligne avant de copier la consultation.");
@@ -1050,14 +1060,12 @@
 
         const fields = isFilters ? FILTER_FIELDS : BELT_FIELDS;
         const label = isFilters ? "Filtres" : "Courroies";
-        const rows = Array.from(checkboxes)
-          .map((checkbox) => extractRowData(checkbox, fields))
-          .filter(Boolean);
+        const rows = checkboxes.map((checkbox) => extractRowData(checkbox, fields)).filter(Boolean);
 
         debugCopyLog("Extracted rows", { rows });
 
-        const table = buildTable(label, rows, fields);
-        const body = `${CONSULTATION_INTRO}${table}${CONSULTATION_FOOTER}`;
+        const bodyParts = [CONSULTATION_INTRO, buildTable(label, rows, fields), CONSULTATION_FOOTER].filter(Boolean);
+        const body = bodyParts.join("\n");
 
         writeToClipboard(body)
           .then(() => {
