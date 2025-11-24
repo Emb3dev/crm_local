@@ -1071,6 +1071,23 @@ def update_filter_line(
     return record
 
 
+def bulk_update_filter_lines_ordered(
+    session: Session, line_ids: Sequence[int], ordered: bool
+) -> int:
+    if not line_ids:
+        return 0
+
+    stmt = select(FilterLine).where(FilterLine.id.in_(line_ids))
+    records = session.exec(stmt).all()
+
+    for record in records:
+        record.ordered = ordered
+        session.add(record)
+
+    session.commit()
+    return len(records)
+
+
 def list_belt_lines(session: Session, q: Optional[str] = None) -> List[BeltLine]:
     stmt = select(BeltLine).order_by(BeltLine.created_at.desc())
     if q:
@@ -1118,6 +1135,23 @@ def update_belt_line(
     session.commit()
     session.refresh(record)
     return record
+
+
+def bulk_update_belt_lines_ordered(
+    session: Session, line_ids: Sequence[int], ordered: bool
+) -> int:
+    if not line_ids:
+        return 0
+
+    stmt = select(BeltLine).where(BeltLine.id.in_(line_ids))
+    records = session.exec(stmt).all()
+
+    for record in records:
+        record.ordered = ordered
+        session.add(record)
+
+    session.commit()
+    return len(records)
 
 
 def delete_belt_line(session: Session, line_id: int) -> bool:
