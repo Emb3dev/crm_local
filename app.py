@@ -3212,13 +3212,28 @@ async def import_workload_plan_excel(
 
 
 @app.post("/filtres-courroies/filtres")
+def _parse_pocket_count(raw: Optional[str]) -> Optional[int]:
+    if raw is None:
+        return None
+    raw = raw.strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Le nombre de poches doit être un entier valide.",
+        ) from exc
+
+
 async def create_filter_line(
     _current_user: CurrentUser,
     site: str = Form(...),
     equipment: str = Form(...),
     efficiency: Optional[str] = Form(None),
     format_type: str = Form(...),
-    pocket_count: Optional[int] = Form(None),
+    pocket_count: Optional[str] = Form(None),
     info_plus: Optional[str] = Form(None),
     dimensions: Optional[str] = Form(None),
     quantity: int = Form(...),
@@ -3238,7 +3253,9 @@ async def create_filter_line(
         equipment=equipment.strip(),
         efficiency=(efficiency.strip() if efficiency else None),
         format_type=format_type,
-        pocket_count=_validate_pocket_count(format_type, pocket_count),
+        pocket_count=_validate_pocket_count(
+            format_type, _parse_pocket_count(pocket_count)
+        ),
         info_plus=(info_plus.strip() if info_plus else None),
         dimensions=(dimensions.strip() if dimensions else None),
         quantity=quantity,
@@ -3258,7 +3275,7 @@ async def update_filter_line(
     equipment: str = Form(...),
     efficiency: Optional[str] = Form(None),
     format_type: str = Form(...),
-    pocket_count: Optional[int] = Form(None),
+    pocket_count: Optional[str] = Form(None),
     info_plus: Optional[str] = Form(None),
     dimensions: Optional[str] = Form(None),
     quantity: int = Form(...),
@@ -3281,7 +3298,9 @@ async def update_filter_line(
         equipment=equipment.strip(),
         efficiency=(efficiency.strip() if efficiency else None),
         format_type=format_type,
-        pocket_count=_validate_pocket_count(format_type, pocket_count),
+        pocket_count=_validate_pocket_count(
+            format_type, _parse_pocket_count(pocket_count)
+        ),
         info_plus=(info_plus.strip() if info_plus else None),
         dimensions=(dimensions.strip() if dimensions else None),
         quantity=quantity,
