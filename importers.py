@@ -127,6 +127,9 @@ FREQUENCY_UNIT_ALIASES = {
     "years": "years",
 }
 
+BOOLEAN_TRUE_VALUES = {"oui", "o", "yes", "y", "true", "vrai", "1"}
+BOOLEAN_FALSE_VALUES = {"non", "no", "n", "false", "faux", "0"}
+
 FILTER_EXPECTED_FIELDS = {"site", "equipment", "format_type"}
 
 FILTER_COLUMN_ALIASES: Dict[str, str] = {
@@ -151,6 +154,10 @@ FILTER_COLUMN_ALIASES: Dict[str, str] = {
     "semaine_commande": "order_week",
     "order_week": "order_week",
     "semaine": "order_week",
+    "inclus": "included_in_contract",
+    "inclus_contrat": "included_in_contract",
+    "included": "included_in_contract",
+    "included_in_contract": "included_in_contract",
 }
 
 FILTER_FORMAT_LOOKUP = {
@@ -182,6 +189,10 @@ BELT_COLUMN_ALIASES: Dict[str, str] = {
     "semaine_commande": "order_week",
     "order_week": "order_week",
     "semaine": "order_week",
+    "inclus": "included_in_contract",
+    "inclus_contrat": "included_in_contract",
+    "included": "included_in_contract",
+    "included_in_contract": "included_in_contract",
 }
 
 PRESTATION_COLUMN_ALIASES: Dict[str, str] = {
@@ -321,6 +332,17 @@ def _parse_positive_int(value: str, row_index: int, field_name: str) -> int:
             f"Ligne {row_index}: valeur de {field_name} invalide '{value}'."
         )
     return quantity
+
+
+def _parse_boolean_flag(value: str, row_index: int, field_name: str) -> bool:
+    normalized = _normalize_header(value)
+    if normalized in BOOLEAN_TRUE_VALUES:
+        return True
+    if normalized in BOOLEAN_FALSE_VALUES:
+        return False
+    raise ValueError(
+        f"Ligne {row_index}: valeur de {field_name} invalide '{value}'."
+    )
 
 
 def parse_clients_excel(content: bytes) -> List[Dict[str, str]]:
@@ -633,6 +655,10 @@ def parse_filter_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]
                 record[header] = _parse_positive_int(value, row_index, "quantité")
             elif header == "order_week":
                 record[header] = value.strip().upper()
+            elif header == "included_in_contract":
+                record[header] = _parse_boolean_flag(
+                    value, row_index, "inclus au contrat"
+                )
             else:
                 record[header] = value
 
@@ -650,6 +676,9 @@ def parse_filter_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]
 
         if "quantity" not in record:
             record["quantity"] = 1
+
+        if "included_in_contract" not in record:
+            record["included_in_contract"] = False
 
         rows.append(record)
 
@@ -697,6 +726,10 @@ def parse_belt_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]:
                 record[header] = _parse_positive_int(value, row_index, "quantité")
             elif header == "order_week":
                 record[header] = value.strip().upper()
+            elif header == "included_in_contract":
+                record[header] = _parse_boolean_flag(
+                    value, row_index, "inclus au contrat"
+                )
             else:
                 record[header] = value
 
@@ -714,6 +747,9 @@ def parse_belt_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]:
 
         if "quantity" not in record:
             record["quantity"] = 1
+
+        if "included_in_contract" not in record:
+            record["included_in_contract"] = False
 
         rows.append(record)
 
