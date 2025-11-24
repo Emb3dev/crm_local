@@ -922,6 +922,7 @@
     (() => {
       const SHELL_ID = "consumables-shell";
       const COPY_ACTION_VALUE = "copy:consultation";
+      const DEBUG_COPY_CONSULTATION = Boolean(window.COPY_CONSULTATION_DEBUG);
       const CONSULTATION_INTRO = [
         "Bonjour,",
         "",
@@ -946,6 +947,17 @@
         { key: "quantity", label: "Quantité" },
         { key: "order_week", label: "Semaine commande" },
       ];
+
+      function debugCopyLog(message, payload = null) {
+        if (!DEBUG_COPY_CONSULTATION) return;
+
+        if (payload) {
+          console.debug(`[CopyConsultation] ${message}`, payload);
+          return;
+        }
+
+        console.debug(`[CopyConsultation] ${message}`);
+      }
 
       function extractRowData(checkbox, fields) {
         const row = checkbox.closest("tr");
@@ -999,6 +1011,8 @@
       }
 
       function writeToClipboard(text) {
+        debugCopyLog("Attempting to write to clipboard", { preferNavigator: Boolean(navigator.clipboard?.writeText) });
+
         if (navigator.clipboard?.writeText) {
           return navigator.clipboard.writeText(text);
         }
@@ -1026,6 +1040,9 @@
           .map((selector) => Array.from(document.querySelectorAll(selector)))
           .flat();
 
+        debugCopyLog("Checkbox selectors", checkboxSelectors);
+        debugCopyLog("Found checkboxes", { count: checkboxes.length });
+
         if (!checkboxes.length) {
           alert("Sélectionnez au moins une ligne avant de copier la consultation.");
           return true;
@@ -1037,6 +1054,8 @@
           .map((checkbox) => extractRowData(checkbox, fields))
           .filter(Boolean);
 
+        debugCopyLog("Extracted rows", { rows });
+
         const table = buildTable(label, rows, fields);
         const body = `${CONSULTATION_INTRO}${table}${CONSULTATION_FOOTER}`;
 
@@ -1044,7 +1063,8 @@
           .then(() => {
             alert("Consultation copiée dans le presse-papiers.");
           })
-          .catch(() => {
+          .catch((error) => {
+            debugCopyLog("Clipboard copy failed", { error });
             alert("Impossible de copier la consultation. Merci de réessayer.");
           });
 
