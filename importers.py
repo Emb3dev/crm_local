@@ -158,6 +158,10 @@ FILTER_COLUMN_ALIASES: Dict[str, str] = {
     "inclus_contrat": "included_in_contract",
     "included": "included_in_contract",
     "included_in_contract": "included_in_contract",
+    "etat_commande": "ordered",
+    "statut_commande": "ordered",
+    "commande_effectuee": "ordered",
+    "ordered": "ordered",
 }
 
 FILTER_FORMAT_LOOKUP = {
@@ -193,6 +197,10 @@ BELT_COLUMN_ALIASES: Dict[str, str] = {
     "inclus_contrat": "included_in_contract",
     "included": "included_in_contract",
     "included_in_contract": "included_in_contract",
+    "etat_commande": "ordered",
+    "statut_commande": "ordered",
+    "commande_effectuee": "ordered",
+    "ordered": "ordered",
 }
 
 PRESTATION_COLUMN_ALIASES: Dict[str, str] = {
@@ -659,6 +667,10 @@ def parse_filter_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]
                 record[header] = _parse_boolean_flag(
                     value, row_index, "inclus au contrat"
                 )
+            elif header == "ordered":
+                record[header] = _parse_boolean_flag(
+                    value, row_index, "commandé"
+                )
             else:
                 record[header] = value
 
@@ -679,6 +691,9 @@ def parse_filter_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]
 
         if "included_in_contract" not in record:
             record["included_in_contract"] = False
+
+        if "ordered" not in record:
+            record["ordered"] = False
 
         rows.append(record)
 
@@ -730,6 +745,10 @@ def parse_belt_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]:
                 record[header] = _parse_boolean_flag(
                     value, row_index, "inclus au contrat"
                 )
+            elif header == "ordered":
+                record[header] = _parse_boolean_flag(
+                    value, row_index, "commandé"
+                )
             else:
                 record[header] = value
 
@@ -750,6 +769,9 @@ def parse_belt_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]:
 
         if "included_in_contract" not in record:
             record["included_in_contract"] = False
+
+        if "ordered" not in record:
+            record["ordered"] = False
 
         rows.append(record)
 

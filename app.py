@@ -3204,6 +3204,7 @@ async def create_filter_line(
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
     included_in_contract: bool = Form(False),
+    ordered: bool = Form(False),
     session: Session = Depends(get_session),
 ):
     if format_type not in FILTER_FORMAT_LABELS:
@@ -3221,6 +3222,7 @@ async def create_filter_line(
         quantity=quantity,
         order_week=(order_week.strip().upper() if order_week else None),
         included_in_contract=included_in_contract,
+        ordered=ordered,
     )
     crud.create_filter_line(session, payload)
     return RedirectResponse("/filtres-courroies", status_code=303)
@@ -3238,6 +3240,7 @@ async def update_filter_line(
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
     included_in_contract: bool = Form(False),
+    ordered: bool = Form(False),
     filters_q: Optional[str] = Form(None),
     belts_q: Optional[str] = Form(None),
     return_anchor: Optional[str] = Form(None),
@@ -3258,6 +3261,7 @@ async def update_filter_line(
         quantity=quantity,
         order_week=(order_week.strip() if order_week else None),
         included_in_contract=included_in_contract,
+        ordered=ordered,
     )
 
     updated = crud.update_filter_line(session, line_id, payload)
@@ -3278,6 +3282,74 @@ async def update_filter_line(
     redirect_url = (
         f"{redirect_base}#{return_anchor}" if return_anchor else redirect_base
     )
+
+    return RedirectResponse(redirect_url, status_code=303)
+
+
+@app.post("/filtres-courroies/courroies/{line_id}/toggle-ordered")
+def toggle_belt_line_ordered(
+    _current_user: CurrentUser,
+    line_id: int,
+    filters_q: Optional[str] = Form(None),
+    belts_q: Optional[str] = Form(None),
+    return_anchor: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    record = crud.get_belt_line(session, line_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Ligne courroie introuvable")
+
+    crud.update_belt_line(
+        session, line_id, BeltLineUpdate(ordered=not bool(record.ordered))
+    )
+
+    redirect_params = []
+    if filters_q:
+        redirect_params.append(("filters_q", filters_q))
+    if belts_q:
+        redirect_params.append(("belts_q", belts_q))
+
+    redirect_base = "/filtres-courroies"
+    if redirect_params:
+        query = urlencode(redirect_params)
+        redirect_base = f"{redirect_base}?{query}"
+
+    anchor = return_anchor or f"belt-{line_id}"
+    redirect_url = f"{redirect_base}#{anchor}"
+
+    return RedirectResponse(redirect_url, status_code=303)
+
+
+@app.post("/filtres-courroies/filtres/{line_id}/toggle-ordered")
+def toggle_filter_line_ordered(
+    _current_user: CurrentUser,
+    line_id: int,
+    filters_q: Optional[str] = Form(None),
+    belts_q: Optional[str] = Form(None),
+    return_anchor: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    record = crud.get_filter_line(session, line_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Ligne filtre introuvable")
+
+    crud.update_filter_line(
+        session, line_id, FilterLineUpdate(ordered=not bool(record.ordered))
+    )
+
+    redirect_params = []
+    if filters_q:
+        redirect_params.append(("filters_q", filters_q))
+    if belts_q:
+        redirect_params.append(("belts_q", belts_q))
+
+    redirect_base = "/filtres-courroies"
+    if redirect_params:
+        query = urlencode(redirect_params)
+        redirect_base = f"{redirect_base}?{query}"
+
+    anchor = return_anchor or f"filter-{line_id}"
+    redirect_url = f"{redirect_base}#{anchor}"
 
     return RedirectResponse(redirect_url, status_code=303)
 
@@ -3373,6 +3445,7 @@ async def create_belt_line(
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
     included_in_contract: bool = Form(False),
+    ordered: bool = Form(False),
     session: Session = Depends(get_session),
 ):
     payload = BeltLineCreate(
@@ -3382,6 +3455,7 @@ async def create_belt_line(
         quantity=quantity,
         order_week=(order_week.strip().upper() if order_week else None),
         included_in_contract=included_in_contract,
+        ordered=ordered,
     )
     crud.create_belt_line(session, payload)
     return RedirectResponse("/filtres-courroies", status_code=303)
@@ -3397,6 +3471,7 @@ async def update_belt_line(
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
     included_in_contract: bool = Form(False),
+    ordered: bool = Form(False),
     filters_q: Optional[str] = Form(None),
     belts_q: Optional[str] = Form(None),
     return_anchor: Optional[str] = Form(None),
@@ -3412,6 +3487,7 @@ async def update_belt_line(
         quantity=quantity,
         order_week=(order_week.strip() if order_week else None),
         included_in_contract=included_in_contract,
+        ordered=ordered,
     )
 
     updated = crud.update_belt_line(session, line_id, payload)
@@ -4132,6 +4208,7 @@ def _build_filter_import_template() -> BytesIO:
         "quantity",
         "order_week",
         "included_in_contract",
+        "ordered",
     ]
     sheet.append(headers)
 
@@ -4145,6 +4222,7 @@ def _build_filter_import_template() -> BytesIO:
             "quantity": 3,
             "order_week": "S12",
             "included_in_contract": "Oui",
+            "ordered": "Non",
         },
         {
             "site": "Siège social",
@@ -4155,6 +4233,7 @@ def _build_filter_import_template() -> BytesIO:
             "quantity": 2,
             "order_week": "S22",
             "included_in_contract": "Non",
+            "ordered": "Oui",
         },
     ]
 
@@ -4192,6 +4271,7 @@ def _build_belt_import_template() -> BytesIO:
         "quantity",
         "order_week",
         "included_in_contract",
+        "ordered",
     ]
     sheet.append(headers)
 
@@ -4203,6 +4283,7 @@ def _build_belt_import_template() -> BytesIO:
             "quantity": 2,
             "order_week": "S08",
             "included_in_contract": "Oui",
+            "ordered": "Non",
         },
         {
             "site": "Usine Est",
@@ -4211,6 +4292,7 @@ def _build_belt_import_template() -> BytesIO:
             "quantity": 3,
             "order_week": "S30",
             "included_in_contract": "Oui",
+            "ordered": "Oui",
         },
         {
             "site": "Entrepôt Sud",
@@ -4219,6 +4301,7 @@ def _build_belt_import_template() -> BytesIO:
             "quantity": 1,
             "order_week": "",
             "included_in_contract": "Non",
+            "ordered": "Non",
         },
     ]
 
