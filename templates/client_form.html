@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% from "_ui_macros.html" import card_shell, form_label, form_control, form_select %}
+{% set page_title_text = 'Nouveau client' if is_creation else 'Modifier le client' %}
+{% set page_subtitle_text = 'Créez un dossier client avec les informations essentielles.' if is_creation else 'Ajustez les informations du client et sauvegardez les modifications.' %}
+{% block page_eyebrow %}Gestion clients{% endblock %}
+{% block page_title %}{{ page_title_text }}{% endblock %}
+{% block page_subtitle %}{{ page_subtitle_text }}{% endblock %}
+{% block title %}{{ page_title_text }} — CRM Local{% endblock %}
+{% block main_classes %}space-y-10{% endblock %}
+{% block content %}
+<section class="{{ card_shell() }}">
+  <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div class="space-y-2">
+      <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">{{ page_title_text }}</h2>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ page_subtitle_text }}</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <a
+        href="{{ return_url }}"
+        class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:focus-visible:ring-white/40"
+      >Retour</a>
+      {% if not is_creation %}
+      <span class="rounded-full border border-slate-200 bg-white px-4 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">Client #{{ form_values.get('id') or '' }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <form action="{{ form_action }}" method="post" class="mt-8 grid gap-4 md:grid-cols-2">
+    <label class="{{ form_label() }}">
+      <span>Nom entreprise *</span>
+      <input
+        name="company_name"
+        list="entreprise-names"
+        required
+        value="{{ form_values.company_name }}"
+        placeholder="Ex: Dupont SARL"
+        class="mt-2 {{ form_control('rounded-2xl') }}"
+      />
+    </label>
+    <label class="{{ form_label() }}">
+      <span>Contact principal *</span>
+      <input
+        name="name"
+        required
+        value="{{ form_values.name }}"
+        placeholder="Ex: Jeanne Martin"
+        class="mt-2 {{ form_control('rounded-2xl') }}"
+      />
+    </label>
+    <label class="{{ form_label() }}">
+      <span>Email du contact</span>
+      <input
+        name="email"
+        type="email"
+        value="{{ form_values.email }}"
+        placeholder="contact@exemple.fr"
+        class="mt-2 {{ form_control('rounded-2xl') }}"
+      />
+    </label>
+    <label class="{{ form_label() }}">
+      <span>Téléphone du contact</span>
+      <input
+        name="phone"
+        value="{{ form_values.phone }}"
+        placeholder="06 12 34 56 78"
+        class="mt-2 {{ form_control('rounded-2xl') }}"
+      />
+    </label>
+    <label class="{{ form_label() }}">
+      <span>Technicien référent</span>
+      <input
+        name="technician_name"
+        value="{{ form_values.technician_name }}"
+        placeholder="Ex: Luc Garnier"
+        class="mt-2 {{ form_control('rounded-2xl') }}"
+      />
+    </label>
+    <label class="md:col-span-2 {{ form_label() }}">
+      <span>Adresse de facturation</span>
+      <textarea
+        name="billing_address"
+        rows="3"
+        placeholder="Rue, code postal, ville…"
+        class="mt-2 {{ form_control('rounded-2xl') }}"
+      >{{ form_values.billing_address }}</textarea>
+    </label>
+    <label class="{{ form_label() }}">
+      <span>Dépannage</span>
+      <div class="relative mt-2">
+        <select
+          name="depannage"
+          class="{{ form_select('rounded-2xl') }}"
+        >
+          {% for value, label in depannage_options.items() %}
+          <option value="{{ value }}" {% if form_values.depannage == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+          </svg>
+        </span>
+      </div>
+    </label>
+    <label class="{{ form_label() }}">
+      <span>Astreinte</span>
+      <div class="relative mt-2">
+        <select
+          name="astreinte"
+          class="{{ form_select('rounded-2xl') }}"
+        >
+          {% for value, label in astreinte_options.items() %}
+          <option value="{{ value }}" {% if form_values.astreinte == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+          </svg>
+        </span>
+      </div>
+    </label>
+    <label class="{{ form_label() }}">
+      <span>Tags</span>
+      <input
+        name="tags"
+        value="{{ form_values.tags }}"
+        placeholder="Ex: clé, secteur..."
+        class="mt-2 {{ form_control('rounded-2xl') }}"
+      />
+    </label>
+    <label class="{{ form_label() }}">
+      <span>Statut</span>
+      <div class="relative mt-2">
+        <select
+          name="status"
+          class="{{ form_select('rounded-2xl') }}"
+        >
+          {% for value, label in status_options.items() %}
+          <option value="{{ value }}" {% if form_values.status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+          </svg>
+        </span>
+      </div>
+    </label>
+    <div class="md:col-span-2 flex flex-wrap items-center gap-3 pt-2">
+      <button class="inline-flex items-center justify-center rounded-full border border-indigo-300 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.3em] text-indigo-700 transition hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20" type="submit">{{ 'Créer le client' if is_creation else 'Enregistrer les modifications' }}</button>
+      <a href="{{ return_url }}" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:focus-visible:ring-white/40">Annuler</a>
+    </div>
+  </form>
+</section>
+
+<datalist id="entreprise-names">
+  {% for name in entreprise_name_options %}
+    <option value="{{ name }}"></option>
+  {% endfor %}
+</datalist>
+{% endblock %}
