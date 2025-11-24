@@ -3203,6 +3203,7 @@ async def create_filter_line(
     dimensions: Optional[str] = Form(None),
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
+    included_in_contract: bool = Form(False),
     session: Session = Depends(get_session),
 ):
     if format_type not in FILTER_FORMAT_LABELS:
@@ -3219,6 +3220,7 @@ async def create_filter_line(
         dimensions=(dimensions.strip() if dimensions else None),
         quantity=quantity,
         order_week=(order_week.strip().upper() if order_week else None),
+        included_in_contract=included_in_contract,
     )
     crud.create_filter_line(session, payload)
     return RedirectResponse("/filtres-courroies", status_code=303)
@@ -3235,6 +3237,7 @@ async def update_filter_line(
     dimensions: Optional[str] = Form(None),
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
+    included_in_contract: bool = Form(False),
     filters_q: Optional[str] = Form(None),
     belts_q: Optional[str] = Form(None),
     return_anchor: Optional[str] = Form(None),
@@ -3254,6 +3257,7 @@ async def update_filter_line(
         dimensions=(dimensions.strip() if dimensions else None),
         quantity=quantity,
         order_week=(order_week.strip() if order_week else None),
+        included_in_contract=included_in_contract,
     )
 
     updated = crud.update_filter_line(session, line_id, payload)
@@ -3368,6 +3372,7 @@ async def create_belt_line(
     reference: str = Form(...),
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
+    included_in_contract: bool = Form(False),
     session: Session = Depends(get_session),
 ):
     payload = BeltLineCreate(
@@ -3376,6 +3381,7 @@ async def create_belt_line(
         reference=reference.strip(),
         quantity=quantity,
         order_week=(order_week.strip().upper() if order_week else None),
+        included_in_contract=included_in_contract,
     )
     crud.create_belt_line(session, payload)
     return RedirectResponse("/filtres-courroies", status_code=303)
@@ -3390,6 +3396,7 @@ async def update_belt_line(
     reference: str = Form(...),
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
+    included_in_contract: bool = Form(False),
     filters_q: Optional[str] = Form(None),
     belts_q: Optional[str] = Form(None),
     return_anchor: Optional[str] = Form(None),
@@ -3404,6 +3411,7 @@ async def update_belt_line(
         reference=reference.strip(),
         quantity=quantity,
         order_week=(order_week.strip() if order_week else None),
+        included_in_contract=included_in_contract,
     )
 
     updated = crud.update_belt_line(session, line_id, payload)
@@ -4123,6 +4131,7 @@ def _build_filter_import_template() -> BytesIO:
         "dimensions",
         "quantity",
         "order_week",
+        "included_in_contract",
     ]
     sheet.append(headers)
 
@@ -4135,6 +4144,7 @@ def _build_filter_import_template() -> BytesIO:
             "dimensions": "592 x 592 x 47",
             "quantity": 3,
             "order_week": "S12",
+            "included_in_contract": "Oui",
         },
         {
             "site": "Siège social",
@@ -4144,6 +4154,7 @@ def _build_filter_import_template() -> BytesIO:
             "dimensions": "287 x 592 x 635",
             "quantity": 2,
             "order_week": "S22",
+            "included_in_contract": "Non",
         },
     ]
 
@@ -4174,7 +4185,14 @@ def _build_belt_import_template() -> BytesIO:
     sheet = workbook.active
     sheet.title = "Courroies"
 
-    headers = ["site", "equipment", "reference", "quantity", "order_week"]
+    headers = [
+        "site",
+        "equipment",
+        "reference",
+        "quantity",
+        "order_week",
+        "included_in_contract",
+    ]
     sheet.append(headers)
 
     sample_rows = [
@@ -4184,6 +4202,7 @@ def _build_belt_import_template() -> BytesIO:
             "reference": "SPB-2000",
             "quantity": 2,
             "order_week": "S08",
+            "included_in_contract": "Oui",
         },
         {
             "site": "Usine Est",
@@ -4191,6 +4210,7 @@ def _build_belt_import_template() -> BytesIO:
             "reference": "XPZ-1250",
             "quantity": 3,
             "order_week": "S30",
+            "included_in_contract": "Oui",
         },
         {
             "site": "Entrepôt Sud",
@@ -4198,6 +4218,7 @@ def _build_belt_import_template() -> BytesIO:
             "reference": "SPC-1780",
             "quantity": 1,
             "order_week": "",
+            "included_in_contract": "Non",
         },
     ]
 

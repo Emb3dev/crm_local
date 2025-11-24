@@ -397,6 +397,9 @@ class FilterLineBase(SQLModel):
     order_week: Optional[str] = Field(
         default=None, description="Semaine de commande (format S01, S02…)"
     )
+    included_in_contract: bool = Field(
+        default=False, description="Filtre inclus dans le contrat"
+    )
 
 
 class FilterLine(FilterLineBase, table=True):
@@ -416,6 +419,7 @@ class FilterLineUpdate(SQLModel):
     dimensions: Optional[str] = None
     quantity: Optional[int] = None
     order_week: Optional[str] = None
+    included_in_contract: Optional[bool] = None
 
 
 # =======================
@@ -429,6 +433,9 @@ class BeltLineBase(SQLModel):
     reference: str = Field(description="Référence de la courroie")
     quantity: int = Field(default=1, description="Quantité requise")
     order_week: Optional[str] = Field(default=None, description="Semaine de commande (S01…)")
+    included_in_contract: bool = Field(
+        default=False, description="Courroie incluse dans le contrat"
+    )
 
 
 class BeltLine(BeltLineBase, table=True):
@@ -446,6 +453,7 @@ class BeltLineUpdate(SQLModel):
     reference: Optional[str] = None
     quantity: Optional[int] = None
     order_week: Optional[str] = None
+    included_in_contract: Optional[bool] = None
 
 
 # =======================

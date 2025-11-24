@@ -105,6 +105,20 @@
             <input name="order_week" type="text" placeholder="Ex : S12" value="{{ editing_filter.order_week if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
           <label class="space-y-2 sm:col-span-2 {{ form_label() }}">
+            Inclus au contrat
+            <div class="relative">
+              <select name="included_in_contract" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                <option value="true" {% if (is_editing_filter and editing_filter.included_in_contract) or (not is_editing_filter) %}selected{% endif %}>Oui</option>
+                <option value="false" {% if is_editing_filter and not editing_filter.included_in_contract %}selected{% endif %}>Non</option>
+              </select>
+              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </div>
+          </label>
+          <label class="space-y-2 sm:col-span-2 {{ form_label() }}">
             Dimensions
             <input name="dimensions" type="text" placeholder="Ex : 592 x 592 x 47" value="{{ editing_filter.dimensions if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
@@ -126,7 +140,7 @@
           <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/60 dark:bg-indigo-500/90 dark:hover:bg-indigo-400">Importer</button>
         </form>
         <div class="space-y-2 text-xs text-slate-500 transition-colors duration-300 dark:text-slate-400">
-          <p>Colonnes attendues : <code class="font-mono text-indigo-600 dark:text-indigo-200">site</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">equipment</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">format_type</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">efficiency</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">dimensions</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">quantity</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">order_week</code>.</p>
+          <p>Colonnes attendues : <code class="font-mono text-indigo-600 dark:text-indigo-200">site</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">equipment</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">format_type</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">efficiency</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">dimensions</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">quantity</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">order_week</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">included_in_contract</code> (Oui/Non).</p>
           <a class="inline-flex items-center gap-2 text-indigo-600 underline-offset-4 transition hover:underline dark:text-indigo-200" href="/filtres-courroies/filtres/import/template">Télécharger le modèle Excel</a>
         </div>
       </div>
@@ -167,6 +181,7 @@
             <th class="py-3 pr-4">Dimensions</th>
             <th class="py-3 pr-4">Quantité</th>
             <th class="py-3 pr-4">Semaine commande</th>
+            <th class="py-3 pr-4">Inclus contrat</th>
             <th class="py-3 text-right">Action</th>
           </tr>
         </thead>
@@ -262,6 +277,23 @@
                       class="{{ form_control('border-indigo-200 bg-white shadow-sm focus:border-indigo-400 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:shadow-indigo-500/20 dark:focus:border-indigo-200') }}"
                     />
                   </td>
+                  <td class="py-3 pr-4">
+                    <div class="relative">
+                      <select
+                        form="filter-inline-{{ line.id }}"
+                        name="included_in_contract"
+                        class="nova-select peer w-full rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
+                      >
+                        <option value="true" {% if editing_filter.included_in_contract %}selected{% endif %}>Oui</option>
+                        <option value="false" {% if not editing_filter.included_in_contract %}selected{% endif %}>Non</option>
+                      </select>
+                      <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                        </svg>
+                      </span>
+                    </div>
+                  </td>
                   <td class="py-3 text-right">
                     <div class="flex justify-end gap-2">
                       <a
@@ -287,6 +319,16 @@
                   <td class="py-3 pr-4">{{ line.dimensions or '—' }}</td>
                   <td class="py-3 pr-4">{{ line.quantity }}</td>
                   <td class="py-3 pr-4">{{ line.order_week or '—' }}</td>
+                  <td class="py-3 pr-4">
+                    {% set contract_classes = 'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm ' %}
+                    {% if line.included_in_contract %}
+                      {% set contract_classes = contract_classes ~ 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/40 dark:bg-sky-500/10 dark:text-sky-100' %}
+                      <span class="{{ contract_classes }}">Oui</span>
+                    {% else %}
+                      {% set contract_classes = contract_classes ~ 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100' %}
+                      <span class="{{ contract_classes }}">Non</span>
+                    {% endif %}
+                  </td>
                   <td class="py-3 text-right">
                     <div class="flex justify-end gap-2">
                       <a href="/filtres-courroies?edit_filter={{ line.id }}{% if filters_q %}&filters_q={{ filters_q|urlencode }}{% endif %}{% if belts_q %}&belts_q={{ belts_q|urlencode }}{% endif %}#filter-{{ line.id }}" class="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-white px-3 py-1 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20">Modifier</a>
@@ -300,7 +342,7 @@
             {% endfor %}
           {% else %}
             <tr>
-              <td colspan="8" class="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
+              <td colspan="9" class="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
                 {% if filters_q %}
                   Aucun filtre ne correspond à « {{ filters_q }} ».
                 {% else %}
@@ -348,6 +390,20 @@
             Semaine de commande
             <input name="order_week" type="text" placeholder="Ex : S12" value="{{ editing_belt.order_week if is_editing_belt else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
+          <label class="space-y-2 sm:col-span-2 {{ form_label() }}">
+            Inclus au contrat
+            <div class="relative">
+              <select name="included_in_contract" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                <option value="true" {% if (is_editing_belt and editing_belt.included_in_contract) or (not is_editing_belt) %}selected{% endif %}>Oui</option>
+                <option value="false" {% if is_editing_belt and not editing_belt.included_in_contract %}selected{% endif %}>Non</option>
+              </select>
+              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </div>
+          </label>
         </div>
         <div class="flex flex-wrap items-center justify-between gap-3">
           {% if is_editing_belt %}
@@ -366,7 +422,7 @@
           <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/60 dark:bg-indigo-500/90 dark:hover:bg-indigo-400">Importer</button>
         </form>
         <div class="space-y-2 text-xs text-slate-500 transition-colors duration-300 dark:text-slate-400">
-          <p>Colonnes attendues : <code class="font-mono text-indigo-600 dark:text-indigo-200">site</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">equipment</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">reference</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">quantity</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">order_week</code>.</p>
+          <p>Colonnes attendues : <code class="font-mono text-indigo-600 dark:text-indigo-200">site</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">equipment</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">reference</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">quantity</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">order_week</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">included_in_contract</code> (Oui/Non).</p>
           <a class="inline-flex items-center gap-2 text-indigo-600 underline-offset-4 transition hover:underline dark:text-indigo-200" href="/filtres-courroies/courroies/import/template">Télécharger le modèle Excel</a>
         </div>
       </div>
@@ -405,6 +461,7 @@
             <th class="py-3 pr-4">Référence</th>
             <th class="py-3 pr-4">Quantité</th>
             <th class="py-3 pr-4">Semaine commande</th>
+            <th class="py-3 pr-4">Inclus contrat</th>
             <th class="py-3 text-right">Action</th>
           </tr>
         </thead>
@@ -472,6 +529,23 @@
                       class="{{ form_control('border-indigo-200 bg-white shadow-sm focus:border-indigo-400 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:shadow-indigo-500/20 dark:focus:border-indigo-200') }}"
                     />
                   </td>
+                  <td class="py-3 pr-4">
+                    <div class="relative">
+                      <select
+                        form="belt-inline-{{ line.id }}"
+                        name="included_in_contract"
+                        class="nova-select peer w-full rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
+                      >
+                        <option value="true" {% if editing_belt.included_in_contract %}selected{% endif %}>Oui</option>
+                        <option value="false" {% if not editing_belt.included_in_contract %}selected{% endif %}>Non</option>
+                      </select>
+                      <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                        </svg>
+                      </span>
+                    </div>
+                  </td>
                   <td class="py-3 text-right">
                     <div class="flex justify-end gap-2">
                       <a
@@ -495,6 +569,16 @@
                   <td class="py-3 pr-4">{{ line.reference }}</td>
                   <td class="py-3 pr-4">{{ line.quantity }}</td>
                   <td class="py-3 pr-4">{{ line.order_week or '—' }}</td>
+                  <td class="py-3 pr-4">
+                    {% set contract_classes = 'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm ' %}
+                    {% if line.included_in_contract %}
+                      {% set contract_classes = contract_classes ~ 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/40 dark:bg-sky-500/10 dark:text-sky-100' %}
+                      <span class="{{ contract_classes }}">Oui</span>
+                    {% else %}
+                      {% set contract_classes = contract_classes ~ 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100' %}
+                      <span class="{{ contract_classes }}">Non</span>
+                    {% endif %}
+                  </td>
                   <td class="py-3 text-right">
                     <div class="flex justify-end gap-2">
                       <a href="/filtres-courroies?edit_belt={{ line.id }}{% if filters_q %}&filters_q={{ filters_q|urlencode }}{% endif %}{% if belts_q %}&belts_q={{ belts_q|urlencode }}{% endif %}#belt-{{ line.id }}" class="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-white px-3 py-1 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20">Modifier</a>
@@ -508,7 +592,7 @@
             {% endfor %}
           {% else %}
             <tr>
-              <td colspan="6" class="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
+              <td colspan="7" class="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
                 {% if belts_q %}
                   Aucune courroie ne correspond à « {{ belts_q }} ».
                 {% else %}
