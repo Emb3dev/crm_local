@@ -3279,11 +3279,7 @@ async def update_filter_line(
         query = urlencode(redirect_params)
         redirect_base = f"{redirect_base}?{query}"
 
-    redirect_url = (
-        f"{redirect_base}#{return_anchor}" if return_anchor else redirect_base
-    )
-
-    return RedirectResponse(redirect_url, status_code=303)
+    return RedirectResponse(redirect_base, status_code=303)
 
 
 @app.post("/filtres-courroies/courroies/{line_id}/toggle-ordered")
@@ -3314,10 +3310,7 @@ def toggle_belt_line_ordered(
         query = urlencode(redirect_params)
         redirect_base = f"{redirect_base}?{query}"
 
-    anchor = return_anchor or f"belt-{line_id}"
-    redirect_url = f"{redirect_base}#{anchor}"
-
-    return RedirectResponse(redirect_url, status_code=303)
+    return RedirectResponse(redirect_base, status_code=303)
 
 
 @app.post("/filtres-courroies/courroies/bulk-actions")
@@ -3356,10 +3349,7 @@ def bulk_manage_belt_lines(
         query = urlencode(redirect_params)
         redirect_base = f"{redirect_base}?{query}"
 
-    anchor = return_anchor or "belts-list"
-    redirect_url = f"{redirect_base}#{anchor}"
-
-    return RedirectResponse(redirect_url, status_code=303)
+    return RedirectResponse(redirect_base, status_code=303)
 
 
 @app.post("/filtres-courroies/filtres/{line_id}/toggle-ordered")
@@ -3390,10 +3380,7 @@ def toggle_filter_line_ordered(
         query = urlencode(redirect_params)
         redirect_base = f"{redirect_base}?{query}"
 
-    anchor = return_anchor or f"filter-{line_id}"
-    redirect_url = f"{redirect_base}#{anchor}"
-
-    return RedirectResponse(redirect_url, status_code=303)
+    return RedirectResponse(redirect_base, status_code=303)
 
 
 @app.post("/filtres-courroies/filtres/bulk-actions")
@@ -3432,10 +3419,7 @@ def bulk_manage_filter_lines(
         query = urlencode(redirect_params)
         redirect_base = f"{redirect_base}?{query}"
 
-    anchor = return_anchor or "filters-list"
-    redirect_url = f"{redirect_base}#{anchor}"
-
-    return RedirectResponse(redirect_url, status_code=303)
+    return RedirectResponse(redirect_base, status_code=303)
 
 
 @app.post("/filtres-courroies/filtres/import")
@@ -3589,11 +3573,7 @@ async def update_belt_line(
         query = urlencode(redirect_params)
         redirect_base = f"{redirect_base}?{query}"
 
-    redirect_url = (
-        f"{redirect_base}#{return_anchor}" if return_anchor else redirect_base
-    )
-
-    return RedirectResponse(redirect_url, status_code=303)
+    return RedirectResponse(redirect_base, status_code=303)
 
 
 @app.post("/filtres-courroies/courroies/import")
