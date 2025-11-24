@@ -3367,7 +3367,10 @@ def bulk_manage_belt_lines(
 ):
     action, _, state = bulk_action.partition(":")
 
-    if action == "ordered":
+    if action == "copy":
+        # Action de consultation copiée côté client (aucune mutation côté serveur)
+        pass
+    elif action == "ordered":
         ordered_flag = state.lower() == "true"
         crud.bulk_update_belt_lines_ordered(session, line_ids, ordered_flag)
     elif action == "contract":
@@ -3437,7 +3440,10 @@ def bulk_manage_filter_lines(
 ):
     action, _, state = bulk_action.partition(":")
 
-    if action == "ordered":
+    if action == "copy":
+        # Action de consultation copiée côté client (aucune mutation côté serveur)
+        pass
+    elif action == "ordered":
         ordered_flag = state.lower() == "true"
         crud.bulk_update_filter_lines_ordered(session, line_ids, ordered_flag)
     elif action == "contract":
