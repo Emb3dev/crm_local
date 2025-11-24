@@ -969,6 +969,43 @@
         return `${label} :\n${header}\n${lines.join("\n")}`;
       }
 
+      function fallbackCopyToClipboard(text) {
+        return new Promise((resolve, reject) => {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "absolute";
+          textarea.style.left = "-9999px";
+          document.body.appendChild(textarea);
+
+          const selection = document.getSelection();
+          const selectedRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+          textarea.select();
+          const copied = document.execCommand("copy");
+          textarea.remove();
+
+          if (selectedRange && selection) {
+            selection.removeAllRanges();
+            selection.addRange(selectedRange);
+          }
+
+          if (copied) {
+            resolve();
+          } else {
+            reject(new Error("Copy command failed"));
+          }
+        });
+      }
+
+      function writeToClipboard(text) {
+        if (navigator.clipboard?.writeText) {
+          return navigator.clipboard.writeText(text);
+        }
+
+        return fallbackCopyToClipboard(text);
+      }
+
       function copyConsultation(form) {
         const actionSelect = form.querySelector('select[name="bulk_action"]');
         if (!actionSelect || actionSelect.value !== COPY_ACTION_VALUE) return false;
@@ -991,8 +1028,7 @@
         const table = buildTable(label, rows, fields);
         const body = `${CONSULTATION_INTRO}${table}${CONSULTATION_FOOTER}`;
 
-        navigator.clipboard
-          .writeText(body)
+        writeToClipboard(body)
           .then(() => {
             alert("Consultation copiée dans le presse-papiers.");
           })
