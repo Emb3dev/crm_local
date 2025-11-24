@@ -139,7 +139,7 @@
         </div>
         <div class="flex flex-wrap items-center justify-between gap-3">
           {% if is_editing_filter %}
-            <a href="/filtres-courroies#filters-form" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:border-white/15 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/20">Annuler</a>
+            <a href="/filtres-courroies" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:border-white/15 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/20">Annuler</a>
           {% endif %}
           <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-500 px-5 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/60 dark:bg-indigo-500/90 dark:hover:bg-indigo-400">
             {{ 'Mettre à jour le filtre' if is_editing_filter else 'Ajouter le filtre' }}
@@ -197,7 +197,6 @@
         {% if belts_q %}
           <input type="hidden" name="belts_q" value="{{ belts_q }}" />
         {% endif %}
-        <input type="hidden" name="return_anchor" value="filters-list" />
         <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
           Action sélection
           <div class="relative">
@@ -260,7 +259,6 @@
                   {% if belts_q %}
                     <input type="hidden" form="filter-inline-{{ line.id }}" name="belts_q" value="{{ belts_q }}" />
                   {% endif %}
-                  <input type="hidden" form="filter-inline-{{ line.id }}" name="return_anchor" value="filter-{{ line.id }}" />
                   <td class="py-3 pr-4">—</td>
                   <td id="filter-{{ line.id }}" class="py-3 pr-4">
                     <input
@@ -428,7 +426,6 @@
                       {% if belts_q %}
                         <input type="hidden" name="belts_q" value="{{ belts_q }}" />
                       {% endif %}
-                      <input type="hidden" name="return_anchor" value="filter-{{ line.id }}" />
                       {% set ordered_classes = 'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm transition focus:outline-none focus-visible:ring-2 ' %}
                       {% if line.ordered %}
                         {% set ordered_classes = ordered_classes ~ 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 focus-visible:ring-emerald-200 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100 dark:hover:bg-emerald-500/20 dark:focus-visible:ring-emerald-300' %}
@@ -588,7 +585,6 @@
         {% if belts_q %}
           <input type="hidden" name="belts_q" value="{{ belts_q }}" />
         {% endif %}
-        <input type="hidden" name="return_anchor" value="belts-list" />
         <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
           Action sélection
           <div class="relative">
@@ -649,7 +645,6 @@
                   {% if belts_q %}
                     <input type="hidden" form="belt-inline-{{ line.id }}" name="belts_q" value="{{ belts_q }}" />
                   {% endif %}
-                  <input type="hidden" form="belt-inline-{{ line.id }}" name="return_anchor" value="belt-{{ line.id }}" />
                   <td class="py-3 pr-4">—</td>
                   <td id="belt-{{ line.id }}" class="py-3 pr-4">
                     <input
@@ -787,7 +782,6 @@
                       {% if belts_q %}
                         <input type="hidden" name="belts_q" value="{{ belts_q }}" />
                       {% endif %}
-                      <input type="hidden" name="return_anchor" value="belt-{{ line.id }}" />
                       {% set ordered_classes = 'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm transition focus:outline-none focus-visible:ring-2 ' %}
                       {% if line.ordered %}
                         {% set ordered_classes = ordered_classes ~ 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 focus-visible:ring-emerald-200 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100 dark:hover:bg-emerald-500/20 dark:focus-visible:ring-emerald-300' %}
@@ -854,4 +848,29 @@
     });
   })();
 </script>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    (() => {
+      const SCROLL_KEY = "consumables-scroll";
+      const forms = document.querySelectorAll("form");
+
+      forms.forEach((form) => {
+        form.addEventListener("submit", () => {
+          sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+        });
+      });
+
+      const savedPosition = sessionStorage.getItem(SCROLL_KEY);
+      if (savedPosition !== null) {
+        sessionStorage.removeItem(SCROLL_KEY);
+        const parsed = Number.parseFloat(savedPosition);
+        if (!Number.isNaN(parsed)) {
+          window.scrollTo({ top: parsed });
+        }
+      }
+    })();
+  </script>
 {% endblock %}
