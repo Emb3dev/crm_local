@@ -114,6 +114,16 @@
             />
           </label>
           <label class="space-y-2 {{ form_label() }}">
+            Info +
+            <input
+              name="info_plus"
+              type="text"
+              placeholder="Ex : + GRILLAGE"
+              value="{{ editing_filter.info_plus if is_editing_filter else '' }}"
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
+            />
+          </label>
+          <label class="space-y-2 {{ form_label() }}">
             Quantité
             <input name="quantity" type="number" min="1" step="1" value="{{ editing_filter.quantity if is_editing_filter else 1 }}" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
@@ -171,7 +181,7 @@
           <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/60 dark:bg-indigo-500/90 dark:hover:bg-indigo-400">Importer</button>
         </form>
         <div class="space-y-2 text-xs text-slate-500 transition-colors duration-300 dark:text-slate-400">
-          <p>Colonnes attendues : <code class="font-mono text-indigo-600 dark:text-indigo-200">site</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">equipment</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">format_type</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">efficiency</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">dimensions</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">pocket_count</code> (si format poche), <code class="font-mono text-indigo-600 dark:text-indigo-200">quantity</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">order_week</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">included_in_contract</code> (Oui/Non), <code class="font-mono text-indigo-600 dark:text-indigo-200">ordered</code> (Oui/Non).</p>
+          <p>Colonnes attendues : <code class="font-mono text-indigo-600 dark:text-indigo-200">site</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">equipment</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">format_type</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">efficiency</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">dimensions</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">pocket_count</code> (si format poche), <code class="font-mono text-indigo-600 dark:text-indigo-200">info_plus</code> (commentaire), <code class="font-mono text-indigo-600 dark:text-indigo-200">quantity</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">order_week</code>, <code class="font-mono text-indigo-600 dark:text-indigo-200">included_in_contract</code> (Oui/Non), <code class="font-mono text-indigo-600 dark:text-indigo-200">ordered</code> (Oui/Non).</p>
           <a class="inline-flex items-center gap-2 text-indigo-600 underline-offset-4 transition hover:underline dark:text-indigo-200" href="/filtres-courroies/filtres/import/template">Télécharger le modèle Excel</a>
         </div>
       </div>
@@ -256,6 +266,7 @@
             <th class="py-3 pr-4">Équipement</th>
             <th class="py-3 pr-4">Format</th>
             <th class="py-3 pr-4">Nb poches</th>
+            <th class="py-3 pr-4">Info +</th>
             <th class="py-3 pr-4">Efficacité</th>
             <th class="py-3 pr-4">Dimensions</th>
             <th class="py-3 pr-4">Quantité</th>
@@ -331,6 +342,16 @@
                       step="1"
                       value="{{ editing_filter.pocket_count or '' }}"
                       {% if editing_filter.format_type == 'poche' %}required{% endif %}
+                      class="{{ form_control('border-indigo-200 bg-white shadow-sm focus:border-indigo-400 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:shadow-indigo-500/20 dark:focus:border-indigo-200') }}"
+                    />
+                  </td>
+                  <td class="py-3 pr-4">
+                    <input
+                      form="filter-inline-{{ line.id }}"
+                      name="info_plus"
+                      type="text"
+                      placeholder="Ex : + GRILLAGE"
+                      value="{{ editing_filter.info_plus or '' }}"
                       class="{{ form_control('border-indigo-200 bg-white shadow-sm focus:border-indigo-400 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:shadow-indigo-500/20 dark:focus:border-indigo-200') }}"
                     />
                   </td>
@@ -445,6 +466,7 @@
                       —
                     {% endif %}
                   </td>
+                  <td class="py-3 pr-4">{{ line.info_plus or '—' }}</td>
                   <td class="py-3 pr-4">{{ line.efficiency or '—' }}</td>
                   <td class="py-3 pr-4">{{ line.dimensions or '—' }}</td>
                   <td class="py-3 pr-4">{{ line.quantity }}</td>
@@ -489,7 +511,7 @@
             {% endfor %}
           {% else %}
             <tr>
-              <td colspan="12" class="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
+              <td colspan="13" class="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
                 {% if filters_q %}
                   Aucun filtre ne correspond à « {{ filters_q }} ».
                 {% else %}

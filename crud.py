@@ -1013,6 +1013,7 @@ def list_filter_lines(
             | FilterLine.dimensions.ilike(like)
             | FilterLine.order_week.ilike(like)
             | FilterLine.format_type.ilike(like)
+            | FilterLine.info_plus.ilike(like)
         )
     return session.exec(stmt).all()
 
