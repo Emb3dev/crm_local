@@ -9,7 +9,7 @@ import re
 from types import SimpleNamespace
 from datetime import datetime, timedelta
 from io import BytesIO
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from fastapi import (
     FastAPI,
@@ -3235,6 +3235,9 @@ async def update_filter_line(
     dimensions: Optional[str] = Form(None),
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
+    filters_q: Optional[str] = Form(None),
+    belts_q: Optional[str] = Form(None),
+    return_anchor: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
     if format_type not in FILTER_FORMAT_LABELS:
@@ -3257,7 +3260,22 @@ async def update_filter_line(
     if not updated:
         raise HTTPException(status_code=404, detail="Ligne filtre introuvable")
 
-    return RedirectResponse("/filtres-courroies", status_code=303)
+    redirect_params = []
+    if filters_q:
+        redirect_params.append(("filters_q", filters_q))
+    if belts_q:
+        redirect_params.append(("belts_q", belts_q))
+
+    redirect_base = "/filtres-courroies"
+    if redirect_params:
+        query = urlencode(redirect_params)
+        redirect_base = f"{redirect_base}?{query}"
+
+    redirect_url = (
+        f"{redirect_base}#{return_anchor}" if return_anchor else redirect_base
+    )
+
+    return RedirectResponse(redirect_url, status_code=303)
 
 
 @app.post("/filtres-courroies/filtres/import")
@@ -3372,6 +3390,9 @@ async def update_belt_line(
     reference: str = Form(...),
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
+    filters_q: Optional[str] = Form(None),
+    belts_q: Optional[str] = Form(None),
+    return_anchor: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
     if quantity < 1:
@@ -3389,7 +3410,22 @@ async def update_belt_line(
     if not updated:
         raise HTTPException(status_code=404, detail="Ligne courroie introuvable")
 
-    return RedirectResponse("/filtres-courroies", status_code=303)
+    redirect_params = []
+    if filters_q:
+        redirect_params.append(("filters_q", filters_q))
+    if belts_q:
+        redirect_params.append(("belts_q", belts_q))
+
+    redirect_base = "/filtres-courroies"
+    if redirect_params:
+        query = urlencode(redirect_params)
+        redirect_base = f"{redirect_base}?{query}"
+
+    redirect_url = (
+        f"{redirect_base}#{return_anchor}" if return_anchor else redirect_base
+    )
+
+    return RedirectResponse(redirect_url, status_code=303)
 
 
 @app.post("/filtres-courroies/courroies/import")

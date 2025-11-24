@@ -176,6 +176,13 @@
               <tr class="transition-colors duration-300 hover:bg-indigo-50/40 dark:hover:bg-indigo-500/10">
                 {% if is_editing_filter and editing_filter.id == line.id %}
                   <form id="filter-inline-{{ line.id }}" method="post" action="/filtres-courroies/filtres/{{ line.id }}/update"></form>
+                  {% if filters_q %}
+                    <input type="hidden" form="filter-inline-{{ line.id }}" name="filters_q" value="{{ filters_q }}" />
+                  {% endif %}
+                  {% if belts_q %}
+                    <input type="hidden" form="filter-inline-{{ line.id }}" name="belts_q" value="{{ belts_q }}" />
+                  {% endif %}
+                  <input type="hidden" form="filter-inline-{{ line.id }}" name="return_anchor" value="filter-{{ line.id }}" />
                   <td id="filter-{{ line.id }}" class="py-3 pr-4">
                     <input
                       form="filter-inline-{{ line.id }}"
@@ -407,6 +414,13 @@
               <tr class="transition-colors duration-300 hover:bg-indigo-50/40 dark:hover:bg-indigo-500/10">
                 {% if is_editing_belt and editing_belt.id == line.id %}
                   <form id="belt-inline-{{ line.id }}" method="post" action="/filtres-courroies/courroies/{{ line.id }}/update"></form>
+                  {% if filters_q %}
+                    <input type="hidden" form="belt-inline-{{ line.id }}" name="filters_q" value="{{ filters_q }}" />
+                  {% endif %}
+                  {% if belts_q %}
+                    <input type="hidden" form="belt-inline-{{ line.id }}" name="belts_q" value="{{ belts_q }}" />
+                  {% endif %}
+                  <input type="hidden" form="belt-inline-{{ line.id }}" name="return_anchor" value="belt-{{ line.id }}" />
                   <td id="belt-{{ line.id }}" class="py-3 pr-4">
                     <input
                       form="belt-inline-{{ line.id }}"
