@@ -88,51 +88,58 @@
   </div>
 
   <section class="{{ card_shell() }}">
-    <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+    <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="space-y-2">
         <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Clients</h2>
         <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Consultez et filtrez votre portefeuille client.</p>
       </div>
-      <form class="{{ form_panel() }}" role="search" hx-get="/_clients" hx-target="#list" hx-trigger="keyup changed delay:300ms">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <label class="flex-1 {{ form_label() }}">
-            <span class="sr-only">Rechercher un client</span>
-            <input type="text" name="q" placeholder="Rechercher (entreprise, client, contact…)" value="{{ q }}" aria-label="Rechercher un client" class="mt-1 {{ form_control('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70') }}" />
-          </label>
-          <div class="flex items-center gap-3 sm:w-auto">
-            <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400">Filtrer</button>
-            <a href="/" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:focus-visible:ring-white/40">Réinitialiser</a>
-          </div>
-        </div>
-        {% set active = active_filters or {} %}
-        {% if filters_definition %}
-          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {% for field in filters_definition %}
-              <label class="space-y-1 {{ form_label() }}">
-                <span>{{ field.label }}</span>
-                <div class="relative">
-                  <select
-                    name="{{ field.name }}"
-                    class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}"
-                  >
-                    <option value="">{{ field.placeholder }}</option>
-                    {% for value, label in field.options %}
-                      <option value="{{ value }}" {% if active.get(field.name) == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                  <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                    </svg>
-                  </span>
-                </div>
-              </label>
-            {% endfor %}
-          </div>
-        {% endif %}
-      </form>
+      <div class="flex flex-wrap items-center gap-3">
+        <a
+          href="/clients/new"
+          class="inline-flex items-center justify-center rounded-full border border-indigo-300 bg-indigo-500/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-700 transition hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20"
+        >Ajouter un client</a>
+        <span class="rounded-full border border-slate-200 bg-white px-4 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">{{ clients|length }} client{{ 's' if clients|length > 1 else '' }}</span>
+      </div>
     </div>
 
+    <form class="mt-6 {{ form_panel() }}" role="search" hx-get="/_clients" hx-target="#list" hx-trigger="keyup changed delay:300ms">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label class="flex-1 {{ form_label() }}">
+          <span class="sr-only">Rechercher un client</span>
+          <input type="text" name="q" placeholder="Rechercher (entreprise, client, contact…)" value="{{ q }}" aria-label="Rechercher un client" class="mt-1 {{ form_control('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70') }}" />
+        </label>
+        <div class="flex items-center gap-3 sm:w-auto">
+          <button type="submit" class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400">Filtrer</button>
+          <a href="/" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:focus-visible:ring-white/40">Réinitialiser</a>
+        </div>
+      </div>
+      {% set active = active_filters or {} %}
+      {% if filters_definition %}
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {% for field in filters_definition %}
+            <label class="space-y-1 {{ form_label() }}">
+              <span>{{ field.label }}</span>
+              <div class="relative">
+                <select
+                  name="{{ field.name }}"
+                  class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}"
+                >
+                  <option value="">{{ field.placeholder }}</option>
+                  {% for value, label in field.options %}
+                    <option value="{{ value }}" {% if active.get(field.name) == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            </label>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </form>
     <div id="list" class="mt-8 space-y-6">
       {% if clients %}
         {% for c in clients %}
@@ -221,6 +228,16 @@
                 </section>
               </div>
 
+              <div class="flex flex-wrap items-center justify-end gap-3">
+                <a
+                  href="/clients/{{ c.id }}/edit"
+                  class="inline-flex items-center justify-center rounded-full border border-indigo-300 bg-indigo-500/10 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20"
+                >Modifier le client</a>
+                <form action="/clients/{{ c.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ company_name }} ?')">
+                  <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" type="submit">Supprimer le client</button>
+                </form>
+              </div>
+
               <section class="space-y-6">
                 <div class="flex flex-wrap items-center justify-between gap-4">
                   <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Contacts</h4>
@@ -305,114 +322,6 @@
                 </div>
               </section>
 
-              <details class="group rounded-2xl border border-slate-200 bg-white/80 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
-                <summary class="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:text-indigo-200 dark:hover:text-indigo-100 dark:focus-visible:ring-indigo-400">
-                  Modifier le client
-                  <span class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-indigo-100 bg-indigo-50 text-indigo-500 transition-transform duration-300 group-open:rotate-180 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
-                    </svg>
-                  </span>
-                </summary>
-                <div class="border-t border-slate-200 px-4 py-4 transition-colors duration-300 dark:border-white/10">
-                  {% set selected_depannage = c.depannage or 'non_refacturable' %}
-                  {% set selected_astreinte = c.astreinte or 'pas_d_astreinte' %}
-                  {% set selected_status = status_key or 'actif' %}
-                  <form action="/clients/{{ c.id }}/edit" method="post" class="grid gap-4 md:grid-cols-2">
-                    <label class="{{ form_label() }}">
-                      <span>Nom entreprise *</span>
-                      <input name="company_name" list="entreprise-names" required value="{{ company_name }}" placeholder="Ex: Dupont SARL" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Contact principal *</span>
-                      <input name="name" required value="{{ c.name or '' }}" placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Email du contact</span>
-                      <input name="email" type="email" value="{{ c.email or '' }}" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Téléphone du contact</span>
-                      <input name="phone" value="{{ c.phone or '' }}" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Technicien référent</span>
-                      <input name="technician_name" value="{{ c.technician_name or '' }}" placeholder="Ex: Luc Garnier" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                    </label>
-                    <label class="md:col-span-2 {{ form_label() }}">
-                      <span>Adresse de facturation</span>
-                      <textarea name="billing_address" rows="3" placeholder="Rue, code postal, ville…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70">{{ billing_address or '' }}</textarea>
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Dépannage</span>
-                      <div class="relative mt-2">
-                        <select
-                          name="depannage"
-                          class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
-                        >
-                          {% for value, label in depannage_options.items() %}
-                            <option value="{{ value }}" {% if selected_depannage == value %}selected{% endif %}>{{ label }}</option>
-                          {% endfor %}
-                        </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                          </svg>
-                        </span>
-                      </div>
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Astreinte</span>
-                      <div class="relative mt-2">
-                        <select
-                          name="astreinte"
-                          class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
-                        >
-                          {% for value, label in astreinte_options.items() %}
-                            <option value="{{ value }}" {% if selected_astreinte == value %}selected{% endif %}>{{ label }}</option>
-                          {% endfor %}
-                        </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                          </svg>
-                        </span>
-                      </div>
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Tags</span>
-                      <input name="tags" value="{{ tag_value or '' }}" placeholder="Ex: premium, 2024" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-                    </label>
-                    <label class="{{ form_label() }}">
-                      <span>Statut</span>
-                      <div class="relative mt-2">
-                        <select
-                          name="status"
-                          class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
-                        >
-                          {% for value, label in status_options.items() %}
-                            <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
-                          {% endfor %}
-                        </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                          </svg>
-                        </span>
-                      </div>
-                    </label>
-                    <div class="md:col-span-2 mt-2 flex justify-end">
-                      <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Enregistrer</button>
-                    </div>
-                  </form>
-                </div>
-              </details>
-
-              <div class="flex justify-end">
-                <form action="/clients/{{ c.id }}/delete" method="post" onsubmit="return confirm('Supprimer {{ company_name }} ?')">
-                  <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" type="submit">Supprimer le client</button>
-                </form>
-              </div>
             </div>
           </details>
         {% endfor %}
@@ -447,102 +356,15 @@
   <div class="{{ card_shell() }}">
     <div class="space-y-2">
       <h2 class="font-display text-2xl text-slate-900 transition-colors duration-300 dark:text-white">Nouveau client</h2>
-      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Ajoutez un dossier client en quelques informations clés.</p>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Accédez à une page dédiée pour ajouter un client avec toutes les informations nécessaires.</p>
     </div>
-    <form action="/clients/new" method="post" class="mt-6 grid gap-4 md:grid-cols-2">
-      <label class="{{ form_label() }}">
-        <span>Nom entreprise *</span>
-        <input name="company_name" list="entreprise-names" required placeholder="Ex: Dupont SARL" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Contact principal *</span>
-        <input name="name" required placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Email du contact</span>
-        <input name="email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Téléphone du contact</span>
-        <input name="phone" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Technicien référent</span>
-        <input name="technician_name" placeholder="Ex: Luc Garnier" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
-      <label class="md:col-span-2 {{ form_label() }}">
-        <span>Adresse de facturation</span>
-        <textarea name="billing_address" rows="3" placeholder="Rue, code postal, ville…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"></textarea>
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Dépannage</span>
-        <div class="relative mt-2">
-          <select
-            name="depannage"
-            class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
-          >
-            {% for value, label in depannage_options.items() %}
-              <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-            </svg>
-          </span>
-        </div>
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Astreinte</span>
-        <div class="relative mt-2">
-          <select
-            name="astreinte"
-            class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
-          >
-            {% for value, label in astreinte_options.items() %}
-              <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-            </svg>
-          </span>
-        </div>
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Tags</span>
-        <input name="tags" placeholder="Ex: premium, 2024" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
-      </label>
-      <label class="{{ form_label() }}">
-        <span>Statut</span>
-        <div class="relative mt-2">
-          <select
-            name="status"
-            class="peer nova-select w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-indigo-100/40 transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70"
-          >
-            {% for value, label in status_options.items() %}
-              <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-            </svg>
-          </span>
-        </div>
-      </label>
-      <div class="md:col-span-2 mt-2 flex justify-end">
-        <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-6 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Ajouter</button>
-      </div>
-    </form>
+    <div class="mt-6 flex flex-wrap items-center gap-4">
+      <a
+        href="/clients/new"
+        class="inline-flex items-center justify-center rounded-full border border-indigo-300 bg-indigo-500/10 px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.3em] text-indigo-700 transition hover:bg-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20"
+      >Ajouter un client</a>
+      <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">Retrouvez un formulaire complet sur une page dédiée pour saisir ou corriger les informations client.</p>
+    </div>
   </div>
 </section>
-
-<datalist id="entreprise-names">
-  {% for name in entreprise_name_options %}
-    <option value="{{ name }}"></option>
-  {% endfor %}
-</datalist>
-
 {% endblock %}

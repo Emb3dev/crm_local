@@ -50,7 +50,7 @@
 
     {% set current_user = request.scope.get('state', {}).get('user') %}
     {% set current_path = request.url.path %}
-    {% set clients_active = current_path == '/' %}
+    {% set clients_active = current_path == '/' or current_path.startswith('/clients') %}
     {% set suppliers_active = current_path.startswith('/fournisseurs') %}
     {% set prestations_active = current_path.startswith('/prestations') %}
     {% set consumables_active = current_path.startswith('/filtres-courroies') %}

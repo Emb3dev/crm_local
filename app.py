@@ -772,6 +772,67 @@ def _clients_context(
     }
 
 
+def _client_form_context(
+    request: Request,
+    entreprises,
+    *,
+    client=None,
+    form_values: Optional[dict] = None,
+    is_creation: bool,
+    form_action: str,
+):
+    entreprise_name_options = sorted({e.nom for e in entreprises})
+    default_values = {
+        "id": None,
+        "company_name": "",
+        "name": "",
+        "email": "",
+        "phone": "",
+        "technician_name": "",
+        "billing_address": "",
+        "depannage": "non_refacturable",
+        "astreinte": "pas_d_astreinte",
+        "tags": "",
+        "status": "actif",
+    }
+
+    if client:
+        entreprise = client.entreprise
+        default_values.update(
+            {
+                "company_name": entreprise.nom if entreprise else (client.company_name or ""),
+                "name": client.name or "",
+                "email": client.email or "",
+                "phone": client.phone or "",
+                "technician_name": client.technician_name or "",
+                "billing_address": entreprise.adresse_facturation
+                if entreprise and entreprise.adresse_facturation
+                else (client.billing_address or ""),
+                "depannage": client.depannage or "non_refacturable",
+                "astreinte": client.astreinte or "pas_d_astreinte",
+                "tags": entreprise.tag if entreprise and entreprise.tag else (client.tags or ""),
+                "status": _status_key_from_bool(entreprise.statut)
+                if entreprise and entreprise.statut is not None
+                else (client.status or "actif"),
+                "id": client.id,
+            }
+        )
+
+    merged_values = {**default_values, **(form_values or {})}
+
+    return {
+        "request": request,
+        "entreprise_name_options": entreprise_name_options,
+        "depannage_options": DEPANNAGE_OPTIONS,
+        "astreinte_options": ASTREINTE_OPTIONS,
+        "status_options": STATUS_OPTIONS,
+        "form_values": merged_values,
+        "is_creation": is_creation,
+        "form_action": form_action,
+        "return_url": request.query_params.get("return_url") or "/",
+    }
+
+
 def _suppliers_context(
     request: Request,
     suppliers,
@@ -1608,6 +1669,48 @@ def clients_page(
             filters,
             entreprises,
             subcontracted_groups,
+        ),
+    )
+
+
+@app.get("/clients/new", response_class=HTMLResponse)
+def new_client_page(
+    request: Request,
+    _current_user: CurrentUser,
+    session: Session = Depends(get_session),
+):
+    entreprises = crud.list_entreprises(session)
+    return templates.TemplateResponse(
+        "client_form.html",
+        _client_form_context(
+            request,
+            entreprises,
+            is_creation=True,
+            form_action="/clients/new",
+        ),
+    )
+
+
+@app.get("/clients/{client_id}/edit", response_class=HTMLResponse)
+def edit_client_page(
+    request: Request,
+    _current_user: CurrentUser,
+    client_id: int,
+    session: Session = Depends(get_session),
+):
+    client = crud.get_client(session, client_id)
+    if not client:
+        raise HTTPException(404, "Client introuvable")
+
+    entreprises = crud.list_entreprises(session)
+    return templates.TemplateResponse(
+        "client_form.html",
+        _client_form_context(
+            request,
+            entreprises,
+            client=client,
+            is_creation=False,
+            form_action=f"/clients/{client_id}/edit",
         ),
     )
 
