@@ -400,6 +400,7 @@ class FilterLineBase(SQLModel):
     included_in_contract: bool = Field(
         default=False, description="Filtre inclus dans le contrat"
     )
+    ordered: bool = Field(default=False, description="Filtre commandé")
 
 
 class FilterLine(FilterLineBase, table=True):
@@ -420,6 +421,7 @@ class FilterLineUpdate(SQLModel):
     quantity: Optional[int] = None
     order_week: Optional[str] = None
     included_in_contract: Optional[bool] = None
+    ordered: Optional[bool] = None
 
 
 # =======================
@@ -436,6 +438,7 @@ class BeltLineBase(SQLModel):
     included_in_contract: bool = Field(
         default=False, description="Courroie incluse dans le contrat"
     )
+    ordered: bool = Field(default=False, description="Courroie commandée")
 
 
 class BeltLine(BeltLineBase, table=True):
@@ -454,6 +457,7 @@ class BeltLineUpdate(SQLModel):
     quantity: Optional[int] = None
     order_week: Optional[str] = None
     included_in_contract: Optional[bool] = None
+    ordered: Optional[bool] = None
 
 
 # =======================
