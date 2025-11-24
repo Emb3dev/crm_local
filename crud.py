@@ -1088,6 +1088,37 @@ def bulk_update_filter_lines_ordered(
     return len(records)
 
 
+def bulk_update_filter_lines_included_in_contract(
+    session: Session, line_ids: Sequence[int], included_in_contract: bool
+) -> int:
+    if not line_ids:
+        return 0
+
+    stmt = select(FilterLine).where(FilterLine.id.in_(line_ids))
+    records = session.exec(stmt).all()
+
+    for record in records:
+        record.included_in_contract = included_in_contract
+        session.add(record)
+
+    session.commit()
+    return len(records)
+
+
+def bulk_delete_filter_lines(session: Session, line_ids: Sequence[int]) -> int:
+    if not line_ids:
+        return 0
+
+    stmt = select(FilterLine).where(FilterLine.id.in_(line_ids))
+    records = session.exec(stmt).all()
+
+    for record in records:
+        session.delete(record)
+
+    session.commit()
+    return len(records)
+
+
 def list_belt_lines(session: Session, q: Optional[str] = None) -> List[BeltLine]:
     stmt = select(BeltLine).order_by(BeltLine.created_at.desc())
     if q:
@@ -1149,6 +1180,37 @@ def bulk_update_belt_lines_ordered(
     for record in records:
         record.ordered = ordered
         session.add(record)
+
+    session.commit()
+    return len(records)
+
+
+def bulk_update_belt_lines_included_in_contract(
+    session: Session, line_ids: Sequence[int], included_in_contract: bool
+) -> int:
+    if not line_ids:
+        return 0
+
+    stmt = select(BeltLine).where(BeltLine.id.in_(line_ids))
+    records = session.exec(stmt).all()
+
+    for record in records:
+        record.included_in_contract = included_in_contract
+        session.add(record)
+
+    session.commit()
+    return len(records)
+
+
+def bulk_delete_belt_lines(session: Session, line_ids: Sequence[int]) -> int:
+    if not line_ids:
+        return 0
+
+    stmt = select(BeltLine).where(BeltLine.id.in_(line_ids))
+    records = session.exec(stmt).all()
+
+    for record in records:
+        session.delete(record)
 
     session.commit()
     return len(records)
