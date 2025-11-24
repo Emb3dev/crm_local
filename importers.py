@@ -705,11 +705,6 @@ def parse_filter_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]
         if "ordered" not in record:
             record["ordered"] = False
 
-        if record.get("format_type") == "poche" and "pocket_count" not in record:
-            raise ValueError(
-                f"Ligne {row_index}: indiquez le nombre de poches pour un filtre au format poche."
-            )
-
         if record.get("format_type") != "poche":
             record.pop("pocket_count", None)
 
