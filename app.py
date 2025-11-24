@@ -3320,6 +3320,36 @@ def toggle_belt_line_ordered(
     return RedirectResponse(redirect_url, status_code=303)
 
 
+@app.post("/filtres-courroies/courroies/bulk-ordered")
+def bulk_update_belt_lines_ordered(
+    _current_user: CurrentUser,
+    ordered: str = Form(...),
+    line_ids: List[int] = Form([]),
+    filters_q: Optional[str] = Form(None),
+    belts_q: Optional[str] = Form(None),
+    return_anchor: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    ordered_flag = ordered.lower() == "true"
+    crud.bulk_update_belt_lines_ordered(session, line_ids, ordered_flag)
+
+    redirect_params = []
+    if filters_q:
+        redirect_params.append(("filters_q", filters_q))
+    if belts_q:
+        redirect_params.append(("belts_q", belts_q))
+
+    redirect_base = "/filtres-courroies"
+    if redirect_params:
+        query = urlencode(redirect_params)
+        redirect_base = f"{redirect_base}?{query}"
+
+    anchor = return_anchor or "belts-list"
+    redirect_url = f"{redirect_base}#{anchor}"
+
+    return RedirectResponse(redirect_url, status_code=303)
+
+
 @app.post("/filtres-courroies/filtres/{line_id}/toggle-ordered")
 def toggle_filter_line_ordered(
     _current_user: CurrentUser,
@@ -3349,6 +3379,36 @@ def toggle_filter_line_ordered(
         redirect_base = f"{redirect_base}?{query}"
 
     anchor = return_anchor or f"filter-{line_id}"
+    redirect_url = f"{redirect_base}#{anchor}"
+
+    return RedirectResponse(redirect_url, status_code=303)
+
+
+@app.post("/filtres-courroies/filtres/bulk-ordered")
+def bulk_update_filter_lines_ordered(
+    _current_user: CurrentUser,
+    ordered: str = Form(...),
+    line_ids: List[int] = Form([]),
+    filters_q: Optional[str] = Form(None),
+    belts_q: Optional[str] = Form(None),
+    return_anchor: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    ordered_flag = ordered.lower() == "true"
+    crud.bulk_update_filter_lines_ordered(session, line_ids, ordered_flag)
+
+    redirect_params = []
+    if filters_q:
+        redirect_params.append(("filters_q", filters_q))
+    if belts_q:
+        redirect_params.append(("belts_q", belts_q))
+
+    redirect_base = "/filtres-courroies"
+    if redirect_params:
+        query = urlencode(redirect_params)
+        redirect_base = f"{redirect_base}?{query}"
+
+    anchor = return_anchor or "filters-list"
     redirect_url = f"{redirect_base}#{anchor}"
 
     return RedirectResponse(redirect_url, status_code=303)
