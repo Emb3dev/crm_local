@@ -397,6 +397,7 @@
                       form="filters-bulk-form"
                       value="{{ line.id }}"
                       class="h-4 w-4 rounded border-slate-300 text-indigo-600 shadow-sm focus:ring-indigo-400 dark:border-slate-600 dark:bg-midnight-800 dark:checked:bg-indigo-500"
+                      data-bulk-group="filters"
                     />
                   </td>
                   <td id="filter-{{ line.id }}" class="py-3 pr-4 font-medium text-slate-900 dark:text-white">{{ line.site }}</td>
@@ -754,6 +755,7 @@
                       form="belts-bulk-form"
                       value="{{ line.id }}"
                       class="h-4 w-4 rounded border-slate-300 text-indigo-600 shadow-sm focus:ring-indigo-400 dark:border-slate-600 dark:bg-midnight-800 dark:checked:bg-indigo-500"
+                      data-bulk-group="belts"
                     />
                   </td>
                   <td id="belt-{{ line.id }}" class="py-3 pr-4 font-medium text-slate-900 dark:text-white">{{ line.site }}</td>
@@ -816,4 +818,34 @@
     </div>
   </article>
 </section>
+<script>
+  (() => {
+    const lastCheckedByGroup = {};
+    const checkboxes = document.querySelectorAll('[data-bulk-group]');
+
+    checkboxes.forEach((checkbox) => {
+      checkbox.addEventListener('click', (event) => {
+        const group = checkbox.dataset.bulkGroup;
+        if (!group) return;
+
+        if (event.shiftKey && lastCheckedByGroup[group]) {
+          const groupBoxes = Array.from(document.querySelectorAll(`[data-bulk-group="${group}"]`));
+          const start = groupBoxes.indexOf(checkbox);
+          const end = groupBoxes.indexOf(lastCheckedByGroup[group]);
+
+          if (start !== -1 && end !== -1) {
+            const [from, to] = start < end ? [start, end] : [end, start];
+            const shouldCheck = checkbox.checked;
+
+            for (let i = from; i <= to; i += 1) {
+              groupBoxes[i].checked = shouldCheck;
+            }
+          }
+        }
+
+        lastCheckedByGroup[group] = checkbox;
+      });
+    });
+  })();
+</script>
 {% endblock %}
