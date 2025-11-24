@@ -188,7 +188,7 @@
       <form
         id="filters-bulk-form"
         method="post"
-        action="/filtres-courroies/filtres/bulk-ordered"
+        action="/filtres-courroies/filtres/bulk-actions"
         class="flex flex-wrap items-center gap-3"
       >
         {% if filters_q %}
@@ -199,14 +199,17 @@
         {% endif %}
         <input type="hidden" name="return_anchor" value="filters-list" />
         <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Marquer la sélection
+          Action sélection
           <div class="relative">
             <select
-              name="ordered"
+              name="bulk_action"
               class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
             >
-              <option value="true">Commandé</option>
-              <option value="false">Non commandé</option>
+              <option value="ordered:true">Marquer commandé</option>
+              <option value="ordered:false">Marquer non commandé</option>
+              <option value="contract:true">Marquer inclus contrat</option>
+              <option value="contract:false">Marquer hors contrat</option>
+              <option value="delete">Supprimer les lignes</option>
             </select>
             <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -576,7 +579,7 @@
       <form
         id="belts-bulk-form"
         method="post"
-        action="/filtres-courroies/courroies/bulk-ordered"
+        action="/filtres-courroies/courroies/bulk-actions"
         class="flex flex-wrap items-center gap-3"
       >
         {% if filters_q %}
@@ -587,14 +590,17 @@
         {% endif %}
         <input type="hidden" name="return_anchor" value="belts-list" />
         <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Marquer la sélection
+          Action sélection
           <div class="relative">
             <select
-              name="ordered"
+              name="bulk_action"
               class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
             >
-              <option value="true">Commandé</option>
-              <option value="false">Non commandé</option>
+              <option value="ordered:true">Marquer commandé</option>
+              <option value="ordered:false">Marquer non commandé</option>
+              <option value="contract:true">Marquer inclus contrat</option>
+              <option value="contract:false">Marquer hors contrat</option>
+              <option value="delete">Supprimer les lignes</option>
             </select>
             <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

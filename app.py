@@ -3320,18 +3320,30 @@ def toggle_belt_line_ordered(
     return RedirectResponse(redirect_url, status_code=303)
 
 
-@app.post("/filtres-courroies/courroies/bulk-ordered")
-def bulk_update_belt_lines_ordered(
+@app.post("/filtres-courroies/courroies/bulk-actions")
+def bulk_manage_belt_lines(
     _current_user: CurrentUser,
-    ordered: str = Form(...),
+    bulk_action: str = Form(...),
     line_ids: List[int] = Form([]),
     filters_q: Optional[str] = Form(None),
     belts_q: Optional[str] = Form(None),
     return_anchor: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
-    ordered_flag = ordered.lower() == "true"
-    crud.bulk_update_belt_lines_ordered(session, line_ids, ordered_flag)
+    action, _, state = bulk_action.partition(":")
+
+    if action == "ordered":
+        ordered_flag = state.lower() == "true"
+        crud.bulk_update_belt_lines_ordered(session, line_ids, ordered_flag)
+    elif action == "contract":
+        contract_flag = state.lower() == "true"
+        crud.bulk_update_belt_lines_included_in_contract(
+            session, line_ids, contract_flag
+        )
+    elif action == "delete":
+        crud.bulk_delete_belt_lines(session, line_ids)
+    else:
+        raise HTTPException(status_code=400, detail="Action de masse inconnue")
 
     redirect_params = []
     if filters_q:
@@ -3384,18 +3396,30 @@ def toggle_filter_line_ordered(
     return RedirectResponse(redirect_url, status_code=303)
 
 
-@app.post("/filtres-courroies/filtres/bulk-ordered")
-def bulk_update_filter_lines_ordered(
+@app.post("/filtres-courroies/filtres/bulk-actions")
+def bulk_manage_filter_lines(
     _current_user: CurrentUser,
-    ordered: str = Form(...),
+    bulk_action: str = Form(...),
     line_ids: List[int] = Form([]),
     filters_q: Optional[str] = Form(None),
     belts_q: Optional[str] = Form(None),
     return_anchor: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
-    ordered_flag = ordered.lower() == "true"
-    crud.bulk_update_filter_lines_ordered(session, line_ids, ordered_flag)
+    action, _, state = bulk_action.partition(":")
+
+    if action == "ordered":
+        ordered_flag = state.lower() == "true"
+        crud.bulk_update_filter_lines_ordered(session, line_ids, ordered_flag)
+    elif action == "contract":
+        contract_flag = state.lower() == "true"
+        crud.bulk_update_filter_lines_included_in_contract(
+            session, line_ids, contract_flag
+        )
+    elif action == "delete":
+        crud.bulk_delete_filter_lines(session, line_ids)
+    else:
+        raise HTTPException(status_code=400, detail="Action de masse inconnue")
 
     redirect_params = []
     if filters_q:
