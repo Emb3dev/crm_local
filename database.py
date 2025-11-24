@@ -159,6 +159,13 @@ def init_db():
             conn.exec_driver_sql(
                 "UPDATE beltline SET included_in_contract = 0 WHERE included_in_contract IS NULL"
             )
+        if "ordered" not in belt_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE beltline ADD COLUMN ordered BOOLEAN DEFAULT 0"
+            )
+            conn.exec_driver_sql(
+                "UPDATE beltline SET ordered = 0 WHERE ordered IS NULL"
+            )
         service_cols = {
             row[1]
             for row in conn.exec_driver_sql("PRAGMA table_info('subcontractedservice')")
