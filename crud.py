@@ -1023,6 +1023,8 @@ def create_filter_line(session: Session, data: FilterLineCreate) -> FilterLine:
     payload["dimensions"] = _normalize_filter_dimensions(
         payload.get("dimensions"), payload["format_type"]
     )
+    if payload.get("format_type") != "poche":
+        payload["pocket_count"] = None
 
     record = FilterLine(**payload)
     session.add(record)
@@ -1061,6 +1063,11 @@ def update_filter_line(
         updates["dimensions"] = _normalize_filter_dimensions(
             updates.get("dimensions"), format_type
         )
+
+    if "format_type" in updates or "pocket_count" in updates:
+        format_type = updates.get("format_type") or record.format_type
+        if format_type != "poche":
+            updates["pocket_count"] = None
 
     for key, value in updates.items():
         setattr(record, key, value)
