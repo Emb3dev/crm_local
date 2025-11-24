@@ -150,6 +150,11 @@ FILTER_COLUMN_ALIASES: Dict[str, str] = {
     "quantite": "quantity",
     "quantity": "quantity",
     "qte": "quantity",
+    "info": "info_plus",
+    "info_plus": "info_plus",
+    "info+": "info_plus",
+    "commentaire": "info_plus",
+    "commentaires": "info_plus",
     "commande": "order_week",
     "semaine_commande": "order_week",
     "order_week": "order_week",
@@ -162,6 +167,9 @@ FILTER_COLUMN_ALIASES: Dict[str, str] = {
     "statut_commande": "ordered",
     "commande_effectuee": "ordered",
     "ordered": "ordered",
+    "poches": "pocket_count",
+    "nb_poches": "pocket_count",
+    "pocket_count": "pocket_count",
 }
 
 FILTER_FORMAT_LOOKUP = {
@@ -661,6 +669,8 @@ def parse_filter_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]
                 record[header] = resolved
             elif header == "quantity":
                 record[header] = _parse_positive_int(value, row_index, "quantité")
+            elif header == "pocket_count":
+                record[header] = _parse_positive_int(value, row_index, "nombre de poches")
             elif header == "order_week":
                 record[header] = value.strip().upper()
             elif header == "included_in_contract":
@@ -694,6 +704,14 @@ def parse_filter_lines_excel(content: bytes) -> List[Dict[str, Union[str, int]]]
 
         if "ordered" not in record:
             record["ordered"] = False
+
+        if record.get("format_type") == "poche" and "pocket_count" not in record:
+            raise ValueError(
+                f"Ligne {row_index}: indiquez le nombre de poches pour un filtre au format poche."
+            )
+
+        if record.get("format_type") != "poche":
+            record.pop("pocket_count", None)
 
         rows.append(record)
 

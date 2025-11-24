@@ -2998,6 +2998,24 @@ def list_filters_and_belts(
     )
 
 
+def _validate_pocket_count(
+    format_type: str, pocket_count: Optional[int]
+) -> Optional[int]:
+    if format_type != "poche":
+        return None
+    if pocket_count is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Merci d'indiquer le nombre de poches pour un filtre au format poche.",
+        )
+    if pocket_count < 1:
+        raise HTTPException(
+            status_code=400,
+            detail="Le nombre de poches doit être supérieur ou égal à 1.",
+        )
+    return pocket_count
+
+
 @app.get("/plan-de-charge", response_class=HTMLResponse)
 def workload_plan(
     request: Request,
@@ -3200,6 +3218,8 @@ async def create_filter_line(
     equipment: str = Form(...),
     efficiency: Optional[str] = Form(None),
     format_type: str = Form(...),
+    pocket_count: Optional[int] = Form(None),
+    info_plus: Optional[str] = Form(None),
     dimensions: Optional[str] = Form(None),
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
@@ -3218,6 +3238,8 @@ async def create_filter_line(
         equipment=equipment.strip(),
         efficiency=(efficiency.strip() if efficiency else None),
         format_type=format_type,
+        pocket_count=_validate_pocket_count(format_type, pocket_count),
+        info_plus=(info_plus.strip() if info_plus else None),
         dimensions=(dimensions.strip() if dimensions else None),
         quantity=quantity,
         order_week=(order_week.strip().upper() if order_week else None),
@@ -3236,6 +3258,8 @@ async def update_filter_line(
     equipment: str = Form(...),
     efficiency: Optional[str] = Form(None),
     format_type: str = Form(...),
+    pocket_count: Optional[int] = Form(None),
+    info_plus: Optional[str] = Form(None),
     dimensions: Optional[str] = Form(None),
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
@@ -3257,6 +3281,8 @@ async def update_filter_line(
         equipment=equipment.strip(),
         efficiency=(efficiency.strip() if efficiency else None),
         format_type=format_type,
+        pocket_count=_validate_pocket_count(format_type, pocket_count),
+        info_plus=(info_plus.strip() if info_plus else None),
         dimensions=(dimensions.strip() if dimensions else None),
         quantity=quantity,
         order_week=(order_week.strip() if order_week else None),
@@ -4269,6 +4295,8 @@ def _build_filter_import_template() -> BytesIO:
         "format_type",
         "efficiency",
         "dimensions",
+        "pocket_count",
+        "info_plus",
         "quantity",
         "order_week",
         "included_in_contract",
@@ -4283,6 +4311,8 @@ def _build_filter_import_template() -> BytesIO:
             "format_type": "cadre",
             "efficiency": "ISO ePM1 80%",
             "dimensions": "592 x 592 x 47",
+            "pocket_count": "",
+            "info_plus": "",
             "quantity": 3,
             "order_week": "S12",
             "included_in_contract": "Oui",
@@ -4294,6 +4324,8 @@ def _build_filter_import_template() -> BytesIO:
             "format_type": "poche",
             "efficiency": "F7",
             "dimensions": "287 x 592 x 635",
+            "pocket_count": 6,
+            "info_plus": "+ GRILLAGE",
             "quantity": 2,
             "order_week": "S22",
             "included_in_contract": "Non",

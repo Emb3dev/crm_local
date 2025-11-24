@@ -25,7 +25,9 @@ def _rebuild_filterline_table(conn, filter_cols):
         filter_type_expr = "format_type"
 
     quantity_expr = "COALESCE(quantity, 1)" if "quantity" in filter_cols else "1"
+    pocket_count_expr = "pocket_count" if "pocket_count" in filter_cols else "NULL"
     order_week_expr = "order_week" if "order_week" in filter_cols else "NULL"
+    info_plus_expr = "info_plus" if "info_plus" in filter_cols else "NULL"
     included_in_contract_expr = (
         "included_in_contract" if "included_in_contract" in filter_cols else "0"
     )
@@ -41,6 +43,8 @@ def _rebuild_filterline_table(conn, filter_cols):
             equipment VARCHAR NOT NULL,
             efficiency VARCHAR,
             filter_type VARCHAR NOT NULL,
+            pocket_count INTEGER,
+            info_plus VARCHAR,
             dimensions VARCHAR,
             quantity INTEGER NOT NULL DEFAULT 1,
             order_week VARCHAR,
@@ -58,6 +62,8 @@ def _rebuild_filterline_table(conn, filter_cols):
             equipment,
             efficiency,
             filter_type,
+            pocket_count,
+            info_plus,
             dimensions,
             quantity,
             order_week,
@@ -71,6 +77,8 @@ def _rebuild_filterline_table(conn, filter_cols):
             equipment,
             efficiency,
             {filter_type_expr},
+            {pocket_count_expr},
+            {info_plus_expr},
             dimensions,
             {quantity_expr},
             {order_week_expr},
@@ -144,6 +152,10 @@ def init_db():
             conn.exec_driver_sql(
                 "UPDATE filterline SET ordered = 0 WHERE ordered IS NULL"
             )
+        if "pocket_count" not in filter_cols:
+            conn.exec_driver_sql("ALTER TABLE filterline ADD COLUMN pocket_count INTEGER")
+        if "info_plus" not in filter_cols:
+            conn.exec_driver_sql("ALTER TABLE filterline ADD COLUMN info_plus VARCHAR")
         belt_cols = {
             row[1]
             for row in conn.exec_driver_sql("PRAGMA table_info('beltline')")

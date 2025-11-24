@@ -392,6 +392,12 @@ class FilterLineBase(SQLModel):
         description="Format du filtre (cousus sur fil, cadre…)",
         sa_column=Column("filter_type", String, nullable=False),
     )
+    pocket_count: Optional[int] = Field(
+        default=None, description="Nombre de poches pour les filtres poche"
+    )
+    info_plus: Optional[str] = Field(
+        default=None, description="Information complémentaire (+ grille, châssis, etc.)"
+    )
     dimensions: Optional[str] = Field(default=None, description="Dimensions du filtre")
     quantity: int = Field(default=1, description="Quantité requise pour ce filtre")
     order_week: Optional[str] = Field(
@@ -417,6 +423,8 @@ class FilterLineUpdate(SQLModel):
     equipment: Optional[str] = None
     efficiency: Optional[str] = None
     format_type: Optional[str] = None
+    pocket_count: Optional[int] = None
+    info_plus: Optional[str] = None
     dimensions: Optional[str] = None
     quantity: Optional[int] = None
     order_week: Optional[str] = None
