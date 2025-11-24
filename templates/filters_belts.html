@@ -216,6 +216,7 @@
         method="post"
         action="/filtres-courroies/filtres/bulk-actions"
         class="flex flex-wrap items-center gap-3"
+        data-bulk-group="filters"
       >
         {% if filters_q %}
           <input type="hidden" name="filters_q" value="{{ filters_q }}" />
@@ -230,6 +231,7 @@
               name="bulk_action"
               class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
             >
+              <option value="copy:consultation">Copier la consultation</option>
               <option value="ordered:true">Marquer commandé</option>
               <option value="ordered:false">Marquer non commandé</option>
               <option value="contract:true">Marquer inclus contrat</option>
@@ -454,21 +456,21 @@
                       data-bulk-group="filters"
                     />
                   </td>
-                  <td id="filter-{{ line.id }}" class="py-3 pr-4 font-medium text-slate-900 dark:text-white">{{ line.site }}</td>
-                  <td class="py-3 pr-4">{{ line.equipment }}</td>
-                  <td class="py-3 pr-4">{{ filter_format_labels.get(line.format_type, line.format_type) }}</td>
-                  <td class="py-3 pr-4">
+                  <td id="filter-{{ line.id }}" class="py-3 pr-4 font-medium text-slate-900 dark:text-white" data-mail-field="site">{{ line.site }}</td>
+                  <td class="py-3 pr-4" data-mail-field="equipment">{{ line.equipment }}</td>
+                  <td class="py-3 pr-4" data-mail-field="format">{{ filter_format_labels.get(line.format_type, line.format_type) }}</td>
+                  <td class="py-3 pr-4" data-mail-field="pockets">
                     {% if line.format_type == 'poche' and line.pocket_count is not none %}
                       {{ line.pocket_count }}
                     {% else %}
                       —
                     {% endif %}
                   </td>
-                  <td class="py-3 pr-4">{{ line.info_plus or '—' }}</td>
-                  <td class="py-3 pr-4">{{ line.efficiency or '—' }}</td>
-                  <td class="py-3 pr-4">{{ line.dimensions or '—' }}</td>
-                  <td class="py-3 pr-4">{{ line.quantity }}</td>
-                  <td class="py-3 pr-4">{{ line.order_week or '—' }}</td>
+                  <td class="py-3 pr-4" data-mail-field="info">{{ line.info_plus or '—' }}</td>
+                  <td class="py-3 pr-4" data-mail-field="efficiency">{{ line.efficiency or '—' }}</td>
+                  <td class="py-3 pr-4" data-mail-field="dimensions">{{ line.dimensions or '—' }}</td>
+                  <td class="py-3 pr-4" data-mail-field="quantity">{{ line.quantity }}</td>
+                  <td class="py-3 pr-4" data-mail-field="order_week">{{ line.order_week or '—' }}</td>
                   <td class="py-3 pr-4">
                     {% set contract_classes = 'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm ' %}
                     {% if line.included_in_contract %}
@@ -639,6 +641,7 @@
         method="post"
         action="/filtres-courroies/courroies/bulk-actions"
         class="flex flex-wrap items-center gap-3"
+        data-bulk-group="belts"
       >
         {% if filters_q %}
           <input type="hidden" name="filters_q" value="{{ filters_q }}" />
@@ -653,6 +656,7 @@
               name="bulk_action"
               class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
             >
+              <option value="copy:consultation">Copier la consultation</option>
               <option value="ordered:true">Marquer commandé</option>
               <option value="ordered:false">Marquer non commandé</option>
               <option value="contract:true">Marquer inclus contrat</option>
@@ -820,11 +824,11 @@
                       data-bulk-group="belts"
                     />
                   </td>
-                  <td id="belt-{{ line.id }}" class="py-3 pr-4 font-medium text-slate-900 dark:text-white">{{ line.site }}</td>
-                  <td class="py-3 pr-4">{{ line.equipment }}</td>
-                  <td class="py-3 pr-4">{{ line.reference }}</td>
-                  <td class="py-3 pr-4">{{ line.quantity }}</td>
-                  <td class="py-3 pr-4">{{ line.order_week or '—' }}</td>
+                  <td id="belt-{{ line.id }}" class="py-3 pr-4 font-medium text-slate-900 dark:text-white" data-mail-field="site">{{ line.site }}</td>
+                  <td class="py-3 pr-4" data-mail-field="equipment">{{ line.equipment }}</td>
+                  <td class="py-3 pr-4" data-mail-field="reference">{{ line.reference }}</td>
+                  <td class="py-3 pr-4" data-mail-field="quantity">{{ line.quantity }}</td>
+                  <td class="py-3 pr-4" data-mail-field="order_week">{{ line.order_week or '—' }}</td>
                   <td class="py-3 pr-4">
                     {% set contract_classes = 'inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm ' %}
                     {% if line.included_in_contract %}
@@ -917,6 +921,87 @@
   <script>
     (() => {
       const SHELL_ID = "consumables-shell";
+      const COPY_ACTION_VALUE = "copy:consultation";
+      const CONSULTATION_INTRO = [
+        "Bonjour,",
+        "",
+        "Je me permets de vous consulter concernant la fourniture des éléments suivants :",
+        "",
+      ].join("\n");
+      const CONSULTATION_FOOTER = "\n\nEn vous remerciant par avance,";
+
+      const FILTER_FIELDS = [
+        { key: "site", label: "Site" },
+        { key: "equipment", label: "Équipement" },
+        { key: "format", label: "Format" },
+        { key: "dimensions", label: "Dimensions" },
+        { key: "quantity", label: "Quantité" },
+        { key: "order_week", label: "Semaine commande" },
+      ];
+
+      const BELT_FIELDS = [
+        { key: "site", label: "Site" },
+        { key: "equipment", label: "Équipement" },
+        { key: "reference", label: "Référence" },
+        { key: "quantity", label: "Quantité" },
+        { key: "order_week", label: "Semaine commande" },
+      ];
+
+      function extractRowData(checkbox, fields) {
+        const row = checkbox.closest("tr");
+        if (!row) return null;
+
+        const data = {};
+        fields.forEach(({ key }) => {
+          const cell = row.querySelector(`[data-mail-field="${key}"]`);
+          data[key] = cell ? cell.textContent.trim() : "";
+        });
+
+        return data;
+      }
+
+      function buildTable(label, rows, fields) {
+        if (!rows.length) return "";
+
+        const header = fields.map((field) => field.label).join(" | ");
+        const lines = rows.map((row) => fields.map((field) => row[field.key] || "—").join(" | "));
+
+        return `${label} :\n${header}\n${lines.join("\n")}`;
+      }
+
+      function copyConsultation(form) {
+        const actionSelect = form.querySelector('select[name="bulk_action"]');
+        if (!actionSelect || actionSelect.value !== COPY_ACTION_VALUE) return false;
+
+        const group = form.dataset.bulkGroup;
+        const isFilters = group === "filters";
+        const checkboxes = form.querySelectorAll(`input[data-bulk-group="${group}"]:checked`);
+
+        if (!checkboxes.length) {
+          alert("Sélectionnez au moins une ligne avant de copier la consultation.");
+          return true;
+        }
+
+        const fields = isFilters ? FILTER_FIELDS : BELT_FIELDS;
+        const label = isFilters ? "Filtres" : "Courroies";
+        const rows = Array.from(checkboxes)
+          .map((checkbox) => extractRowData(checkbox, fields))
+          .filter(Boolean);
+
+        const table = buildTable(label, rows, fields);
+        const body = `${CONSULTATION_INTRO}${table}${CONSULTATION_FOOTER}`;
+
+        navigator.clipboard
+          .writeText(body)
+          .then(() => {
+            alert("Consultation copiée dans le presse-papiers.");
+          })
+          .catch(() => {
+            alert("Impossible de copier la consultation. Merci de réessayer.");
+          });
+
+        return true;
+      }
 
       function togglePocketField(select, root = document) {
         const formId = select.getAttribute("form") || select.form?.id;
@@ -958,6 +1043,8 @@
           form.addEventListener("submit", (event) => {
             if (event.defaultPrevented) return;
             event.preventDefault();
+
+            if (copyConsultation(form)) return;
 
             const scrollY = window.scrollY;
             const method = (form.method || "GET").toUpperCase();
