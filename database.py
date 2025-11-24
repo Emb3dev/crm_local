@@ -120,6 +120,13 @@ def init_db():
             conn.exec_driver_sql(
                 "ALTER TABLE filterline ADD COLUMN order_week VARCHAR"
             )
+        if "included_in_contract" not in filter_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE filterline ADD COLUMN included_in_contract BOOLEAN DEFAULT 0"
+            )
+            conn.exec_driver_sql(
+                "UPDATE filterline SET included_in_contract = 0 WHERE included_in_contract IS NULL"
+            )
         belt_cols = {
             row[1]
             for row in conn.exec_driver_sql("PRAGMA table_info('beltline')")
@@ -127,6 +134,13 @@ def init_db():
         if "order_week" not in belt_cols:
             conn.exec_driver_sql(
                 "ALTER TABLE beltline ADD COLUMN order_week VARCHAR"
+            )
+        if "included_in_contract" not in belt_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE beltline ADD COLUMN included_in_contract BOOLEAN DEFAULT 0"
+            )
+            conn.exec_driver_sql(
+                "UPDATE beltline SET included_in_contract = 0 WHERE included_in_contract IS NULL"
             )
         service_cols = {
             row[1]
