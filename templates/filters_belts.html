@@ -7,6 +7,7 @@
 {% block main_classes %}space-y-12{% endblock %}
 
 {% block content %}
+<div id="consumables-shell">
 {% if import_report %}
   {% set is_success = not import_report.errors %}
   {% set alert_classes = 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100' if is_success else 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100' %}
@@ -818,6 +819,7 @@
     </div>
   </article>
 </section>
+</div>
 <script>
   (() => {
     const lastCheckedByGroup = {};
@@ -854,23 +856,59 @@
   {{ super() }}
   <script>
     (() => {
-      const SCROLL_KEY = "consumables-scroll";
-      const forms = document.querySelectorAll("form");
+      const SHELL_ID = "consumables-shell";
 
-      forms.forEach((form) => {
-        form.addEventListener("submit", () => {
-          sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+      function enhanceForms() {
+        const shell = document.getElementById(SHELL_ID);
+        if (!shell) return;
+
+        shell.querySelectorAll("form").forEach((form) => {
+          if (form.dataset.ajaxBound === "true") return;
+          form.dataset.ajaxBound = "true";
+
+          form.addEventListener("submit", (event) => {
+            if (event.defaultPrevented) return;
+            event.preventDefault();
+
+            const scrollY = window.scrollY;
+            const method = (form.method || "GET").toUpperCase();
+            let url = form.action || window.location.href;
+            const fetchOptions = { method };
+
+            if (method === "GET") {
+              const params = new URLSearchParams(new FormData(form));
+              const urlObj = new URL(url, window.location.origin);
+              urlObj.search = params.toString();
+              url = urlObj.toString();
+            } else {
+              fetchOptions.body = new FormData(form);
+            }
+
+            fetch(url, fetchOptions)
+              .then((response) => response.text().then((html) => ({ html, url: response.url || url })))
+              .then(({ html, url: responseUrl }) => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, "text/html");
+                const nextShell = doc.getElementById(SHELL_ID);
+
+                if (!nextShell) throw new Error("Conteneur des consommables introuvable");
+
+                const currentShell = document.getElementById(SHELL_ID);
+                currentShell.replaceWith(nextShell);
+                history.replaceState({}, "", responseUrl);
+                window.scrollTo({ top: scrollY });
+                enhanceForms();
+              })
+              .catch((error) => {
+                console.error("Échec de la mise à jour asynchrone des consommables", error);
+                form.submit();
+              });
+          });
         });
-      });
-
-      const savedPosition = sessionStorage.getItem(SCROLL_KEY);
-      if (savedPosition !== null) {
-        sessionStorage.removeItem(SCROLL_KEY);
-        const parsed = Number.parseFloat(savedPosition);
-        if (!Number.isNaN(parsed)) {
-          window.scrollTo({ top: parsed });
-        }
       }
+
+      enhanceForms();
     })();
   </script>
 {% endblock %}
+
