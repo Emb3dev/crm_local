@@ -26,6 +26,10 @@ def _rebuild_filterline_table(conn, filter_cols):
 
     quantity_expr = "COALESCE(quantity, 1)" if "quantity" in filter_cols else "1"
     order_week_expr = "order_week" if "order_week" in filter_cols else "NULL"
+    included_in_contract_expr = (
+        "included_in_contract" if "included_in_contract" in filter_cols else "0"
+    )
+    ordered_expr = "ordered" if "ordered" in filter_cols else "0"
     created_at_expr = "created_at" if "created_at" in filter_cols else "CURRENT_TIMESTAMP"
 
     conn.exec_driver_sql("DROP TABLE IF EXISTS filterline_tmp")
@@ -40,6 +44,8 @@ def _rebuild_filterline_table(conn, filter_cols):
             dimensions VARCHAR,
             quantity INTEGER NOT NULL DEFAULT 1,
             order_week VARCHAR,
+            included_in_contract BOOLEAN NOT NULL DEFAULT 0,
+            ordered BOOLEAN NOT NULL DEFAULT 0,
             created_at DATETIME
         )
         """
@@ -55,6 +61,8 @@ def _rebuild_filterline_table(conn, filter_cols):
             dimensions,
             quantity,
             order_week,
+            included_in_contract,
+            ordered,
             created_at
         )
         SELECT
@@ -66,6 +74,8 @@ def _rebuild_filterline_table(conn, filter_cols):
             dimensions,
             {quantity_expr},
             {order_week_expr},
+            {included_in_contract_expr},
+            {ordered_expr},
             {created_at_expr}
         FROM filterline
         """
@@ -126,6 +136,13 @@ def init_db():
             )
             conn.exec_driver_sql(
                 "UPDATE filterline SET included_in_contract = 0 WHERE included_in_contract IS NULL"
+            )
+        if "ordered" not in filter_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE filterline ADD COLUMN ordered BOOLEAN DEFAULT 0"
+            )
+            conn.exec_driver_sql(
+                "UPDATE filterline SET ordered = 0 WHERE ordered IS NULL"
             )
         belt_cols = {
             row[1]
