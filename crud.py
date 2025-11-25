@@ -1127,6 +1127,14 @@ def bulk_delete_filter_lines(session: Session, line_ids: Sequence[int]) -> int:
     return len(records)
 
 
+def list_filter_lines_by_ids(session: Session, line_ids: Sequence[int]) -> List[FilterLine]:
+    if not line_ids:
+        return []
+
+    stmt = select(FilterLine).where(FilterLine.id.in_(line_ids))
+    return session.exec(stmt).all()
+
+
 def list_belt_lines(session: Session, q: Optional[str] = None) -> List[BeltLine]:
     stmt = select(BeltLine).order_by(BeltLine.created_at.desc())
     if q:
@@ -1222,6 +1230,14 @@ def bulk_delete_belt_lines(session: Session, line_ids: Sequence[int]) -> int:
 
     session.commit()
     return len(records)
+
+
+def list_belt_lines_by_ids(session: Session, line_ids: Sequence[int]) -> List[BeltLine]:
+    if not line_ids:
+        return []
+
+    stmt = select(BeltLine).where(BeltLine.id.in_(line_ids))
+    return session.exec(stmt).all()
 
 
 def delete_belt_line(session: Session, line_id: int) -> bool:
