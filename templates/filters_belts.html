@@ -34,6 +34,26 @@
   </div>
 {% endif %}
 
+{% set metrics = namespace(filters=filters|length, belts=belts|length, contract=0, ordered=0, total_quantity=0) %}
+{% for f in filters %}
+  {% if f.included_in_contract %}
+    {% set metrics.contract = metrics.contract + 1 %}
+  {% endif %}
+  {% if f.ordered %}
+    {% set metrics.ordered = metrics.ordered + 1 %}
+  {% endif %}
+  {% set metrics.total_quantity = metrics.total_quantity + (f.quantity or 0) %}
+{% endfor %}
+{% for b in belts %}
+  {% if b.included_in_contract %}
+    {% set metrics.contract = metrics.contract + 1 %}
+  {% endif %}
+  {% if b.ordered %}
+    {% set metrics.ordered = metrics.ordered + 1 %}
+  {% endif %}
+  {% set metrics.total_quantity = metrics.total_quantity + (b.quantity or 0) %}
+{% endfor %}
+
 <section class="{{ card_shell() }}">
   <div class="grid gap-6 lg:grid-cols-2">
     <div class="space-y-4">
@@ -51,6 +71,45 @@
         permettent d'éviter les ruptures et de consolider les besoins lors des consultations fournisseurs.
       </p>
     </div>
+  </div>
+</section>
+
+<section class="{{ card_shell() }}">
+  <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+    <div class="space-y-4">
+      <span class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-200">Synthèse instantanée</span>
+      <h2 class="font-display text-2xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white sm:text-3xl">Vos consommables prêts à être pilotés</h2>
+      <p class="max-w-3xl text-base text-slate-600 transition-colors duration-300 dark:text-slate-300">
+        Suivez {{ metrics.filters + metrics.belts }} lignes de filtres et courroies et anticipez {{ metrics.total_quantity }} pièce{{ 's' if metrics.total_quantity > 1 else '' }} à prévoir.
+        D'un coup d'œil, identifiez ce qui est sous contrat ou déjà commandé pour sécuriser vos approvisionnements.
+      </p>
+    </div>
+    <div class="rounded-3xl border border-slate-200 bg-white/80 p-6 text-sm text-slate-600 shadow shadow-indigo-500/10 transition-colors duration-300 lg:max-w-xs dark:border-white/10 dark:bg-midnight-800/60 dark:text-slate-300 dark:shadow-indigo-500/20">
+      <p class="font-semibold text-slate-900 transition-colors duration-300 dark:text-white">Pourquoi ces indicateurs ?</p>
+      <p class="mt-2">Ils mettent en avant l'effort de commande et la part contractuelle pour cibler rapidement les actions à mener par site.</p>
+    </div>
+  </div>
+  <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <article class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg shadow-indigo-500/10 transition-colors duration-300 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15">
+      <p class="{{ form_label() }}">Lignes suivies</p>
+      <p class="mt-3 text-3xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ metrics.filters + metrics.belts }}</p>
+      <p class="mt-3 text-sm text-slate-500 transition-colors duration-300 dark:text-slate-400">Filtres et courroies référencés</p>
+    </article>
+    <article class="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-700 shadow-lg shadow-emerald-200/60 transition-colors duration-300 backdrop-blur dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100 dark:shadow-emerald-500/20">
+      <p class="text-xs font-semibold uppercase tracking-[0.3em]">Inclus contrat</p>
+      <p class="mt-3 text-3xl font-semibold">{{ metrics.contract }}</p>
+      <p class="mt-3 text-sm">Lignes couvertes par vos contrats</p>
+    </article>
+    <article class="rounded-3xl border border-sky-200 bg-sky-50 p-6 text-sky-700 shadow-lg shadow-sky-200/60 transition-colors duration-300 backdrop-blur dark:border-sky-400/40 dark:bg-sky-500/10 dark:text-sky-100 dark:shadow-sky-500/20">
+      <p class="text-xs font-semibold uppercase tracking-[0.3em]">Déjà commandées</p>
+      <p class="mt-3 text-3xl font-semibold">{{ metrics.ordered }}</p>
+      <p class="mt-3 text-sm">Filtres et courroies marqués comme commandés</p>
+    </article>
+    <article class="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg shadow-indigo-500/10 transition-colors duration-300 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15">
+      <p class="{{ form_label() }}">Quantités à prévoir</p>
+      <p class="mt-3 text-3xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">{{ metrics.total_quantity }}</p>
+      <p class="mt-3 text-sm text-slate-500 transition-colors duration-300 dark:text-slate-400">Volumes cumulés à anticiper</p>
+    </article>
   </div>
 </section>
 
