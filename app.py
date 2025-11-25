@@ -7,7 +7,7 @@ import os
 import secrets
 import re
 from types import SimpleNamespace
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from io import BytesIO
 from urllib.parse import quote, urlencode
 
@@ -3367,9 +3367,23 @@ def bulk_manage_belt_lines(
 ):
     action, _, state = bulk_action.partition(":")
 
-    if action == "copy":
-        # Action de consultation copiée côté client (aucune mutation côté serveur)
-        pass
+    if action == "export":
+        if not line_ids:
+            raise HTTPException(
+                status_code=400, detail="Aucune ligne sélectionnée pour export"
+            )
+
+        lines = crud.list_belt_lines_by_ids(session, line_ids)
+        buffer = _build_belt_export_workbook(lines)
+        filename = f"consultation_courroies_{date.today().isoformat()}.xlsx"
+
+        return Response(
+            content=buffer.getvalue(),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename=\"{filename}\""
+            },
+        )
     elif action == "ordered":
         ordered_flag = state.lower() == "true"
         crud.bulk_update_belt_lines_ordered(session, line_ids, ordered_flag)
@@ -3440,9 +3454,23 @@ def bulk_manage_filter_lines(
 ):
     action, _, state = bulk_action.partition(":")
 
-    if action == "copy":
-        # Action de consultation copiée côté client (aucune mutation côté serveur)
-        pass
+    if action == "export":
+        if not line_ids:
+            raise HTTPException(
+                status_code=400, detail="Aucune ligne sélectionnée pour export"
+            )
+
+        lines = crud.list_filter_lines_by_ids(session, line_ids)
+        buffer = _build_filter_export_workbook(lines)
+        filename = f"consultation_filtres_{date.today().isoformat()}.xlsx"
+
+        return Response(
+            content=buffer.getvalue(),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename=\"{filename}\""
+            },
+        )
     elif action == "ordered":
         ordered_flag = state.lower() == "true"
         crud.bulk_update_filter_lines_ordered(session, line_ids, ordered_flag)
@@ -4369,6 +4397,96 @@ def _build_filter_import_template() -> BytesIO:
         options_sheet.append([value, label])
 
     _autofit_sheet(options_sheet, padding=4, max_width=50)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def _build_belt_export_workbook(lines: Iterable) -> BytesIO:
+    workbook = Workbook()
+
+    sheet = workbook.active
+    sheet.title = "Courroies"
+
+    headers = [
+        "Site",
+        "Équipement",
+        "Référence",
+        "Quantité",
+        "Semaine commande",
+        "Inclus contrat",
+        "État commande",
+    ]
+    sheet.append(headers)
+
+    for line in lines:
+        sheet.append(
+            [
+                getattr(line, "site", ""),
+                getattr(line, "equipment", ""),
+                getattr(line, "reference", ""),
+                getattr(line, "quantity", 0),
+                getattr(line, "order_week", ""),
+                "Oui" if getattr(line, "included_in_contract", False) else "Non",
+                "Commandé" if getattr(line, "ordered", False) else "Non commandé",
+            ]
+        )
+
+    sheet.freeze_panes = "A2"
+    _autofit_sheet(sheet, padding=2, max_width=40)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def _build_filter_export_workbook(lines: Iterable) -> BytesIO:
+    workbook = Workbook()
+
+    sheet = workbook.active
+    sheet.title = "Filtres"
+
+    headers = [
+        "Site",
+        "Équipement",
+        "Format",
+        "Nb poches",
+        "Info +",
+        "Efficacité",
+        "Dimensions",
+        "Quantité",
+        "Semaine commande",
+        "Inclus contrat",
+        "État commande",
+    ]
+    sheet.append(headers)
+
+    for line in lines:
+        format_label = FILTER_FORMAT_LABELS.get(
+            getattr(line, "format_type", None), getattr(line, "format_type", "")
+        )
+        pocket_count = getattr(line, "pocket_count", None)
+        sheet.append(
+            [
+                getattr(line, "site", ""),
+                getattr(line, "equipment", ""),
+                format_label or "",
+                pocket_count if getattr(line, "format_type", "") == "poche" else "",
+                getattr(line, "info_plus", ""),
+                getattr(line, "efficiency", ""),
+                getattr(line, "dimensions", ""),
+                getattr(line, "quantity", 0),
+                getattr(line, "order_week", ""),
+                "Oui" if getattr(line, "included_in_contract", False) else "Non",
+                "Commandé" if getattr(line, "ordered", False) else "Non commandé",
+            ]
+        )
+
+    sheet.freeze_panes = "A2"
+    _autofit_sheet(sheet, padding=2, max_width=45)
 
     buffer = BytesIO()
     workbook.save(buffer)
