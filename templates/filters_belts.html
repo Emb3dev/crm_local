@@ -955,47 +955,186 @@
           const value = cell.textContent.trim();
           return `${label}: ${value}`;
         });
-
-        return parts.join(" | ");
       }
 
-      function bindBulkCopy(form) {
-        if (form.dataset.bulkCopyBound === "true") return;
-        form.dataset.bulkCopyBound = "true";
+      function presentManualCopyDialog(text) {
+        debugCopyLog("Showing manual copy dialog");
 
-        form.addEventListener("submit", (event) => {
-          const action = form.querySelector('select[name="bulk_action"]')?.value;
-          if (action !== "copy") return;
+        const overlay = document.createElement("div");
+        overlay.className =
+          "fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 px-4 text-left text-slate-800";
 
-          const selected = Array.from(
-            form.querySelectorAll('input[type="checkbox"][name="line_ids"][data-bulk-group]:checked'),
-          );
+        const dialog = document.createElement("div");
+        dialog.className =
+          "w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl shadow-indigo-500/30 ring-1 ring-slate-900/10";
 
-          if (!selected.length) {
-            event.preventDefault();
-            alert("Sélectionnez au moins une ligne à copier.");
-            return;
+        const title = document.createElement("p");
+        title.className = "text-base font-semibold text-slate-900";
+        title.textContent = "Copie manuelle";
+
+        const helper = document.createElement("p");
+        helper.className = "mt-2 text-sm text-slate-600";
+        helper.textContent = "Votre navigateur a bloqué l'accès au presse-papiers. Sélectionnez le texte ci-dessous puis copiez-le (Ctrl/Cmd+C).";
+
+        const textarea = document.createElement("textarea");
+        textarea.className =
+          "mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-sm text-slate-800 shadow-inner focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200";
+        textarea.rows = 10;
+        textarea.readOnly = true;
+        textarea.value = text;
+
+        const actions = document.createElement("div");
+        actions.className = "mt-4 flex flex-wrap justify-between gap-3 sm:justify-end";
+
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className =
+          "inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-600 shadow-sm transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200";
+        retry.textContent = "Copier le texte";
+
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className =
+          "inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400";
+        close.textContent = "Fermer";
+
+        actions.appendChild(retry);
+        actions.appendChild(close);
+        dialog.appendChild(title);
+        dialog.appendChild(helper);
+        dialog.appendChild(textarea);
+        dialog.appendChild(actions);
+        overlay.appendChild(dialog);
+
+        document.body.appendChild(overlay);
+        textarea.focus();
+        textarea.select();
+
+        return new Promise((resolve) => {
+          const handleKeydown = (event) => {
+            if (event.key === "Escape") cleanup("manual");
+          };
+
+          function cleanup(result) {
+            overlay.remove();
+            document.removeEventListener("keydown", handleKeydown);
+            resolve(result);
           }
 
-          const lines = selected
-            .map((checkbox) => formatLineForClipboard(checkbox))
-            .filter(Boolean);
+          const retryCopy = () => {
+            retry.disabled = true;
+            retry.textContent = "Copie…";
+            const doCopy = navigator.clipboard?.writeText
+              ? navigator.clipboard.writeText(text)
+              : fallbackCopyToClipboard(text);
+
+            Promise.resolve(doCopy)
+              .then(() => {
+                helper.textContent = "Consultation copiée. Vous pouvez fermer cette fenêtre.";
+                retry.textContent = "Copié !";
+                setTimeout(() => cleanup("manual-copied"), 400);
+              })
+              .catch((error) => {
+                debugCopyLog("Manual copy button failed", { error });
+                helper.textContent =
+                  "Copie impossible. Sélectionnez le texte ci-dessus puis utilisez Ctrl/Cmd+C pour copier.";
+                retry.textContent = "Réessayer";
+                retry.disabled = false;
+              });
+          };
+
+          overlay.addEventListener("click", (event) => {
+            if (event.target === overlay) cleanup("manual");
+          });
+
+          retry.addEventListener("click", retryCopy);
+          close.addEventListener("click", () => cleanup("manual"));
+          document.addEventListener("keydown", handleKeydown);
+        });
+      }
+
+      function writeToClipboard(text) {
+        debugCopyLog("Attempting to write to clipboard", { preferNavigator: Boolean(navigator.clipboard?.writeText) });
+
+        const handleManualFallback = (fallbackError) => {
+          debugCopyLog("Automatic copy failed, switching to manual", { fallbackError });
+          return presentManualCopyDialog(text);
+        };
+
+        if (navigator.clipboard?.writeText) {
+          return navigator.clipboard.writeText(text).catch((error) => {
+            debugCopyLog("Navigator clipboard failed, falling back", { error });
+            return fallbackCopyToClipboard(text).catch(handleManualFallback);
+          });
+        }
+
+        return fallbackCopyToClipboard(text).catch(handleManualFallback);
+      }
+
+      function collectCheckedBoxes(group, formId = "") {
+        const baseSelector = `input[data-bulk-group="${group}"][name="line_ids"]:checked`;
+        const selectors = [baseSelector];
+
+        if (formId) {
+          selectors.push(`input[data-bulk-group="${group}"][name="line_ids"][form="${formId}"]:checked`);
+          selectors.push(`#${formId} ${baseSelector}`);
+        }
+
+        debugCopyLog("Checkbox selectors", selectors);
+
+        const checkboxes = selectors
+          .map((selector) => Array.from(document.querySelectorAll(selector)))
+          .flat();
+
+        const uniqueCheckboxes = Array.from(new Set(checkboxes));
+        debugCopyLog("Found checkboxes", { count: uniqueCheckboxes.length });
+
+        return uniqueCheckboxes;
+      }
+
+      function copyConsultation(form) {
+        const actionSelect = form.querySelector('select[name="bulk_action"]');
+        if (!actionSelect || actionSelect.value !== COPY_ACTION_VALUE) return false;
+
+        const group = form.dataset.bulkGroup;
+        const isFilters = group === "filters";
+        const formId = form.id;
+        const checkboxes = collectCheckedBoxes(group, formId);
+
+        if (!checkboxes.length) {
+          alert("Sélectionnez au moins une ligne avant de copier la consultation.");
+          return true;
+        }
+
+        const fields = isFilters ? FILTER_FIELDS : BELT_FIELDS;
+        const label = isFilters ? "Filtres" : "Courroies";
+        const rows = checkboxes.map((checkbox) => extractRowData(checkbox, fields)).filter(Boolean);
 
           if (!lines.length) return;
 
-          event.preventDefault();
+        const bodyParts = [CONSULTATION_INTRO, buildTable(label, rows, fields), CONSULTATION_FOOTER].filter(Boolean);
+        const body = bodyParts.join("\n");
 
-          const clipboardText = lines.join("\n\n");
-          navigator.clipboard
-            .writeText(clipboardText)
-            .then(() => {
-              alert("Sélection copiée dans le presse-papiers");
-            })
-            .catch((error) => {
-              console.error("Impossible de copier dans le presse-papiers", error);
-              alert("Échec de la copie dans le presse-papiers");
-            });
-        });
+        writeToClipboard(body)
+          .then((result) => {
+            if (result === "manual-copied") {
+              alert("Consultation copiée via le mode manuel.");
+              return;
+            }
+
+            if (result === "manual") {
+              alert("Consultation prête à être copiée manuellement.");
+              return;
+            }
+
+            alert("Consultation copiée dans le presse-papiers.");
+          })
+          .catch((error) => {
+            debugCopyLog("Clipboard copy failed", { error });
+            alert("Impossible de copier la consultation. Merci de réessayer.");
+          });
+
+        return true;
       }
 
       function togglePocketField(select, root = document) {
