@@ -231,6 +231,7 @@
               name="bulk_action"
               class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
             >
+              <option value="copy">Copier la sélection</option>
               <option value="ordered:true">Marquer commandé</option>
               <option value="ordered:false">Marquer non commandé</option>
               <option value="contract:true">Marquer inclus contrat</option>
@@ -655,6 +656,7 @@
               name="bulk_action"
               class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
             >
+              <option value="copy">Copier la sélection</option>
               <option value="ordered:true">Marquer commandé</option>
               <option value="ordered:false">Marquer non commandé</option>
               <option value="contract:true">Marquer inclus contrat</option>
@@ -920,6 +922,82 @@
     (() => {
       const SHELL_ID = "consumables-shell";
 
+      const bulkCopyLabels = {
+        filters: {
+          site: "Site",
+          equipment: "Équipement",
+          format: "Format",
+          pockets: "Nb poches",
+          info: "Info +",
+          efficiency: "Efficacité",
+          dimensions: "Dimensions",
+          quantity: "Quantité",
+          order_week: "Semaine commande",
+        },
+        belts: {
+          site: "Site",
+          equipment: "Équipement",
+          reference: "Référence",
+          quantity: "Quantité",
+          order_week: "Semaine commande",
+        },
+      };
+
+      function formatLineForClipboard(checkbox) {
+        const row = checkbox.closest("tr");
+        const group = checkbox.dataset.bulkGroup;
+        if (!row || !group) return null;
+
+        const labels = bulkCopyLabels[group] || {};
+        const parts = Array.from(row.querySelectorAll("[data-mail-field]")).map((cell) => {
+          const key = cell.dataset.mailField || "";
+          const label = labels[key] || key;
+          const value = cell.textContent.trim();
+          return `${label}: ${value}`;
+        });
+
+        return parts.join(" | ");
+      }
+
+      function bindBulkCopy(form) {
+        if (form.dataset.bulkCopyBound === "true") return;
+        form.dataset.bulkCopyBound = "true";
+
+        form.addEventListener("submit", (event) => {
+          const action = form.querySelector('select[name="bulk_action"]')?.value;
+          if (action !== "copy") return;
+
+          const selected = Array.from(
+            form.querySelectorAll('input[type="checkbox"][name="line_ids"][data-bulk-group]:checked'),
+          );
+
+          if (!selected.length) {
+            event.preventDefault();
+            alert("Sélectionnez au moins une ligne à copier.");
+            return;
+          }
+
+          const lines = selected
+            .map((checkbox) => formatLineForClipboard(checkbox))
+            .filter(Boolean);
+
+          if (!lines.length) return;
+
+          event.preventDefault();
+
+          const clipboardText = lines.join("\n\n");
+          navigator.clipboard
+            .writeText(clipboardText)
+            .then(() => {
+              alert("Sélection copiée dans le presse-papiers");
+            })
+            .catch((error) => {
+              console.error("Impossible de copier dans le presse-papiers", error);
+              alert("Échec de la copie dans le presse-papiers");
+            });
+        });
+      }
+
       function togglePocketField(select, root = document) {
         const formId = select.getAttribute("form") || select.form?.id;
         const pocketSelector = formId
@@ -952,6 +1030,10 @@
         if (!shell) return;
 
         bindPocketFields(shell);
+
+        shell
+          .querySelectorAll('form[action$="bulk-actions"]')
+          .forEach((bulkForm) => bindBulkCopy(bulkForm));
 
         shell.querySelectorAll("form").forEach((form) => {
           if (form.dataset.ajaxBound === "true") return;
