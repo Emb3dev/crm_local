@@ -1053,8 +1053,114 @@
         });
       }
 
-      function writeToClipboard(text) {
+      function presentManualCopyDialog(text, { autoCopy = false } = {}) {
+        debugCopyLog("Showing manual copy dialog");
+
+        const overlay = document.createElement("div");
+        overlay.className =
+          "fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 px-4 text-left text-slate-800";
+
+        const dialog = document.createElement("div");
+        dialog.className =
+          "w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl shadow-indigo-500/30 ring-1 ring-slate-900/10";
+
+        const title = document.createElement("p");
+        title.className = "text-base font-semibold text-slate-900";
+        title.textContent = "Copie manuelle";
+
+        const helper = document.createElement("p");
+        helper.className = "mt-2 text-sm text-slate-600";
+        helper.textContent = "Votre navigateur a bloqué l'accès au presse-papiers. Sélectionnez le texte ci-dessous puis copiez-le (Ctrl/Cmd+C).";
+
+        const textarea = document.createElement("textarea");
+        textarea.className =
+          "mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-sm text-slate-800 shadow-inner focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200";
+        textarea.rows = 10;
+        textarea.readOnly = true;
+        textarea.value = text;
+
+        const actions = document.createElement("div");
+        actions.className = "mt-4 flex flex-wrap justify-between gap-3 sm:justify-end";
+
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className =
+          "inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-600 shadow-sm transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200";
+        retry.textContent = "Copier le texte";
+
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className =
+          "inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400";
+        close.textContent = "Fermer";
+
+        actions.appendChild(retry);
+        actions.appendChild(close);
+        dialog.appendChild(title);
+        dialog.appendChild(helper);
+        dialog.appendChild(textarea);
+        dialog.appendChild(actions);
+        overlay.appendChild(dialog);
+
+        document.body.appendChild(overlay);
+        textarea.focus();
+        textarea.select();
+
+        return new Promise((resolve) => {
+          const handleKeydown = (event) => {
+            if (event.key === "Escape") cleanup("manual");
+          };
+
+          function cleanup(result) {
+            overlay.remove();
+            document.removeEventListener("keydown", handleKeydown);
+            resolve(result);
+          }
+
+          const retryCopy = () => {
+            retry.disabled = true;
+            retry.textContent = "Copie…";
+            const doCopy = navigator.clipboard?.writeText
+              ? navigator.clipboard.writeText(text)
+              : fallbackCopyToClipboard(text);
+
+            Promise.resolve(doCopy)
+              .then(() => {
+                helper.textContent = "Consultation copiée. Vous pouvez fermer cette fenêtre.";
+                retry.textContent = "Copié !";
+                setTimeout(() => cleanup("manual-copied"), 400);
+              })
+              .catch((error) => {
+                debugCopyLog("Manual copy button failed", { error });
+                helper.textContent =
+                  "Copie impossible. Sélectionnez le texte ci-dessus puis utilisez Ctrl/Cmd+C pour copier.";
+                retry.textContent = "Réessayer";
+                retry.disabled = false;
+              });
+          };
+
+          overlay.addEventListener("click", (event) => {
+            if (event.target === overlay) cleanup("manual");
+          });
+
+          retry.addEventListener("click", retryCopy);
+          close.addEventListener("click", () => cleanup("manual"));
+          document.addEventListener("keydown", handleKeydown);
+
+          if (autoCopy) {
+            helper.textContent = "Copie en cours…";
+            retryCopy();
+          }
+        });
+      }
+
+      function writeToClipboard(text, { forceManual = false } = {}) {
         debugCopyLog("Attempting to write to clipboard", { preferNavigator: Boolean(navigator.clipboard?.writeText) });
+
+        if (forceManual) {
+          debugCopyLog("Using manual dialog first");
+          return presentManualCopyDialog(text, { autoCopy: true });
+        }
 
         const handleManualFallback = (fallbackError) => {
           debugCopyLog("Automatic copy failed, switching to manual", { fallbackError });
@@ -1115,7 +1221,7 @@
         const bodyParts = [CONSULTATION_INTRO, buildTable(label, rows, fields), CONSULTATION_FOOTER].filter(Boolean);
         const body = bodyParts.join("\n");
 
-        writeToClipboard(body)
+        writeToClipboard(body, { forceManual: true })
           .then((result) => {
             if (result === "manual-copied") {
               alert("Consultation copiée via le mode manuel.");
