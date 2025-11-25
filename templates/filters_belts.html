@@ -231,7 +231,7 @@
               name="bulk_action"
               class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
             >
-              <option value="copy:consultation">Copier la consultation</option>
+              <option value="copy">Copier la sélection</option>
               <option value="ordered:true">Marquer commandé</option>
               <option value="ordered:false">Marquer non commandé</option>
               <option value="contract:true">Marquer inclus contrat</option>
@@ -656,7 +656,7 @@
               name="bulk_action"
               class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
             >
-              <option value="copy:consultation">Copier la consultation</option>
+              <option value="copy">Copier la sélection</option>
               <option value="ordered:true">Marquer commandé</option>
               <option value="ordered:false">Marquer non commandé</option>
               <option value="contract:true">Marquer inclus contrat</option>
@@ -921,92 +921,135 @@
   <script>
     (() => {
       const SHELL_ID = "consumables-shell";
-      const COPY_ACTION_VALUE = "copy:consultation";
-      const DEBUG_COPY_CONSULTATION = Boolean(window.COPY_CONSULTATION_DEBUG);
-      const CONSULTATION_INTRO = [
-        "Bonjour,",
-        "",
-        "Je me permets de vous consulter concernant la fourniture des éléments suivants :",
-        "",
-      ].join("\n");
-      const CONSULTATION_FOOTER = "\n\nEn vous remerciant par avance,";
 
-      const FILTER_FIELDS = [
-        { key: "site", label: "Site" },
-        { key: "equipment", label: "Équipement" },
-        { key: "format", label: "Format" },
-        { key: "dimensions", label: "Dimensions" },
-        { key: "quantity", label: "Quantité" },
-        { key: "order_week", label: "Semaine commande" },
-      ];
+      const bulkCopyLabels = {
+        filters: {
+          site: "Site",
+          equipment: "Équipement",
+          format: "Format",
+          pockets: "Nb poches",
+          info: "Info +",
+          efficiency: "Efficacité",
+          dimensions: "Dimensions",
+          quantity: "Quantité",
+          order_week: "Semaine commande",
+        },
+        belts: {
+          site: "Site",
+          equipment: "Équipement",
+          reference: "Référence",
+          quantity: "Quantité",
+          order_week: "Semaine commande",
+        },
+      };
 
-      const BELT_FIELDS = [
-        { key: "site", label: "Site" },
-        { key: "equipment", label: "Équipement" },
-        { key: "reference", label: "Référence" },
-        { key: "quantity", label: "Quantité" },
-        { key: "order_week", label: "Semaine commande" },
-      ];
-
-      function debugCopyLog(message, payload = null) {
-        if (!DEBUG_COPY_CONSULTATION) return;
-
-        if (payload) {
-          console.debug(`[CopyConsultation] ${message}`, payload);
-          return;
-        }
-
-        console.debug(`[CopyConsultation] ${message}`);
-      }
-
-      function extractRowData(checkbox, fields) {
+      function formatLineForClipboard(checkbox) {
         const row = checkbox.closest("tr");
-        if (!row) return null;
+        const group = checkbox.dataset.bulkGroup;
+        if (!row || !group) return null;
 
-        const data = {};
-        fields.forEach(({ key }) => {
-          const cell = row.querySelector(`[data-mail-field="${key}"]`);
-          data[key] = cell ? cell.textContent.trim() : "";
+        const labels = bulkCopyLabels[group] || {};
+        const parts = Array.from(row.querySelectorAll("[data-mail-field]")).map((cell) => {
+          const key = cell.dataset.mailField || "";
+          const label = labels[key] || key;
+          const value = cell.textContent.trim();
+          return `${label}: ${value}`;
         });
-
-        return data;
       }
 
-      function buildTable(label, rows, fields) {
-        if (!rows.length) return "";
+      function presentManualCopyDialog(text) {
+        debugCopyLog("Showing manual copy dialog");
 
-        const header = fields.map((field) => field.label).join(" | ");
-        const lines = rows.map((row) => fields.map((field) => row[field.key] || "—").join(" | "));
+        const overlay = document.createElement("div");
+        overlay.className =
+          "fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 px-4 text-left text-slate-800";
 
-        return `${label} :\n${header}\n${lines.join("\n")}`;
-      }
+        const dialog = document.createElement("div");
+        dialog.className =
+          "w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl shadow-indigo-500/30 ring-1 ring-slate-900/10";
 
-      function fallbackCopyToClipboard(text) {
-        return new Promise((resolve, reject) => {
-          const textarea = document.createElement("textarea");
-          textarea.value = text;
-          textarea.setAttribute("readonly", "");
-          textarea.style.position = "absolute";
-          textarea.style.left = "-9999px";
-          document.body.appendChild(textarea);
+        const title = document.createElement("p");
+        title.className = "text-base font-semibold text-slate-900";
+        title.textContent = "Copie manuelle";
 
-          const selection = document.getSelection();
-          const selectedRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+        const helper = document.createElement("p");
+        helper.className = "mt-2 text-sm text-slate-600";
+        helper.textContent = "Votre navigateur a bloqué l'accès au presse-papiers. Sélectionnez le texte ci-dessous puis copiez-le (Ctrl/Cmd+C).";
 
-          textarea.select();
-          const copied = document.execCommand("copy");
-          textarea.remove();
+        const textarea = document.createElement("textarea");
+        textarea.className =
+          "mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-sm text-slate-800 shadow-inner focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200";
+        textarea.rows = 10;
+        textarea.readOnly = true;
+        textarea.value = text;
 
-          if (selectedRange && selection) {
-            selection.removeAllRanges();
-            selection.addRange(selectedRange);
+        const actions = document.createElement("div");
+        actions.className = "mt-4 flex flex-wrap justify-between gap-3 sm:justify-end";
+
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className =
+          "inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-600 shadow-sm transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200";
+        retry.textContent = "Copier le texte";
+
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className =
+          "inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400";
+        close.textContent = "Fermer";
+
+        actions.appendChild(retry);
+        actions.appendChild(close);
+        dialog.appendChild(title);
+        dialog.appendChild(helper);
+        dialog.appendChild(textarea);
+        dialog.appendChild(actions);
+        overlay.appendChild(dialog);
+
+        document.body.appendChild(overlay);
+        textarea.focus();
+        textarea.select();
+
+        return new Promise((resolve) => {
+          const handleKeydown = (event) => {
+            if (event.key === "Escape") cleanup("manual");
+          };
+
+          function cleanup(result) {
+            overlay.remove();
+            document.removeEventListener("keydown", handleKeydown);
+            resolve(result);
           }
 
-          if (copied) {
-            resolve();
-          } else {
-            reject(new Error("Copy command failed"));
-          }
+          const retryCopy = () => {
+            retry.disabled = true;
+            retry.textContent = "Copie…";
+            const doCopy = navigator.clipboard?.writeText
+              ? navigator.clipboard.writeText(text)
+              : fallbackCopyToClipboard(text);
+
+            Promise.resolve(doCopy)
+              .then(() => {
+                helper.textContent = "Consultation copiée. Vous pouvez fermer cette fenêtre.";
+                retry.textContent = "Copié !";
+                setTimeout(() => cleanup("manual-copied"), 400);
+              })
+              .catch((error) => {
+                debugCopyLog("Manual copy button failed", { error });
+                helper.textContent =
+                  "Copie impossible. Sélectionnez le texte ci-dessus puis utilisez Ctrl/Cmd+C pour copier.";
+                retry.textContent = "Réessayer";
+                retry.disabled = false;
+              });
+          };
+
+          overlay.addEventListener("click", (event) => {
+            if (event.target === overlay) cleanup("manual");
+          });
+
+          retry.addEventListener("click", retryCopy);
+          close.addEventListener("click", () => cleanup("manual"));
+          document.addEventListener("keydown", handleKeydown);
         });
       }
 
@@ -1173,7 +1216,7 @@
         const label = isFilters ? "Filtres" : "Courroies";
         const rows = checkboxes.map((checkbox) => extractRowData(checkbox, fields)).filter(Boolean);
 
-        debugCopyLog("Extracted rows", { rows });
+          if (!lines.length) return;
 
         const bodyParts = [CONSULTATION_INTRO, buildTable(label, rows, fields), CONSULTATION_FOOTER].filter(Boolean);
         const body = bodyParts.join("\n");
@@ -1233,6 +1276,10 @@
 
         bindPocketFields(shell);
 
+        shell
+          .querySelectorAll('form[action$="bulk-actions"]')
+          .forEach((bulkForm) => bindBulkCopy(bulkForm));
+
         shell.querySelectorAll("form").forEach((form) => {
           if (form.dataset.ajaxBound === "true") return;
           form.dataset.ajaxBound = "true";
@@ -1240,8 +1287,6 @@
           form.addEventListener("submit", (event) => {
             if (event.defaultPrevented) return;
             event.preventDefault();
-
-            if (copyConsultation(form)) return;
 
             const scrollY = window.scrollY;
             const method = (form.method || "GET").toUpperCase();
