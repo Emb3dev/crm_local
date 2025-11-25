@@ -1010,17 +1010,88 @@
         });
       }
 
+      function presentManualCopyDialog(text) {
+        debugCopyLog("Showing manual copy dialog");
+
+        const overlay = document.createElement("div");
+        overlay.className =
+          "fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 px-4 text-left text-slate-800";
+
+        const dialog = document.createElement("div");
+        dialog.className =
+          "w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl shadow-indigo-500/30 ring-1 ring-slate-900/10";
+
+        const title = document.createElement("p");
+        title.className = "text-base font-semibold text-slate-900";
+        title.textContent = "Copie manuelle";
+
+        const helper = document.createElement("p");
+        helper.className = "mt-2 text-sm text-slate-600";
+        helper.textContent = "Votre navigateur a bloqué l'accès au presse-papiers. Sélectionnez le texte ci-dessous puis copiez-le (Ctrl/Cmd+C).";
+
+        const textarea = document.createElement("textarea");
+        textarea.className =
+          "mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-sm text-slate-800 shadow-inner focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200";
+        textarea.rows = 10;
+        textarea.readOnly = true;
+        textarea.value = text;
+
+        const actions = document.createElement("div");
+        actions.className = "mt-4 flex justify-end";
+
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className =
+          "inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400";
+        close.textContent = "Fermer";
+
+        actions.appendChild(close);
+        dialog.appendChild(title);
+        dialog.appendChild(helper);
+        dialog.appendChild(textarea);
+        dialog.appendChild(actions);
+        overlay.appendChild(dialog);
+
+        document.body.appendChild(overlay);
+        textarea.focus();
+        textarea.select();
+
+        return new Promise((resolve) => {
+          const handleKeydown = (event) => {
+            if (event.key === "Escape") cleanup("manual");
+          };
+
+          function cleanup(result) {
+            overlay.remove();
+            document.removeEventListener("keydown", handleKeydown);
+            resolve(result);
+          }
+
+          overlay.addEventListener("click", (event) => {
+            if (event.target === overlay) cleanup("manual");
+          });
+
+          close.addEventListener("click", () => cleanup("manual"));
+          document.addEventListener("keydown", handleKeydown);
+        });
+      }
+
       function writeToClipboard(text) {
         debugCopyLog("Attempting to write to clipboard", { preferNavigator: Boolean(navigator.clipboard?.writeText) });
+
+        const handleManualFallback = (fallbackError) => {
+          debugCopyLog("Automatic copy failed, switching to manual", { fallbackError });
+          return presentManualCopyDialog(text);
+        };
 
         if (navigator.clipboard?.writeText) {
           return navigator.clipboard.writeText(text).catch((error) => {
             debugCopyLog("Navigator clipboard failed, falling back", { error });
-            return fallbackCopyToClipboard(text);
+            return fallbackCopyToClipboard(text).catch(handleManualFallback);
           });
         }
 
-        return fallbackCopyToClipboard(text);
+        return fallbackCopyToClipboard(text).catch(handleManualFallback);
       }
 
       function collectCheckedBoxes(group, formId = "") {
@@ -1068,7 +1139,12 @@
         const body = bodyParts.join("\n");
 
         writeToClipboard(body)
-          .then(() => {
+          .then((result) => {
+            if (result === "manual") {
+              alert("Consultation prête à être copiée manuellement.");
+              return;
+            }
+
             alert("Consultation copiée dans le presse-papiers.");
           })
           .catch((error) => {
