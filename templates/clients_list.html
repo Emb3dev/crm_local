@@ -151,6 +151,10 @@
           {% set primary_has_data = 1 if c.name or c.email or c.phone else 0 %}
           {% set contact_list = c.contacts or [] %}
           {% set contact_total = primary_has_data + (contact_list | length) %}
+          {% set services = c.subcontractings or [] %}
+          {% set total_services = services | length %}
+          {% set completed_services = services | selectattr('status', 'equalto', 'fait') | list | length %}
+          {% set progress_ratio = (completed_services / total_services * 100) if total_services else 100 %}
           {% set is_target = focus_id and focus_id|int == c.id %}
           {% set status_classes = 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-500/15 dark:text-emerald-100' if status_key == 'actif' else 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/20 dark:bg-white/10 dark:text-slate-200' if not status_key else 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/40 dark:bg-rose-500/20 dark:text-rose-100' %}
           <details class="group overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-xl shadow-indigo-500/10 transition-all focus-within:ring-2 focus-within:ring-indigo-200 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15 dark:focus-within:ring-indigo-400" id="client-{{ c.id }}" {% if is_target %}open{% endif %}>
@@ -178,7 +182,15 @@
               <div class="flex flex-col items-start gap-3 transition-colors duration-300 sm:items-end">
                 <span class="inline-flex items-center gap-2 rounded-full border {{ status_classes }} px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">{{ status_options.get(status_key, status_key or "—") }}</span>
                 <span class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ contact_total }} contact{{ 's' if contact_total > 1 else '' }}</span>
-                <span class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ (c.subcontractings or []) | length }} prestation{{ 's' if (c.subcontractings or []) | length > 1 else '' }}</span>
+                <div class="flex items-center gap-3">
+                  <span class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ total_services }} prestation{{ 's' if total_services > 1 else '' }}</span>
+                  <div class="flex items-center gap-2" aria-label="Avancement des prestations">
+                    <div class="h-1.5 w-20 rounded-full bg-slate-200/80 dark:bg-white/10">
+                      <div class="h-1.5 rounded-full bg-emerald-500 transition-[width] duration-300" style="width: {{ '{:.0f}'.format(progress_ratio) }}%"></div>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-600 transition-colors duration-300 dark:text-slate-200">{{ '{:.0f}'.format(progress_ratio) }}%</span>
+                  </div>
+                </div>
                 <span class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sm text-slate-500 transition group-open:rotate-180 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
