@@ -1007,6 +1007,10 @@
 
         bindPocketFields(shell);
 
+        shell
+          .querySelectorAll('form[action$="bulk-actions"]')
+          .forEach((bulkForm) => bindBulkCopy(bulkForm));
+
         shell.querySelectorAll("form").forEach((form) => {
           if (form.dataset.ajaxBound === "true") return;
           form.dataset.ajaxBound = "true";
