@@ -154,7 +154,7 @@
           {% set services = c.subcontractings or [] %}
           {% set total_services = services | length %}
           {% set completed_services = services | selectattr('status', 'equalto', 'fait') | list | length %}
-          {% set progress_ratio = (completed_services / total_services * 100) if total_services else 0 %}
+          {% set progress_ratio = (completed_services / total_services * 100) if total_services else 100 %}
           {% set is_target = focus_id and focus_id|int == c.id %}
           {% set status_classes = 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-500/15 dark:text-emerald-100' if status_key == 'actif' else 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/20 dark:bg-white/10 dark:text-slate-200' if not status_key else 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/40 dark:bg-rose-500/20 dark:text-rose-100' %}
           <details class="group overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-xl shadow-indigo-500/10 transition-all focus-within:ring-2 focus-within:ring-indigo-200 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15 dark:focus-within:ring-indigo-400" id="client-{{ c.id }}" {% if is_target %}open{% endif %}>
