@@ -859,6 +859,10 @@ def list_subcontracted_services(
     frequency = effective_filters.get("frequency")
     if frequency:
         stmt = stmt.where(SubcontractedService.frequency == frequency)
+
+    status = effective_filters.get("status")
+    if status:
+        stmt = stmt.where(SubcontractedService.status == status)
     records = session.exec(stmt.limit(limit)).all()
 
     if effective_filters.get("order_status") == "overdue":
