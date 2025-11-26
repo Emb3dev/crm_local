@@ -274,6 +274,13 @@ SUBCONTRACT_STATUS_STYLES = {
     "non_commence": "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100",
 }
 
+SUBCONTRACT_STATUS_FILTER_OPTIONS = [
+    ("non_commence", "Non commencé"),
+    ("en_cours", "En cours"),
+    ("fait", "Fait"),
+]
+SUBCONTRACT_STATUS_FILTER_KEYS = {value for value, _ in SUBCONTRACT_STATUS_FILTER_OPTIONS}
+
 ORDER_STATUS_FILTER_OPTIONS = [("overdue", "Commandes en retard")]
 ORDER_STATUS_FILTER_KEYS = {value for value, _ in ORDER_STATUS_FILTER_OPTIONS}
 
@@ -477,6 +484,12 @@ SUBCONTRACTING_FILTER_BASE = [
         "label": "Fréquence",
         "placeholder": "Toutes les fréquences",
         "options": [(key, data["label"]) for key, data in PREDEFINED_FREQUENCIES.items()],
+    },
+    {
+        "name": "status",
+        "label": "État",
+        "placeholder": "Tous les états",
+        "options": SUBCONTRACT_STATUS_FILTER_OPTIONS,
     },
     {
         "name": "order_status",
@@ -951,6 +964,7 @@ def _subcontractings_context(
         {**SUBCONTRACTING_FILTER_BASE[0], "options": category_filter_options},
         {**SUBCONTRACTING_FILTER_BASE[1], "options": frequency_filter_options},
         SUBCONTRACTING_FILTER_BASE[2],
+        SUBCONTRACTING_FILTER_BASE[3],
     ]
 
     comments_by_service = crud.list_subcontracted_service_comments_by_service(
@@ -962,6 +976,7 @@ def _subcontractings_context(
         "q": q or "",
         "category": filters.get("category", ""),
         "frequency": filters.get("frequency", ""),
+        "status": filters.get("status", ""),
         "order_status": filters.get("order_status", ""),
     }
     cleaned_params = {k: v for k, v in export_params.items() if v}
@@ -1061,6 +1076,7 @@ def _extract_client_filters(
 def _extract_subcontracting_filters(
     category: Optional[str],
     frequency: Optional[str],
+    status: Optional[str],
     order_status: Optional[str],
     *,
     valid_categories: Optional[Iterable[str]] = None,
@@ -1071,6 +1087,8 @@ def _extract_subcontracting_filters(
         filters["category"] = category
     if frequency and frequency != CUSTOM_INTERVAL_VALUE:
         filters["frequency"] = frequency
+    if status in SUBCONTRACT_STATUS_FILTER_KEYS:
+        filters["status"] = status
     if order_status in ORDER_STATUS_FILTER_KEYS:
         filters["order_status"] = order_status
     return filters
@@ -2054,6 +2072,7 @@ def subcontracted_services_page(
     q: Optional[str] = None,
     category: Optional[str] = None,
     frequency: Optional[str] = None,
+    status: Optional[str] = None,
     order_status: Optional[str] = None,
     session: Session = Depends(get_session),
 ):
@@ -2062,6 +2081,7 @@ def subcontracted_services_page(
     filters = _extract_subcontracting_filters(
         category,
         frequency,
+        status,
         order_status,
         valid_categories=[c for c in valid_categories if c],
     )
@@ -4597,6 +4617,7 @@ def download_subcontracted_services(
     q: Optional[str] = None,
     category: Optional[str] = None,
     frequency: Optional[str] = None,
+    status: Optional[str] = None,
     order_status: Optional[str] = None,
 ):
     subcontracted_groups, _ = _get_subcontracted_options(session)
@@ -4604,6 +4625,7 @@ def download_subcontracted_services(
     filters = _extract_subcontracting_filters(
         category,
         frequency,
+        status,
         order_status,
         valid_categories=[c for c in valid_categories if c],
     )
