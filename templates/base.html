@@ -67,6 +67,7 @@
             class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-indigo-400 hover:bg-indigo-500/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 md:hidden dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-indigo-500/20"
             aria-controls="primaryNavigation"
             aria-expanded="false"
+            aria-label="Ouvrir le menu"
           >
             <span class="sr-only">Ouvrir le menu</span>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,7 +138,7 @@
         <div class="flex items-center gap-3">
           <button
             id="themeToggle"
-              class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-indigo-400 hover:bg-indigo-500/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-indigo-500/20"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-indigo-400 hover:bg-indigo-500/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-indigo-500/20"
             title="Basculer le thème"
             aria-label="Basculer le thème"
           >
@@ -172,7 +173,7 @@
           {% endif %}
         </div>
       </div>
-      <div id="mobileNavPanel" class="hidden md:hidden">
+      <div id="mobileNavPanel" class="hidden md:hidden" aria-hidden="true">
         <nav class="mx-4 mb-4 space-y-2 rounded-3xl border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700 shadow-lg shadow-indigo-500/10 dark:border-white/10 dark:bg-white/5 dark:text-slate-200" aria-label="Navigation principale mobile">
           <a
             href="/"
@@ -248,6 +249,42 @@
       </div>
     </header>
 
+    <div class="border-b border-slate-200/70 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-midnight-900/70">
+      <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 text-sm text-slate-500 sm:px-6 lg:px-8 dark:text-slate-300">
+        {% set breadcrumb_items = [{ 'href': '/', 'label': 'Accueil', 'current': clients_active }] %}
+        {% if prestations_active %}
+          {% set breadcrumb_items = breadcrumb_items + [{ 'href': '/prestations', 'label': 'Prestations', 'current': True }] %}
+        {% elif consumables_active %}
+          {% set breadcrumb_items = breadcrumb_items + [{ 'href': '/filtres-courroies', 'label': 'Filtres & Courroies', 'current': True }] %}
+        {% elif workload_active %}
+          {% set breadcrumb_items = breadcrumb_items + [{ 'href': '/plan-de-charge', 'label': 'Plan de charge', 'current': True }] %}
+        {% elif admin_active %}
+          {% set breadcrumb_items = breadcrumb_items + [{ 'href': '/admin/utilisateurs', 'label': 'Administration', 'current': True }] %}
+        {% endif %}
+        {% block breadcrumbs %}
+        <nav aria-label="Fil d'Ariane" class="w-full">
+          <ol class="flex flex-wrap items-center gap-2">
+            {% for crumb in breadcrumb_items %}
+              <li class="flex items-center gap-2">
+                <a
+                  href="{{ crumb.href }}"
+                  class="inline-flex items-center gap-2 rounded-full px-3 py-1 font-semibold transition-colors duration-300 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:hover:text-indigo-200"
+                  {% if crumb.current %}aria-current="page"{% endif %}
+                >
+                  {% if loop.first %}<span aria-hidden="true">🏠</span>{% endif %}
+                  {{ crumb.label }}
+                </a>
+                {% if not loop.last %}
+                  <span aria-hidden="true" class="text-slate-300 dark:text-slate-500">/</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ol>
+        </nav>
+        {% endblock %}
+      </div>
+    </div>
+
     <main id="main" class="relative">
       <div class="mx-auto flex max-w-screen-2xl flex-col gap-10 px-4 pb-16 pt-10 sm:px-6 lg:px-8">
         <div class="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-indigo-500/10 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/20">
@@ -287,6 +324,8 @@
       root.setAttribute('data-theme', theme);
       if (themeToggle) {
         themeToggle.innerHTML = theme === 'dark' ? '<span aria-hidden="true">🌞</span>' : '<span aria-hidden="true">🌙</span>';
+        themeToggle.setAttribute('aria-label', theme === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre');
+        themeToggle.setAttribute('data-theme-state', theme);
       }
     };
 
@@ -303,10 +342,12 @@
 
     mobileNavToggle?.addEventListener('click', () => {
       const expanded = mobileNavToggle.getAttribute('aria-expanded') === 'true';
-      mobileNavToggle.setAttribute('aria-expanded', String(!expanded));
-      mobileNavToggle.setAttribute('aria-label', expanded ? 'Ouvrir le menu' : 'Fermer le menu');
+      const nextExpanded = !expanded;
+      mobileNavToggle.setAttribute('aria-expanded', String(nextExpanded));
+      mobileNavToggle.setAttribute('aria-label', nextExpanded ? 'Fermer le menu' : 'Ouvrir le menu');
       if (mobileNavPanel) {
         mobileNavPanel.classList.toggle('hidden');
+        mobileNavPanel.setAttribute('aria-hidden', expanded ? 'true' : 'false');
       }
     });
   </script>
