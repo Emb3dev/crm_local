@@ -253,6 +253,11 @@ STATUS_OPTIONS = {
     "inactif": "Inactif",
 }
 
+CLIENT_COMPLETION_OPTIONS = {
+    "termine": "Terminé",
+    "non_termine": "Non terminé",
+}
+
 SUPPLIER_TYPE_OPTIONS = {
     "fournisseur": "Fournisseur",
     "sous_traitant": "Sous-traitant",
@@ -409,6 +414,12 @@ CLIENT_FILTER_DEFINITIONS = [
             if key != "pas_d_astreinte"
         ]
         + [("pas_d_astreinte", ASTREINTE_OPTIONS["pas_d_astreinte"])],
+    },
+    {
+        "name": "completion",
+        "label": "Prestations",
+        "placeholder": "Toutes les prestations",
+        "options": list(CLIENT_COMPLETION_OPTIONS.items()),
     },
 ]
 
@@ -1061,7 +1072,10 @@ def _resolve_supplier_id(
 
 
 def _extract_client_filters(
-    status: Optional[str], depannage: Optional[str], astreinte: Optional[str]
+    status: Optional[str],
+    depannage: Optional[str],
+    astreinte: Optional[str],
+    completion: Optional[str],
 ) -> Dict[str, str]:
     filters: Dict[str, str] = {}
     if status in STATUS_OPTIONS:
@@ -1070,6 +1084,8 @@ def _extract_client_filters(
         filters["depannage"] = depannage
     if astreinte in ASTREINTE_OPTIONS:
         filters["astreinte"] = astreinte
+    if completion in CLIENT_COMPLETION_OPTIONS:
+        filters["completion"] = completion
     return filters
 
 
@@ -1674,9 +1690,10 @@ def clients_page(
     status: Optional[str] = None,
     depannage: Optional[str] = None,
     astreinte: Optional[str] = None,
+    completion: Optional[str] = None,
     session: Session = Depends(get_session),
-): 
-    filters = _extract_client_filters(status, depannage, astreinte)
+):
+    filters = _extract_client_filters(status, depannage, astreinte, completion)
     clients = crud.list_clients(session, q=q, filters=filters)
     entreprises = crud.list_entreprises(session)
     subcontracted_groups, _ = _get_subcontracted_options(session)
@@ -2046,9 +2063,10 @@ def clients_fragment(
     status: Optional[str] = None,
     depannage: Optional[str] = None,
     astreinte: Optional[str] = None,
+    completion: Optional[str] = None,
     session: Session = Depends(get_session),
-): 
-    filters = _extract_client_filters(status, depannage, astreinte)
+):
+    filters = _extract_client_filters(status, depannage, astreinte, completion)
     clients = crud.list_clients(session, q=q, filters=filters)
     entreprises = crud.list_entreprises(session)
     subcontracted_groups, _ = _get_subcontracted_options(session)

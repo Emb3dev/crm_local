@@ -256,6 +256,15 @@ def list_clients(
     if astreinte:
         stmt = stmt.where(Client.astreinte == astreinte)
 
+    completion = effective_filters.get("completion")
+    if completion:
+        stmt = stmt.outerjoin(SubcontractedService)
+        if completion == "termine":
+            stmt = stmt.where(SubcontractedService.status == "fait")
+        elif completion == "non_termine":
+            stmt = stmt.where(SubcontractedService.status != "fait")
+        stmt = stmt.distinct()
+
     return session.exec(stmt.limit(limit)).all()
 
 
