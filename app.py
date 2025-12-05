@@ -3248,7 +3248,6 @@ async def import_workload_plan_excel(
     return {"sites": count}
 
 
-@app.post("/filtres-courroies/filtres")
 def _parse_pocket_count(raw: Optional[str]) -> Optional[int]:
     if raw is None:
         return None
@@ -3264,6 +3263,7 @@ def _parse_pocket_count(raw: Optional[str]) -> Optional[int]:
         ) from exc
 
 
+@app.post("/filtres-courroies/filtres")
 async def create_filter_line(
     _current_user: CurrentUser,
     site: str = Form(...),
