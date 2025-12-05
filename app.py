@@ -3248,7 +3248,7 @@ async def import_workload_plan_excel(
     return {"sites": count}
 
 
-def _parse_pocket_count(raw: Optional[str]) -> Optional[int]:
+def _parse_pocket_count(raw: Optional[str] = None) -> Optional[int]:
     if raw is None:
         return None
     raw = raw.strip()
