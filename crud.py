@@ -959,6 +959,18 @@ def create_subcontracted_service_comment(
     return comment
 
 
+def delete_subcontracted_service_comment(
+    session: Session, comment_id: int
+) -> bool:
+    comment = session.get(SubcontractedServiceComment, comment_id)
+    if not comment:
+        return False
+
+    session.delete(comment)
+    session.commit()
+    return True
+
+
 def update_subcontracted_service(
     session: Session, service_id: int, data: SubcontractedServiceUpdate
 ) -> Optional[SubcontractedService]:

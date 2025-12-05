@@ -45,6 +45,7 @@ from models import (
     SupplierContactCreate,
     SupplierUpdate,
     SubcontractedServiceCreate,
+    SubcontractedServiceComment,
     SubcontractedServiceUpdate,
     WorkloadCellUpdate,
     WorkloadSiteCreate,
@@ -2302,6 +2303,32 @@ def add_subcontracted_service_comment(
         url=redirect_target,
         status_code=303,
     )
+
+
+@app.post("/prestations/{service_id}/comments/{comment_id}/delete")
+def delete_subcontracted_service_comment(
+    _current_user: CurrentUser,
+    service_id: int,
+    comment_id: int,
+    return_url: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    comment = session.get(SubcontractedServiceComment, comment_id)
+    if not comment or comment.service_id != service_id:
+        raise HTTPException(404, "Commentaire introuvable")
+
+    is_admin = _current_user.username == DEFAULT_ADMIN_USERNAME
+    is_author = _current_user.username == comment.author_name
+    if not (is_admin or is_author):
+        raise HTTPException(
+            403, "Vous ne pouvez supprimer que vos propres commentaires"
+        )
+
+    if not crud.delete_subcontracted_service_comment(session, comment_id):
+        raise HTTPException(404, "Commentaire introuvable")
+
+    redirect_target = return_url or f"/prestations/{service_id}/edit#comments"
+    return RedirectResponse(url=redirect_target, status_code=303)
 
 
 def _create_subcontracted_service_from_form(
