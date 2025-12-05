@@ -361,6 +361,76 @@
                         </div>
                         <p class="text-xs text-slate-500 dark:text-slate-400">Sélectionnez une catégorie existante ou saisissez un nouveau tag.</p>
                       </div>
+                      {% set contact_rows = supplier.contacts if supplier.contacts else [{'name': '', 'email': '', 'phone': '', 'description': ''}] %}
+                      <div class="md:col-span-2 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition-colors duration-300 dark:border-white/10 dark:bg-white/5" data-contact-repeater>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 dark:text-slate-200">Contacts (optionnels)</p>
+                            <p class="text-[0.8rem] text-slate-500 dark:text-slate-300">Ajoutez, modifiez ou supprimez plusieurs contacts en une fois.</p>
+                          </div>
+                          <button
+                            type="button"
+                            class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+                            data-add-contact
+                          >
+                            Ajouter un contact
+                          </button>
+                        </div>
+                        <div class="space-y-3" data-contact-list>
+                          {% for contact in contact_rows %}
+                            <div class="space-y-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm transition-colors duration-300 dark:border-white/10 dark:bg-white/5" data-contact-row>
+                              <div class="flex items-center justify-between gap-3">
+                                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Contact</p>
+                                <button type="button" class="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-50 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" data-remove-contact>Supprimer</button>
+                              </div>
+                              <div class="grid gap-3 md:grid-cols-2">
+                                <label class="{{ form_label() }}">
+                                  <span>Nom <span class="text-rose-500">*</span></span>
+                                  <input name="contact_name" value="{{ contact.name }}" placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                                </label>
+                                <label class="{{ form_label() }}">
+                                  <span>Email</span>
+                                  <input name="contact_email" type="email" value="{{ contact.email }}" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                                </label>
+                                <label class="{{ form_label() }}">
+                                  <span>Téléphone</span>
+                                  <input name="contact_phone" value="{{ contact.phone }}" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                                </label>
+                                <label class="{{ form_label() }}">
+                                  <span>Description</span>
+                                  <textarea name="contact_description" placeholder="Rôle, zone, disponibilité…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70">{{ contact.description }}</textarea>
+                                </label>
+                              </div>
+                            </div>
+                          {% endfor %}
+                        </div>
+                        <template data-contact-template>
+                          <div class="space-y-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm transition-colors duration-300 dark:border-white/10 dark:bg-white/5" data-contact-row>
+                            <div class="flex items-center justify-between gap-3">
+                              <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Contact</p>
+                              <button type="button" class="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-50 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" data-remove-contact>Supprimer</button>
+                            </div>
+                            <div class="grid gap-3 md:grid-cols-2">
+                              <label class="{{ form_label() }}">
+                                <span>Nom <span class="text-rose-500">*</span></span>
+                                <input name="contact_name" placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                              </label>
+                              <label class="{{ form_label() }}">
+                                <span>Email</span>
+                                <input name="contact_email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                              </label>
+                              <label class="{{ form_label() }}">
+                                <span>Téléphone</span>
+                                <input name="contact_phone" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                              </label>
+                              <label class="{{ form_label() }}">
+                                <span>Description</span>
+                                <textarea name="contact_description" placeholder="Rôle, zone, disponibilité…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"></textarea>
+                              </label>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
                       <div class="md:col-span-2 mt-2 flex justify-end">
                         <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Enregistrer</button>
                       </div>
@@ -417,6 +487,46 @@
   </section>
 
   <script>
+    const setupContactRepeater = (root) => {
+      if (root.dataset.contactRepeaterInitialized === 'true') return;
+      root.dataset.contactRepeaterInitialized = 'true';
+
+      const list = root.querySelector('[data-contact-list]');
+      const template = root.querySelector('[data-contact-template]');
+      const addButton = root.querySelector('[data-add-contact]');
+
+      const bindRow = (row) => {
+        if (!row || row.dataset.contactBound === 'true') return;
+        row.dataset.contactBound = 'true';
+        const removeButton = row.querySelector('[data-remove-contact]');
+        if (removeButton) {
+          removeButton.addEventListener('click', () => {
+            row.remove();
+            ensureAtLeastOneRow();
+          });
+        }
+      };
+
+      const ensureAtLeastOneRow = () => {
+        if (!list) return;
+        const rows = list.querySelectorAll('[data-contact-row]');
+        if (rows.length === 0) {
+          addRow();
+        }
+      };
+
+      const addRow = () => {
+        if (!template || !list) return;
+        const fragment = template.content.firstElementChild.cloneNode(true);
+        list.appendChild(fragment);
+        bindRow(fragment);
+      };
+
+      list?.querySelectorAll('[data-contact-row]').forEach(bindRow);
+      addButton?.addEventListener('click', () => addRow());
+      ensureAtLeastOneRow();
+    };
+
     const parseCategoryInput = (value) =>
       (value || '')
         .split(/[;,]/)
@@ -544,6 +654,7 @@
     const initializeSupplierPage = (root = document) => {
       root.querySelectorAll('[data-category-picker]').forEach((element) => setupCategoryPicker(element));
 
+      root.querySelectorAll('[data-contact-repeater]').forEach((element) => setupContactRepeater(element));
       bindToggle(root, 'data-toggle-contact-form', 'contact-form-', 'input[name="contact_name"]');
       bindToggle(root, 'data-toggle-edit-form', 'edit-form-', 'input[name="name"]');
     };

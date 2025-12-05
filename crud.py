@@ -435,7 +435,11 @@ def create_supplier(
 
 
 def update_supplier(
-    session: Session, supplier_id: int, data: SupplierUpdate
+    session: Session,
+    supplier_id: int,
+    data: SupplierUpdate,
+    *,
+    contacts: Optional[List[SupplierContactCreate]] = None,
 ) -> Optional[Supplier]:
     supplier = session.get(Supplier, supplier_id)
     if not supplier:
@@ -443,6 +447,13 @@ def update_supplier(
     updates = data.model_dump(exclude_unset=True)
     for key, value in updates.items():
         setattr(supplier, key, value)
+
+    if contacts is not None:
+        supplier.contacts.clear()
+        for contact_data in contacts:
+            supplier.contacts.append(
+                SupplierContact(**contact_data.model_dump())
+            )
     session.add(supplier)
     session.commit()
     session.refresh(supplier)
