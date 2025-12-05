@@ -10,6 +10,7 @@ from types import SimpleNamespace
 from datetime import date, datetime, timedelta
 from io import BytesIO
 from urllib.parse import quote, urlencode
+from itertools import zip_longest
 
 from fastapi import (
     FastAPI,
@@ -876,6 +877,14 @@ def _suppliers_context(
         "supplier_type": "fournisseur",
         "our_code": "",
         "categories": "",
+        "contacts": [
+            {
+                "name": "",
+                "email": "",
+                "phone": "",
+                "description": "",
+            }
+        ],
         "contact_name": "",
         "contact_email": "",
         "contact_phone": "",
@@ -916,6 +925,14 @@ def _supplier_creation_context(
         "supplier_type": "fournisseur",
         "our_code": "",
         "categories": "",
+        "contacts": [
+            {
+                "name": "",
+                "email": "",
+                "phone": "",
+                "description": "",
+            }
+        ],
         "contact_name": "",
         "contact_email": "",
         "contact_phone": "",
@@ -938,6 +955,61 @@ def _supplier_creation_context(
         "success": success,
         "category_success": category_success,
     }
+
+
+def _parse_contact_form_entries(
+    contact_names: Sequence[str] | None,
+    contact_emails: Sequence[str] | None,
+    contact_phones: Sequence[str] | None,
+    contact_descriptions: Sequence[str] | None,
+) -> Tuple[List[SupplierContactCreate], List[dict], List[str]]:
+    rows = list(
+        zip_longest(
+            contact_names or [],
+            contact_emails or [],
+            contact_phones or [],
+            contact_descriptions or [],
+            fillvalue="",
+        )
+    )
+
+    if not rows:
+        rows = [("", "", "", "")]
+
+    parsed_contacts: List[SupplierContactCreate] = []
+    entries: List[dict] = []
+    errors: List[str] = []
+
+    for name, email, phone, description in rows:
+        entry = {
+            "name": (name or "").strip(),
+            "email": (email or "").strip(),
+            "phone": (phone or "").strip(),
+            "description": (description or "").strip(),
+        }
+        entries.append(entry)
+
+        has_data = any(entry.values())
+        if not has_data:
+            continue
+
+        if not entry["name"]:
+            errors.append("Le nom du contact est requis.")
+            continue
+
+        parsed_contacts.append(
+            SupplierContactCreate(
+                name=entry["name"],
+                email=entry["email"] or None,
+                phone=entry["phone"] or None,
+                description=entry["description"] or None,
+            )
+        )
+
+    if not entries:
+        entries.append({"name": "", "email": "", "phone": "", "description": ""})
+
+    return parsed_contacts, entries, errors
 
 def _subcontractings_context(
     request: Request,
@@ -2761,10 +2833,10 @@ def create_supplier(
     our_code: Optional[str] = Form(None),
     categories: Optional[str] = Form(None),
     categories_list: Optional[List[str]] = Form(None),
-    contact_name: Optional[str] = Form(None),
-    contact_email: Optional[str] = Form(None),
-    contact_phone: Optional[str] = Form(None),
-    contact_description: Optional[str] = Form(None),
+    contact_names: List[str] = Form([], alias="contact_name"),
+    contact_emails: List[str] = Form([], alias="contact_email"),
+    contact_phones: List[str] = Form([], alias="contact_phone"),
+    contact_descriptions: List[str] = Form([], alias="contact_description"),
     redirect_to: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
@@ -2786,21 +2858,10 @@ def create_supplier(
     if normalized_type not in SUPPLIER_TYPE_OPTIONS:
         errors.append("Type de fournisseur invalide.")
 
-    contacts_payload: List[SupplierContactCreate] = []
-    has_contact_data = contact_name or contact_email or contact_phone or contact_description
-    if has_contact_data:
-        normalized_contact_name = (contact_name or "").strip()
-        if not normalized_contact_name:
-            errors.append("Le nom du contact est requis.")
-        else:
-            contacts_payload.append(
-                SupplierContactCreate(
-                    name=normalized_contact_name,
-                    email=(contact_email or "").strip() or None,
-                    phone=(contact_phone or "").strip() or None,
-                    description=(contact_description or "").strip() or None,
-                )
-            )
+    contacts_payload, contact_entries, contact_errors = _parse_contact_form_entries(
+        contact_names, contact_emails, contact_phones, contact_descriptions
+    )
+    errors.extend(contact_errors)
 
     if errors:
         supplier_categories = crud.list_supplier_categories(session)
@@ -2809,10 +2870,7 @@ def create_supplier(
             "supplier_type": normalized_type,
             "our_code": (our_code or "").strip(),
             "categories": normalized_categories or "",
-            "contact_name": (contact_name or "").strip(),
-            "contact_email": (contact_email or "").strip(),
-            "contact_phone": (contact_phone or "").strip(),
-            "contact_description": (contact_description or "").strip(),
+            "contacts": contact_entries,
         }
         if redirect_target:
             context = _supplier_creation_context(
@@ -2877,6 +2935,10 @@ def edit_supplier(
     our_code: Optional[str] = Form(None),
     categories: Optional[str] = Form(None),
     categories_list: Optional[List[str]] = Form(None),
+    contact_names: List[str] = Form([], alias="contact_name"),
+    contact_emails: List[str] = Form([], alias="contact_email"),
+    contact_phones: List[str] = Form([], alias="contact_phone"),
+    contact_descriptions: List[str] = Form([], alias="contact_description"),
     session: Session = Depends(get_session),
 ):
     normalized_name = (name or "").strip()
@@ -2889,6 +2951,11 @@ def edit_supplier(
     normalized_categories = _normalize_categories(
         (categories_list or []) + _split_categories(categories)
     )
+    contacts_payload, _contact_entries, contact_errors = _parse_contact_form_entries(
+        contact_names, contact_emails, contact_phones, contact_descriptions
+    )
+    if contact_errors:
+        raise HTTPException(400, "; ".join(contact_errors))
     _ensure_supplier_categories(session, normalized_categories)
     updated = crud.update_supplier(
         session,
@@ -2899,6 +2966,7 @@ def edit_supplier(
             our_code=(our_code or "").strip() or None,
             categories=normalized_categories,
         ),
+        contacts=contacts_payload,
     )
     if not updated:
         raise HTTPException(404, "Fournisseur introuvable")
