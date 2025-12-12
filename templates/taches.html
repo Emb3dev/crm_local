@@ -94,10 +94,13 @@
         <p class="{{ form_label() }}">Historique des envois</p>
         <p class="text-base text-slate-700 dark:text-slate-300">Suivez les statuts, consultez les réponses et relancez en cas d'échec.</p>
       </div>
-      <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-300">
-        <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Succès
-        <span class="h-2 w-2 rounded-full bg-amber-500"></span> En cours
-        <span class="h-2 w-2 rounded-full bg-rose-500"></span> Échec
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-300">
+          <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Succès
+          <span class="h-2 w-2 rounded-full bg-amber-500"></span> En cours
+          <span class="h-2 w-2 rounded-full bg-rose-500"></span> Échec
+        </div>
+        <button id="clearHistory" type="button" class="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">Vider l'historique</button>
       </div>
     </div>
     <div id="uploads" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
@@ -136,6 +139,7 @@
     const cstsReset = document.getElementById('cstsReset');
 
     const uploads = document.getElementById('uploads');
+    const clearHistory = document.getElementById('clearHistory');
 
     const validationMessages = {
       missingFile: 'Aucun fichier sélectionné.',
@@ -172,6 +176,15 @@
       const filtered = current.filter((item) => item.id !== entry.id);
       filtered.unshift(entry);
       saveHistory(filtered);
+    }
+
+    function clearHistoryEntries() {
+      try {
+        localStorage.removeItem(HISTORY_KEY);
+      } catch (error) {
+        console.warn("Impossible de nettoyer l'historique", error);
+      }
+      uploads.innerHTML = '';
     }
 
     function validateFile(file, types, maxMB) {
@@ -464,6 +477,12 @@
       const history = loadHistory();
       history.forEach((entry) => createUploadCard(null, entry));
     }
+
+    clearHistory?.addEventListener('click', () => {
+      const shouldClear = confirm("Voulez-vous vraiment vider l'historique des envois ?");
+      if (!shouldClear) return;
+      clearHistoryEntries();
+    });
 
     renderHistory();
   </script>
