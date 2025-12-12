@@ -1883,7 +1883,7 @@ def suppliers_fragment(
     )
     supplier_categories = crud.list_supplier_categories(session)
     return templates.TemplateResponse(
-        "suppliers_list.html",
+        "_suppliers_list_fragment.html",
         _suppliers_context(
             request,
             suppliers,
