@@ -39,6 +39,7 @@ from models import (
     BeltLineUpdate,
     ClientCreate,
     ClientUpdate,
+    ClientSiteCreate,
     ContactCreate,
     FilterLineCreate,
     FilterLineUpdate,
@@ -2819,6 +2820,41 @@ def remove_contact(
     ok = crud.delete_contact(session, client_id, contact_id)
     if not ok:
         raise HTTPException(404, "Contact introuvable")
+    return RedirectResponse(
+        url=f"/?focus={client_id}#client-{client_id}", status_code=303
+    )
+
+
+@app.post("/clients/{client_id}/sites")
+def add_client_site(
+    _current_user: CurrentUser,
+    client_id: int,
+    denomination: str = Form(..., alias="site_denomination"),
+    adresse: Optional[str] = Form(None, alias="site_adresse"),
+    session: Session = Depends(get_session),
+):
+    created = crud.create_client_site(
+        session,
+        client_id,
+        ClientSiteCreate(denomination=denomination, adresse=adresse),
+    )
+    if not created:
+        raise HTTPException(404, "Client introuvable")
+    return RedirectResponse(
+        url=f"/?focus={client_id}#client-{client_id}", status_code=303
+    )
+
+
+@app.post("/clients/{client_id}/sites/{site_id}/delete")
+def remove_client_site(
+    _current_user: CurrentUser,
+    client_id: int,
+    site_id: int,
+    session: Session = Depends(get_session),
+):
+    ok = crud.delete_client_site(session, client_id, site_id)
+    if not ok:
+        raise HTTPException(404, "Site introuvable")
     return RedirectResponse(
         url=f"/?focus={client_id}#client-{client_id}", status_code=303
     )
