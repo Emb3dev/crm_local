@@ -148,6 +148,33 @@
       missingWebhook: 'Webhook non configuré pour cette action.'
     };
 
+    const navigationAbortController = new AbortController();
+    const unloadWarning = "Un envoi est en cours. Quitter la page annulera l'opération.";
+    let isUnloading = false;
+    let activeUploads = 0;
+
+    function incrementUploads() {
+      activeUploads += 1;
+    }
+
+    function decrementUploads() {
+      activeUploads = Math.max(0, activeUploads - 1);
+    }
+
+    window.addEventListener('beforeunload', (event) => {
+      if (activeUploads > 0) {
+        event.preventDefault();
+        event.returnValue = unloadWarning;
+        return unloadWarning;
+      }
+      isUnloading = true;
+    });
+
+    window.addEventListener('unload', () => {
+      isUnloading = true;
+      navigationAbortController.abort();
+    });
+
     function makeId() {
       if (typeof crypto?.randomUUID === 'function') return crypto.randomUUID();
       return `upl-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -339,7 +366,11 @@
         }
       });
 
-      const res = await fetch(webhookUrl, { method: 'POST', body: form });
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        body: form,
+        signal: navigationAbortController.signal,
+      });
       const contentType = (res.headers.get('content-type') || '').toLowerCase();
       let bodyText = '';
       try {
@@ -376,15 +407,23 @@
         }
 
         const run = async () => {
+          incrementUploads();
           try {
             ui.setPending('Traitement…');
             const { status, bodyText } = await uploadToWebhook(file, webhookUrl);
             ui.setOk(`OK ${status}`);
             ui.showResponse(bodyText);
           } catch (error) {
+            if (isUnloading || error?.name === 'AbortError') {
+              ui.setErr('Interrompu');
+              ui.showResponse('Envoi interrompu (rafraîchissement ou navigation).');
+              return;
+            }
             ui.setErr('Échec');
             ui.showResponse(String(error.message || error));
             ui.setRetry(run);
+          } finally {
+            decrementUploads();
           }
         };
 
@@ -464,6 +503,11 @@
           ui.showResponse(bodyText);
           cstsReset.click();
         } catch (error) {
+          if (isUnloading || error?.name === 'AbortError') {
+            ui.setErr('Interrompu');
+            ui.showResponse('Envoi interrompu (rafraîchissement ou navigation).');
+            return;
+          }
           ui.setErr('Échec');
           ui.showResponse(String(error.message || error));
           ui.setRetry(run);
