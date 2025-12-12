@@ -1,0 +1,290 @@
+{% from "_ui_macros.html" import form_label, form_control, form_select %}
+<div id="supplier-list" class="mt-8 space-y-6">
+      {% if suppliers %}
+        {% for supplier in suppliers %}
+          {% set contact_list = supplier.contacts or [] %}
+          {% set supplier_categories = split_categories(supplier.categories) %}
+          {% set is_target = focus_id and focus_id|int == supplier.id %}
+          <details class="group overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-xl shadow-indigo-500/10 transition-all focus-within:ring-2 focus-within:ring-indigo-200 dark:border-white/10 dark:bg-white/5 dark:shadow-indigo-500/15 dark:focus-within:ring-indigo-400" id="supplier-{{ supplier.id }}" {% if is_target %}open{% endif %}>
+            <summary class="flex cursor-pointer flex-col gap-4 px-6 py-5 transition-colors duration-300 sm:flex-row sm:items-center sm:justify-between">
+              <div class="space-y-2">
+                <h3 class="font-display text-xl text-slate-900 transition-colors duration-300 dark:text-white">{{ supplier.name }}</h3>
+                <p class="text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">{{ supplier_type_options.get(supplier.supplier_type, '—') }}</p>
+                {% if supplier_categories %}
+                  <div class="flex flex-wrap gap-2">
+                    {% for category in supplier_categories %}
+                      <span class="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700 shadow-sm shadow-violet-500/10 transition-colors duration-300 dark:border-violet-400/40 dark:bg-violet-500/15 dark:text-violet-50">{{ category }}</span>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="flex flex-col items-start gap-3 transition-colors duration-300 sm:items-end">
+                {% if supplier.our_code %}
+                  <span class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-300">Code : {{ supplier.our_code }}</span>
+                {% endif %}
+                <span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">{{ contact_list | length }} contact{{ 's' if contact_list | length > 1 else '' }}</span>
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sm text-slate-500 transition group-open:rotate-180 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
+              </div>
+            </summary>
+            <div class="space-y-8 border-t border-slate-200 bg-slate-50 px-6 py-6 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/40">
+              <div class="grid grid-cols-1 gap-6">
+                <section class="space-y-4">
+                  <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Informations fournisseur</h4>
+                  <dl class="grid gap-4 text-sm text-slate-600 transition-colors duration-300 sm:grid-cols-2 dark:text-slate-300">
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Nom</dt>
+                      <dd class="mt-1 text-base text-slate-900 transition-colors duration-300 dark:text-white">{{ supplier.name }}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Type</dt>
+                      <dd class="mt-1 text-base text-slate-700 transition-colors duration-300 dark:text-white/90">{{ supplier_type_options.get(supplier.supplier_type, '—') }}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Code interne</dt>
+                      <dd class="mt-1 text-base text-slate-700 transition-colors duration-300 dark:text-white/90">{{ supplier.our_code or '—' }}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 transition-colors duration-300 dark:text-slate-400">Catégories</dt>
+                      <dd class="mt-1 text-base text-slate-700 transition-colors duration-300 dark:text-white/90">
+                        {% if supplier_categories %}
+                          <div class="flex flex-wrap gap-2">
+                            {% for category in supplier_categories %}
+                              <span class="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700 shadow-sm shadow-violet-500/10 transition-colors duration-300 dark:border-violet-400/40 dark:bg-violet-500/15 dark:text-violet-50">{{ category }}</span>
+                            {% endfor %}
+                          </div>
+                        {% else %}
+                          —
+                        {% endif %}
+                      </dd>
+                    </div>
+                  </dl>
+                </section>
+                <section class="space-y-4">
+                  <div class="flex items-center gap-3">
+                    <h4 class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 transition-colors duration-300 dark:text-indigo-200">Contacts associés</h4>
+                    <span class="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">{{ contact_list | length }} contact{{ 's' if contact_list | length > 1 else '' }}</span>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors duration-300 dark:border-white/10 dark:bg-white/5">
+                    {% if contact_list %}
+                      <ul class="space-y-3">
+                        {% for contact in contact_list | sort(attribute='name') %}
+                          <li class="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div>
+                                <p class="text-base font-semibold text-slate-900 transition-colors duration-300 dark:text-white">
+                                  {{ contact.name }}{% if contact.description %} — {{ contact.description }}{% endif %}
+                                </p>
+                                <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-600 transition-colors duration-300 dark:text-slate-300">
+                                  {% if contact.email %}
+                                    <a class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/70 px-3 py-1 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/10 dark:hover:border-indigo-300 dark:hover:text-white" href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+                                  {% endif %}
+                                  {% if contact.phone %}
+                                    {% set sanitized_phone = contact.phone | replace(' ', '') | replace('.', '') | replace('-', '') %}
+                                    <a class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/70 px-3 py-1 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/10 dark:hover:border-indigo-300 dark:hover:text-white" href="tel:{{ sanitized_phone }}">{{ contact.phone }}</a>
+                                  {% endif %}
+                                  {% if not contact.email and not contact.phone %}
+                                    <span class="text-slate-500 dark:text-slate-400">Coordonnées à renseigner</span>
+                                  {% endif %}
+                                </div>
+                              </div>
+                              <form action="/fournisseurs/{{ supplier.id }}/contacts/{{ contact.id }}/delete" method="post" onsubmit="return confirm('Supprimer ce contact ?')" class="flex justify-end">
+                                <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" type="submit" title="Supprimer le contact">🗑️</button>
+                              </form>
+                            </div>
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    {% else %}
+                      <p class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 transition-colors duration-300 dark:border-white/20 dark:bg-white/5 dark:text-slate-300">Aucun contact pour le moment.</p>
+                    {% endif %}
+                    <div class="mt-4 flex justify-end">
+                      <button
+                        type="button"
+                        class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+                        data-toggle-contact-form="{{ supplier.id }}"
+                        aria-controls="contact-form-{{ supplier.id }}"
+                        aria-expanded="false"
+                      >
+                        Ajouter un contact
+                      </button>
+                    </div>
+                    <div id="contact-form-{{ supplier.id }}" class="mt-4 hidden border-t border-slate-200 pt-4 transition-colors duration-300 dark:border-white/10">
+                      <form action="/fournisseurs/{{ supplier.id }}/contacts" method="post" class="grid gap-3">
+                        <label class="{{ form_label() }}">
+                          <span>Nom *</span>
+                          <input name="contact_name" required placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                        </label>
+                        <label class="{{ form_label() }}">
+                          <span>Email</span>
+                          <input name="contact_email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                        </label>
+                        <label class="{{ form_label() }}">
+                          <span>Téléphone</span>
+                          <input name="contact_phone" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                        </label>
+                        <label class="{{ form_label() }}">
+                          <span>Description</span>
+                          <textarea name="contact_description" placeholder="Rôle, zone d'intervention, disponibilité…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"></textarea>
+                        </label>
+                        <div class="mt-2 flex justify-end">
+                          <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Ajouter</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <div class="sm:col-span-2 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+                      data-toggle-edit-form="{{ supplier.id }}"
+                      aria-controls="edit-form-{{ supplier.id }}"
+                      aria-expanded="false"
+                    >
+                      Modifier
+                    </button>
+                    <form action="/fournisseurs/{{ supplier.id }}/delete" method="post" class="flex" onsubmit="return confirm('Supprimer {{ supplier.name }} ?')">
+                      <button class="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-50 dark:hover:bg-rose-400/20 dark:focus-visible:ring-rose-300" type="submit">Supprimer</button>
+                    </form>
+                  </div>
+                  <div id="edit-form-{{ supplier.id }}" class="sm:col-span-2 rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-inner shadow-indigo-100/40 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:shadow-indigo-500/10 hidden">
+                    <form action="/fournisseurs/{{ supplier.id }}/edit" method="post" class="grid gap-4 md:grid-cols-2">
+                      <label class="{{ form_label() }}">
+                        <span>Nom *</span>
+                        <input name="name" value="{{ supplier.name }}" required class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                      </label>
+                      <label class="{{ form_label() }}">
+                        <span>Type</span>
+                        <div class="relative mt-2">
+                          <select name="supplier_type" class="{{ form_select('focus:border-indigo-300 focus:ring-indigo-200 dark:focus:ring-indigo-400/70') }}">
+                            {% for value, label in supplier_type_options.items() %}
+                              <option value="{{ value }}" {% if supplier.supplier_type == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                          </select>
+                          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                            </svg>
+                          </span>
+                        </div>
+                      </label>
+                      <label class="{{ form_label() }}">
+                        <span>Notre code client</span>
+                        <input name="our_code" value="{{ supplier.our_code or '' }}" placeholder="Code interne" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                      </label>
+                      {% set selected_categories = supplier_categories %}
+                      <div class="{{ form_label() }} space-y-2" data-category-picker data-suggestions-url="/_fournisseurs/categories">
+                        <span>Catégorie(s)</span>
+                        <input type="hidden" name="categories" value="{{ supplier.categories or '' }}" data-category-input />
+                        <input type="hidden" name="selected_categories" data-selected-values value="{{ supplier.categories or '' }}" />
+                        <div data-selected-inputs class="hidden"></div>
+                        <div class="mt-1 flex flex-wrap gap-2" data-selected-tags></div>
+                        <div class="relative">
+                          <input
+                            data-category-search
+                            name="q"
+                            type="search"
+                            autocomplete="off"
+                            placeholder="Rechercher ou ajouter une catégorie"
+                            hx-get="/_fournisseurs/categories"
+                            hx-target="#category-suggestions-{{ supplier.id }}"
+                            hx-trigger="input changed delay:250ms, focus"
+                            hx-include="[data-selected-values]"
+                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"
+                          />
+                          <div id="category-suggestions-{{ supplier.id }}" class="mt-2" data-category-suggestions>
+                            {% include "_supplier_category_suggestions.html" %}
+                          </div>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Sélectionnez une catégorie existante ou saisissez un nouveau tag.</p>
+                      </div>
+                      {% set contact_rows = supplier.contacts if supplier.contacts else [{'name': '', 'email': '', 'phone': '', 'description': ''}] %}
+                      <div class="md:col-span-2 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition-colors duration-300 dark:border-white/10 dark:bg-white/5" data-contact-repeater>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 dark:text-slate-200">Contacts (optionnels)</p>
+                            <p class="text-[0.8rem] text-slate-500 dark:text-slate-300">Ajoutez, modifiez ou supprimez plusieurs contacts en une fois.</p>
+                          </div>
+                          <button
+                            type="button"
+                            class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400"
+                            data-add-contact
+                          >
+                            Ajouter un contact
+                          </button>
+                        </div>
+                        <div class="space-y-3" data-contact-list>
+                          {% for contact in contact_rows %}
+                            <div class="space-y-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm transition-colors duration-300 dark:border-white/10 dark:bg-white/5" data-contact-row>
+                              <div class="flex items-center justify-between gap-3">
+                                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Contact</p>
+                                <button type="button" class="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-50 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" data-remove-contact>Supprimer</button>
+                              </div>
+                              <div class="grid gap-3 md:grid-cols-2">
+                                <label class="{{ form_label() }}">
+                                  <span>Nom <span class="text-rose-500">*</span></span>
+                                  <input name="contact_name" value="{{ contact.name }}" placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                                </label>
+                                <label class="{{ form_label() }}">
+                                  <span>Email</span>
+                                  <input name="contact_email" type="email" value="{{ contact.email }}" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                                </label>
+                                <label class="{{ form_label() }}">
+                                  <span>Téléphone</span>
+                                  <input name="contact_phone" value="{{ contact.phone }}" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                                </label>
+                                <label class="{{ form_label() }}">
+                                  <span>Description</span>
+                                  <textarea name="contact_description" placeholder="Rôle, zone, disponibilité…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70">{{ contact.description }}</textarea>
+                                </label>
+                              </div>
+                            </div>
+                          {% endfor %}
+                        </div>
+                        <template data-contact-template>
+                          <div class="space-y-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm transition-colors duration-300 dark:border-white/10 dark:bg-white/5" data-contact-row>
+                            <div class="flex items-center justify-between gap-3">
+                              <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Contact</p>
+                              <button type="button" class="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-50 dark:hover:bg-rose-500/20 dark:focus-visible:ring-rose-400" data-remove-contact>Supprimer</button>
+                            </div>
+                            <div class="grid gap-3 md:grid-cols-2">
+                              <label class="{{ form_label() }}">
+                                <span>Nom <span class="text-rose-500">*</span></span>
+                                <input name="contact_name" placeholder="Ex: Jeanne Martin" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                              </label>
+                              <label class="{{ form_label() }}">
+                                <span>Email</span>
+                                <input name="contact_email" type="email" placeholder="contact@exemple.fr" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                              </label>
+                              <label class="{{ form_label() }}">
+                                <span>Téléphone</span>
+                                <input name="contact_phone" placeholder="06 12 34 56 78" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70" />
+                              </label>
+                              <label class="{{ form_label() }}">
+                                <span>Description</span>
+                                <textarea name="contact_description" placeholder="Rôle, zone, disponibilité…" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-indigo-400/70"></textarea>
+                              </label>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                      <div class="md:col-span-2 mt-2 flex justify-end">
+                        <button class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-white dark:hover:bg-indigo-400/20 dark:focus-visible:ring-indigo-400" type="submit">Enregistrer</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+            </div>
+          </details>
+        {% endfor %}
+      {% else %}
+        <p class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 transition-colors duration-300 dark:border-white/10 dark:bg-midnight-800/60 dark:text-slate-200">Aucun fournisseur référencé pour le moment.</p>
+      {% endif %}
+    </div>
