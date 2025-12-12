@@ -87,6 +87,10 @@ class Client(ClientBase, table=True):
         back_populates="client",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
+    sites: List["ClientSite"] = Relationship(
+        back_populates="client",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
 
 
 class ClientCreate(ClientBase):
@@ -104,6 +108,32 @@ class ClientUpdate(SQLModel):
     astreinte: Optional[str] = None
     tags: Optional[str] = None
     status: Optional[str] = None
+
+
+# =======================
+# TABLE SITE CLIENT
+# =======================
+
+
+class ClientSiteBase(SQLModel):
+    denomination: str = Field(index=True, description="Nom du site")
+    adresse: Optional[str] = Field(default=None, description="Adresse du site")
+
+
+class ClientSite(ClientSiteBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    client_id: int = Field(foreign_key="client.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    client: Optional[Client] = Relationship(back_populates="sites")
+
+
+class ClientSiteCreate(ClientSiteBase):
+    pass
+
+
+class ClientSiteUpdate(SQLModel):
+    denomination: Optional[str] = None
+    adresse: Optional[str] = None
 
 
 # =======================

@@ -14,6 +14,8 @@ from models import (
     Client,
     ClientCreate,
     ClientUpdate,
+    ClientSite,
+    ClientSiteCreate,
     Contact,
     ContactCreate,
     Entreprise,
@@ -219,6 +221,7 @@ def list_clients(
             selectinload(Client.contacts),
             selectinload(Client.subcontractings),
             selectinload(Client.entreprise),
+            selectinload(Client.sites),
         )
         .order_by(Client.created_at.desc())
     )
@@ -349,6 +352,7 @@ def delete_client(session: Session, client_id: int) -> bool:
     c = session.get(Client, client_id)
     if not c: return False
     session.exec(delete(Contact).where(Contact.client_id == client_id))
+    session.exec(delete(ClientSite).where(ClientSite.client_id == client_id))
     session.delete(c)
     session.commit()
     return True
@@ -370,6 +374,28 @@ def delete_contact(session: Session, client_id: int, contact_id: int) -> bool:
     if not contact or contact.client_id != client_id:
         return False
     session.delete(contact)
+    session.commit()
+    return True
+
+
+def create_client_site(
+    session: Session, client_id: int, data: ClientSiteCreate
+) -> Optional[ClientSite]:
+    client = session.get(Client, client_id)
+    if not client:
+        return None
+    site = ClientSite(client_id=client_id, **data.model_dump())
+    session.add(site)
+    session.commit()
+    session.refresh(site)
+    return site
+
+
+def delete_client_site(session: Session, client_id: int, site_id: int) -> bool:
+    site = session.get(ClientSite, site_id)
+    if not site or site.client_id != client_id:
+        return False
+    session.delete(site)
     session.commit()
     return True
 
