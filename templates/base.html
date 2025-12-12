@@ -54,6 +54,7 @@
     {% set suppliers_active = current_path.startswith('/fournisseurs') %}
     {% set prestations_active = current_path.startswith('/prestations') %}
     {% set consumables_active = current_path.startswith('/filtres-courroies') %}
+    {% set tasks_active = current_path.startswith('/taches') %}
     {% set workload_active = current_path.startswith('/plan-de-charge') %}
     {% set admin_active = current_path.startswith('/admin') %}
     {% set is_admin = current_user and current_user.username == ADMIN_USERNAME %}
@@ -114,6 +115,14 @@
           >
             <span aria-hidden="true">🧰</span>
             Consommables
+          </a>
+          <a
+            href="/taches"
+            class="flex items-center gap-2 rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-900 hover:shadow-md dark:hover:bg-white/10 dark:hover:text-white dark:hover:shadow dark:hover:shadow-indigo-500/20 {{ 'bg-slate-100 text-slate-900 shadow shadow-indigo-500/20 dark:text-midnight-900' if tasks_active else '' }}"
+            {% if tasks_active %}aria-current="page"{% endif %}
+          >
+            <span aria-hidden="true">✅</span>
+            Tâches
           </a>
           <a
             href="/plan-de-charge"
@@ -205,6 +214,14 @@
           >
             <span class="flex items-center gap-2"><span aria-hidden="true">🧰</span> Consommables</span>
             {% if consumables_active %}<span class="text-xs font-semibold uppercase tracking-wide">Actif</span>{% endif %}
+          </a>
+          <a
+            href="/taches"
+            class="flex items-center justify-between rounded-2xl px-4 py-3 transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-white/10 dark:hover:text-white {{ 'bg-slate-100 text-slate-900 shadow shadow-indigo-500/20 dark:text-midnight-900' if tasks_active else '' }}"
+            {% if tasks_active %}aria-current="page"{% endif %}
+          >
+            <span class="flex items-center gap-2"><span aria-hidden="true">✅</span> Tâches</span>
+            {% if tasks_active %}<span class="text-xs font-semibold uppercase tracking-wide">Actif</span>{% endif %}
           </a>
           <a
             href="/plan-de-charge"
