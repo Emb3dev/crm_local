@@ -8,8 +8,66 @@
 
 {% block content %}
 <div id="consumables-shell">
-{% if import_report %}
-  {% set is_success = not import_report.errors %}
+  <div id="client-picker-modal" class="fixed inset-0 z-30 hidden flex items-center justify-center bg-slate-900/60 px-4 py-8 backdrop-blur">
+    <div class="w-full max-w-xl rounded-2xl border border-indigo-100 bg-white p-6 shadow-2xl shadow-indigo-500/30 dark:border-white/10 dark:bg-midnight-800/90">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500 dark:text-indigo-200">Rattachement client</p>
+          <h4 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">Choisir le client</h4>
+        </div>
+        <button type="button" class="rounded-full p-1 text-slate-400 transition hover:bg-indigo-50 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:text-slate-200 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-100" data-picker-close>
+          <span class="sr-only">Fermer</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M4.22 4.22a.75.75 0 011.06 0L10 8.94l4.72-4.72a.75.75 0 111.06 1.06L11.06 10l4.72 4.72a.75.75 0 11-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 11-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 010-1.06z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+      <div class="mt-4 space-y-3">
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-200" for="client-picker-select">Client à assigner</label>
+        <select id="client-picker-select" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-midnight-900/60 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-300">
+          <option value="">Retirer le rattachement</option>
+          {% for client in clients %}
+            <option value="{{ client.id }}">{{ client.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <button type="button" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5" data-picker-close>Annuler</button>
+        <button type="button" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:bg-indigo-500 dark:hover:bg-indigo-400" data-picker-apply>Assigner</button>
+      </div>
+    </div>
+  </div>
+  <div id="client-site-picker-modal" class="fixed inset-0 z-30 hidden flex items-center justify-center bg-slate-900/60 px-4 py-8 backdrop-blur">
+    <div class="w-full max-w-xl rounded-2xl border border-indigo-100 bg-white p-6 shadow-2xl shadow-indigo-500/30 dark:border-white/10 dark:bg-midnight-800/90">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500 dark:text-indigo-200">Rattachement site</p>
+          <h4 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">Choisir le site client</h4>
+        </div>
+        <button type="button" class="rounded-full p-1 text-slate-400 transition hover:bg-indigo-50 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:text-slate-200 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-100" data-picker-close>
+          <span class="sr-only">Fermer</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M4.22 4.22a.75.75 0 011.06 0L10 8.94l4.72-4.72a.75.75 0 111.06 1.06L11.06 10l4.72 4.72a.75.75 0 11-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 11-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 010-1.06z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+      <div class="mt-4 space-y-3">
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-200" for="client-site-picker-select">Site client à assigner</label>
+        <select id="client-site-picker-select" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-midnight-900/60 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-300">
+          <option value="">Retirer le rattachement</option>
+          {% for site in client_sites %}
+            <option value="{{ site.id }}">{{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <button type="button" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5" data-picker-close>Annuler</button>
+        <button type="button" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:bg-indigo-500 dark:hover:bg-indigo-400" data-picker-apply>Assigner</button>
+      </div>
+    </div>
+  </div>
+  {% if import_report %}
+    {% set is_success = not import_report.errors %}
   {% set alert_classes = 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100' if is_success else 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100' %}
   {% set singular_label = import_report.entity_label or 'enregistrement' %}
   {% set plural_label = import_report.entity_label_plural or singular_label ~ 's' %}
@@ -128,39 +186,89 @@
         id="filters-form"
       >
         <div class="grid gap-4 sm:grid-cols-2">
+          {% set filter_client_input_id = 'client-input-filters-form' %}
           <label class="space-y-2 {{ form_label() }}">
             Client
-            <div class="relative">
-              <select name="client_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
-                <option value="" {% if not is_editing_filter or not editing_filter.client_id %}selected{% endif %}>Aucun</option>
-                {% for client in clients %}
-                  <option value="{{ client.id }}" {% if is_editing_filter and editing_filter.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
-                {% endfor %}
-              </select>
-              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                </svg>
-              </span>
-            </div>
+            {% if is_editing_filter %}
+              <input
+                type="hidden"
+                name="client_id"
+                id="{{ filter_client_input_id }}"
+                value="{{ editing_filter.client_id if is_editing_filter else '' }}"
+              />
+              <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
+                <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ filter_client_input_id }}">
+                  {% if is_editing_filter and editing_filter.client %}
+                    {{ editing_filter.client.name }}
+                  {% else %}
+                    Non assigné
+                  {% endif %}
+                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                  data-open-client-picker="{{ filter_client_input_id }}"
+                >
+                  Assigner
+                </button>
+              </div>
+            {% else %}
+              <div class="relative">
+                <select name="client_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                  <option value="" {% if not is_editing_filter %}selected{% endif %}>Non assigné</option>
+                  {% for client in clients %}
+                    <option value="{{ client.id }}">{{ client.name }}</option>
+                  {% endfor %}
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            {% endif %}
           </label>
+          {% set filter_client_site_input_id = 'client-site-input-filters-form' %}
           <label class="space-y-2 {{ form_label() }}">
             Site client
-            <div class="relative">
-              <select name="client_site_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
-                <option value="" {% if not is_editing_filter or not editing_filter.client_site_id %}selected{% endif %}>Aucun</option>
-                {% for site in client_sites %}
-                  <option value="{{ site.id }}" {% if is_editing_filter and editing_filter.client_site_id == site.id %}selected{% endif %}>
-                    {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}
-                  </option>
-                {% endfor %}
-              </select>
-              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                </svg>
-              </span>
-            </div>
+            {% if is_editing_filter %}
+              <input
+                type="hidden"
+                name="client_site_id"
+                id="{{ filter_client_site_input_id }}"
+                value="{{ editing_filter.client_site_id if is_editing_filter else '' }}"
+              />
+              <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
+                <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ filter_client_site_input_id }}">
+                  {% if is_editing_filter and editing_filter.client_site %}
+                    {{ editing_filter.client_site.denomination }}{% if editing_filter.client_site.client %} — {{ editing_filter.client_site.client.name }}{% endif %}
+                  {% else %}
+                    Non assigné
+                  {% endif %}
+                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                  data-open-client-site-picker="{{ filter_client_site_input_id }}"
+                >
+                  Assigner
+                </button>
+              </div>
+            {% else %}
+              <div class="relative">
+                <select name="client_site_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                  <option value="" {% if not is_editing_filter %}selected{% endif %}>Non assigné</option>
+                  {% for site in client_sites %}
+                    <option value="{{ site.id }}">{{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}</option>
+                  {% endfor %}
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            {% endif %}
           </label>
           <label class="space-y-2 {{ form_label() }}">
             Site
@@ -398,43 +506,55 @@
                   {% endif %}
                   <td class="py-3 pr-4">—</td>
                   <td class="py-3 pr-4">
-                    <div class="relative">
-                      <select
-                        form="filter-inline-{{ line.id }}"
-                        name="client_id"
-                        class="nova-select peer w-full rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
-                      >
-                        <option value="" {% if not editing_filter.client_id %}selected{% endif %}>Aucun</option>
-                        {% for client in clients %}
-                          <option value="{{ client.id }}" {% if editing_filter.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
-                        {% endfor %}
-                      </select>
-                      <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                        </svg>
+                    {% set inline_filter_client_input_id = 'client-inline-' ~ line.id %}
+                    <input
+                      type="hidden"
+                      form="filter-inline-{{ line.id }}"
+                      name="client_id"
+                      id="{{ inline_filter_client_input_id }}"
+                      value="{{ editing_filter.client_id if is_editing_filter else '' }}"
+                    />
+                    <div class="flex items-center gap-3 rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm shadow-sm dark:border-indigo-400/40 dark:bg-white/5">
+                      <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ inline_filter_client_input_id }}">
+                        {% if editing_filter.client %}
+                          {{ editing_filter.client.name }}
+                        {% else %}
+                          Non assigné
+                        {% endif %}
                       </span>
+                      <button
+                        type="button"
+                        class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                        data-open-client-picker="{{ inline_filter_client_input_id }}"
+                      >
+                        Assigner
+                      </button>
                     </div>
                   </td>
                   <td class="py-3 pr-4">
-                    <div class="relative">
-                      <select
-                        form="filter-inline-{{ line.id }}"
-                        name="client_site_id"
-                        class="nova-select peer w-full rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
-                      >
-                        <option value="" {% if not editing_filter.client_site_id %}selected{% endif %}>Aucun</option>
-                        {% for site in client_sites %}
-                          <option value="{{ site.id }}" {% if editing_filter.client_site_id == site.id %}selected{% endif %}>
-                            {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}
-                          </option>
-                        {% endfor %}
-                      </select>
-                      <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                        </svg>
+                    {% set inline_filter_client_site_input_id = 'client-site-inline-' ~ line.id %}
+                    <input
+                      type="hidden"
+                      form="filter-inline-{{ line.id }}"
+                      name="client_site_id"
+                      id="{{ inline_filter_client_site_input_id }}"
+                      value="{{ editing_filter.client_site_id if is_editing_filter else '' }}"
+                    />
+                    <div class="flex items-center gap-3 rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm shadow-sm dark:border-indigo-400/40 dark:bg-white/5">
+                      <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ inline_filter_client_site_input_id }}">
+                        {% if editing_filter.client_site %}
+                          {{ editing_filter.client_site.denomination }}{% if editing_filter.client_site.client %} — {{ editing_filter.client_site.client.name }}{% endif %}
+                        {% else %}
+                          Non assigné
+                        {% endif %}
                       </span>
+                      <button
+                        type="button"
+                        class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                        data-open-client-site-picker="{{ inline_filter_client_site_input_id }}"
+                      >
+                        Assigner
+                      </button>
                     </div>
                   </td>
                   <td id="filter-{{ line.id }}" class="py-3 pr-4">
@@ -694,39 +814,89 @@
         id="belts-form"
       >
         <div class="grid gap-4 sm:grid-cols-2">
+          {% set belt_client_input_id = 'client-input-belts-form' %}
           <label class="space-y-2 {{ form_label() }}">
             Client
-            <div class="relative">
-              <select name="client_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
-                <option value="" {% if not is_editing_belt or not editing_belt.client_id %}selected{% endif %}>Aucun</option>
-                {% for client in clients %}
-                  <option value="{{ client.id }}" {% if is_editing_belt and editing_belt.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
-                {% endfor %}
-              </select>
-              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                </svg>
-              </span>
-            </div>
+            {% if is_editing_belt %}
+              <input
+                type="hidden"
+                name="client_id"
+                id="{{ belt_client_input_id }}"
+                value="{{ editing_belt.client_id if is_editing_belt else '' }}"
+              />
+              <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
+                <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ belt_client_input_id }}">
+                  {% if is_editing_belt and editing_belt.client %}
+                    {{ editing_belt.client.name }}
+                  {% else %}
+                    Non assigné
+                  {% endif %}
+                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                  data-open-client-picker="{{ belt_client_input_id }}"
+                >
+                  Assigner
+                </button>
+              </div>
+            {% else %}
+              <div class="relative">
+                <select name="client_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                  <option value="" {% if not is_editing_belt %}selected{% endif %}>Non assigné</option>
+                  {% for client in clients %}
+                    <option value="{{ client.id }}">{{ client.name }}</option>
+                  {% endfor %}
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            {% endif %}
           </label>
+          {% set belt_client_site_input_id = 'client-site-input-belts-form' %}
           <label class="space-y-2 {{ form_label() }}">
             Site client
-            <div class="relative">
-              <select name="client_site_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
-                <option value="" {% if not is_editing_belt or not editing_belt.client_site_id %}selected{% endif %}>Aucun</option>
-                {% for site in client_sites %}
-                  <option value="{{ site.id }}" {% if is_editing_belt and editing_belt.client_site_id == site.id %}selected{% endif %}>
-                    {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}
-                  </option>
-                {% endfor %}
-              </select>
-              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                </svg>
-              </span>
-            </div>
+            {% if is_editing_belt %}
+              <input
+                type="hidden"
+                name="client_site_id"
+                id="{{ belt_client_site_input_id }}"
+                value="{{ editing_belt.client_site_id if is_editing_belt else '' }}"
+              />
+              <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
+                <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ belt_client_site_input_id }}">
+                  {% if is_editing_belt and editing_belt.client_site %}
+                    {{ editing_belt.client_site.denomination }}{% if editing_belt.client_site.client %} — {{ editing_belt.client_site.client.name }}{% endif %}
+                  {% else %}
+                    Non assigné
+                  {% endif %}
+                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                  data-open-client-site-picker="{{ belt_client_site_input_id }}"
+                >
+                  Assigner
+                </button>
+              </div>
+            {% else %}
+              <div class="relative">
+                <select name="client_site_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                  <option value="" {% if not is_editing_belt %}selected{% endif %}>Non assigné</option>
+                  {% for site in client_sites %}
+                    <option value="{{ site.id }}">{{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}</option>
+                  {% endfor %}
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            {% endif %}
           </label>
           <label class="space-y-2 {{ form_label() }}">
             Site
@@ -915,43 +1085,55 @@
                   {% endif %}
                   <td class="py-3 pr-4">—</td>
                   <td class="py-3 pr-4">
-                    <div class="relative">
-                      <select
-                        form="belt-inline-{{ line.id }}"
-                        name="client_id"
-                        class="nova-select peer w-full rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
-                      >
-                        <option value="" {% if not editing_belt.client_id %}selected{% endif %}>Aucun</option>
-                        {% for client in clients %}
-                          <option value="{{ client.id }}" {% if editing_belt.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
-                        {% endfor %}
-                      </select>
-                      <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                        </svg>
+                    {% set inline_belt_client_input_id = 'belt-client-inline-' ~ line.id %}
+                    <input
+                      type="hidden"
+                      form="belt-inline-{{ line.id }}"
+                      name="client_id"
+                      id="{{ inline_belt_client_input_id }}"
+                      value="{{ editing_belt.client_id if is_editing_belt else '' }}"
+                    />
+                    <div class="flex items-center gap-3 rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm shadow-sm dark:border-indigo-400/40 dark:bg-white/5">
+                      <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ inline_belt_client_input_id }}">
+                        {% if editing_belt.client %}
+                          {{ editing_belt.client.name }}
+                        {% else %}
+                          Non assigné
+                        {% endif %}
                       </span>
+                      <button
+                        type="button"
+                        class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                        data-open-client-picker="{{ inline_belt_client_input_id }}"
+                      >
+                        Assigner
+                      </button>
                     </div>
                   </td>
                   <td class="py-3 pr-4">
-                    <div class="relative">
-                      <select
-                        form="belt-inline-{{ line.id }}"
-                        name="client_site_id"
-                        class="nova-select peer w-full rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
-                      >
-                        <option value="" {% if not editing_belt.client_site_id %}selected{% endif %}>Aucun</option>
-                        {% for site in client_sites %}
-                          <option value="{{ site.id }}" {% if editing_belt.client_site_id == site.id %}selected{% endif %}>
-                            {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}
-                          </option>
-                        {% endfor %}
-                      </select>
-                      <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                        </svg>
+                    {% set inline_belt_client_site_input_id = 'belt-client-site-inline-' ~ line.id %}
+                    <input
+                      type="hidden"
+                      form="belt-inline-{{ line.id }}"
+                      name="client_site_id"
+                      id="{{ inline_belt_client_site_input_id }}"
+                      value="{{ editing_belt.client_site_id if is_editing_belt else '' }}"
+                    />
+                    <div class="flex items-center gap-3 rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm shadow-sm dark:border-indigo-400/40 dark:bg-white/5">
+                      <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ inline_belt_client_site_input_id }}">
+                        {% if editing_belt.client_site %}
+                          {{ editing_belt.client_site.denomination }}{% if editing_belt.client_site.client %} — {{ editing_belt.client_site.client.name }}{% endif %}
+                        {% else %}
+                          Non assigné
+                        {% endif %}
                       </span>
+                      <button
+                        type="button"
+                        class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                        data-open-client-site-picker="{{ inline_belt_client_site_input_id }}"
+                      >
+                        Assigner
+                      </button>
                     </div>
                   </td>
                   <td id="belt-{{ line.id }}" class="py-3 pr-4">
@@ -1252,11 +1434,84 @@
         });
       }
 
+      function bindPicker(modalId, selectId, triggerAttribute, context = document) {
+        const modal = document.getElementById(modalId);
+        const select = modal?.querySelector(`#${selectId}`) || modal?.querySelector("select");
+        if (!modal || !select) return;
+
+        function closeModal() {
+          modal.classList.add("hidden");
+          delete modal.dataset.targetInput;
+        }
+
+        function applySelection() {
+          const targetId = modal.dataset.targetInput;
+          if (!targetId) return closeModal();
+
+          const input = document.getElementById(targetId);
+          if (!input) return closeModal();
+
+          input.value = select.value;
+
+          const label = document.querySelector(`[data-display-for="${targetId}"]`);
+          const selectedText = select.value
+            ? select.selectedOptions[0]?.textContent?.trim()
+            : "Non assigné";
+          if (label) {
+            label.textContent = selectedText || "Non assigné";
+          }
+
+          closeModal();
+        }
+
+        function openModal(targetId) {
+          if (!targetId) return;
+          modal.dataset.targetInput = targetId;
+          const input = document.getElementById(targetId);
+          select.value = input?.value || "";
+          modal.classList.remove("hidden");
+        }
+
+        modal.addEventListener("click", (event) => {
+          if (event.target === modal) {
+            closeModal();
+          }
+        });
+
+        modal.querySelectorAll("[data-picker-close]").forEach((button) => {
+          if (button.dataset.pickerBound === "true") return;
+          button.dataset.pickerBound = "true";
+          button.addEventListener("click", closeModal);
+        });
+
+        const applyButton = modal.querySelector("[data-picker-apply]");
+        if (applyButton && applyButton.dataset.pickerBound !== "true") {
+          applyButton.dataset.pickerBound = "true";
+          applyButton.addEventListener("click", applySelection);
+        }
+
+        context.querySelectorAll(`[${triggerAttribute}]`).forEach((trigger) => {
+          if (trigger.dataset.pickerBound === "true") return;
+          trigger.dataset.pickerBound = "true";
+
+          trigger.addEventListener("click", () => {
+            const targetId = trigger.getAttribute(triggerAttribute);
+            openModal(targetId);
+          });
+        });
+      }
+
+      function bindPickers(context = document) {
+        bindPicker("client-picker-modal", "client-picker-select", "data-open-client-picker", context);
+        bindPicker("client-site-picker-modal", "client-site-picker-select", "data-open-client-site-picker", context);
+      }
+
       function enhanceForms() {
         const shell = document.getElementById(SHELL_ID);
         if (!shell) return;
 
         bindPocketFields(shell);
+        bindPickers(shell);
 
         shell
           .querySelectorAll('form[action$="bulk-actions"]')
