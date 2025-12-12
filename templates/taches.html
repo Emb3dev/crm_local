@@ -113,6 +113,8 @@
     const WEBHOOK_URL_MP3 = "";
     const WEBHOOK_URL_CSTS = "https://n8n.srv947303.hstgr.cloud/webhook/c8760a79-7ab1-42cc-974a-88c728f418f2";
     const MAX_SIZE_MB = 25;
+    const HISTORY_KEY = 'tachesUploadHistory';
+    const HISTORY_LIMIT = 30;
 
     const btnUpload1 = document.getElementById('btnUpload1');
     const btnUpload2 = document.getElementById('btnUpload2');
@@ -142,6 +144,36 @@
       missingWebhook: 'Webhook non configuré pour cette action.'
     };
 
+    function makeId() {
+      if (typeof crypto?.randomUUID === 'function') return crypto.randomUUID();
+      return `upl-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function loadHistory() {
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (error) {
+        console.warn('Impossible de charger l\'historique', error);
+        return [];
+      }
+    }
+
+    function saveHistory(entries) {
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(0, HISTORY_LIMIT)));
+      } catch (error) {
+        console.warn('Impossible de sauvegarder l\'historique', error);
+      }
+    }
+
+    function upsertHistory(entry) {
+      const current = loadHistory();
+      const filtered = current.filter((item) => item.id !== entry.id);
+      filtered.unshift(entry);
+      saveHistory(filtered);
+    }
+
     function validateFile(file, types, maxMB) {
       if (!file) return { ok: false, reason: validationMessages.missingFile };
       const accepted = Array.isArray(types) ? types : [types];
@@ -155,7 +187,18 @@
       return { ok: true };
     }
 
-    function createUploadCard(file) {
+    function createUploadCard(file, savedEntry) {
+      const entry = savedEntry || {
+        id: makeId(),
+        name: file?.name || 'Fichier',
+        size: file?.size || 0,
+        type: file?.type || '',
+        status: 'pending',
+        statusLabel: 'Envoi…',
+        response: '',
+        date: Date.now(),
+      };
+
       const card = document.createElement('article');
       card.className = 'upload-card rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm dark:border-white/10 dark:bg-white/5';
 
@@ -166,10 +209,10 @@
       meta.className = 'min-w-0 space-y-1';
       const title = document.createElement('p');
       title.className = 'truncate text-sm font-semibold text-slate-900 dark:text-white';
-      title.textContent = file.name;
+      title.textContent = entry.name;
       const size = document.createElement('p');
       size.className = 'text-xs text-slate-500 dark:text-slate-300';
-      size.textContent = `${(file.size / 1024 / 1024).toFixed(2)} Mo`;
+      size.textContent = `${(entry.size / 1024 / 1024).toFixed(2)} Mo`;
       meta.append(title, size);
 
       const pill = document.createElement('span');
@@ -203,29 +246,68 @@
       card.append(head, pre, actions);
       uploads.prepend(card);
 
-      return {
-        setPending(label) {
-          pill.className = 'pill-icon inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-amber-700 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100';
-          pill.innerHTML = `<span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-amber-400 border-r-transparent"></span><span>${label}</span>`;
-        },
-        setOk(text) {
-          pill.className = 'pill-icon inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100';
-          pill.textContent = text;
-          retry.classList.add('hidden');
-        },
-        setErr(text) {
-          pill.className = 'pill-icon inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-rose-700 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100';
-          pill.textContent = text;
-        },
-        showResponse(text) {
-          pre.textContent = text || 'Aucune réponse.';
+      function setPending(label) {
+        entry.status = 'pending';
+        entry.statusLabel = label;
+        upsertHistory(entry);
+        pill.className = 'pill-icon inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-amber-700 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100';
+        pill.innerHTML = `<span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-amber-400 border-r-transparent"></span><span>${label}</span>`;
+      }
+
+      function setOk(text) {
+        entry.status = 'ok';
+        entry.statusLabel = text;
+        upsertHistory(entry);
+        pill.className = 'pill-icon inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-100';
+        pill.textContent = text;
+        retry.classList.add('hidden');
+      }
+
+      function setErr(text) {
+        entry.status = 'error';
+        entry.statusLabel = text;
+        upsertHistory(entry);
+        pill.className = 'pill-icon inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-rose-700 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-100';
+        pill.textContent = text;
+      }
+
+      function showResponse(text) {
+        entry.response = text;
+        upsertHistory(entry);
+        pre.textContent = text || 'Aucune réponse.';
+        pre.classList.remove('hidden');
+        copy.classList.remove('hidden');
+      }
+
+      function setRetry(handler) {
+        retry.onclick = handler;
+        retry.classList.remove('hidden');
+      }
+
+      function restoreState() {
+        if (entry.response) {
+          pre.textContent = entry.response;
           pre.classList.remove('hidden');
           copy.classList.remove('hidden');
-        },
-        setRetry(handler) {
-          retry.onclick = handler;
-          retry.classList.remove('hidden');
-        },
+        }
+        if (entry.status === 'ok') {
+          setOk(entry.statusLabel || 'OK');
+        } else if (entry.status === 'error') {
+          setErr(entry.statusLabel || 'Erreur');
+        } else {
+          setPending(entry.statusLabel || 'Envoi…');
+        }
+      }
+
+      restoreState();
+
+      return {
+        entry,
+        setPending,
+        setOk,
+        setErr,
+        showResponse,
+        setRetry,
       };
     }
 
@@ -377,5 +459,12 @@
 
       await run();
     });
+
+    function renderHistory() {
+      const history = loadHistory();
+      history.forEach((entry) => createUploadCard(null, entry));
+    }
+
+    renderHistory();
   </script>
 {% endblock %}
