@@ -33,6 +33,8 @@ def _rebuild_filterline_table(conn, filter_cols):
     )
     ordered_expr = "ordered" if "ordered" in filter_cols else "0"
     created_at_expr = "created_at" if "created_at" in filter_cols else "CURRENT_TIMESTAMP"
+    client_id_expr = "client_id" if "client_id" in filter_cols else "NULL"
+    client_site_id_expr = "client_site_id" if "client_site_id" in filter_cols else "NULL"
 
     conn.exec_driver_sql("DROP TABLE IF EXISTS filterline_tmp")
     conn.exec_driver_sql(
@@ -41,6 +43,8 @@ def _rebuild_filterline_table(conn, filter_cols):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             site VARCHAR NOT NULL,
             equipment VARCHAR NOT NULL,
+            client_id INTEGER REFERENCES client(id),
+            client_site_id INTEGER REFERENCES clientsite(id),
             efficiency VARCHAR,
             filter_type VARCHAR NOT NULL,
             pocket_count INTEGER,
@@ -60,6 +64,8 @@ def _rebuild_filterline_table(conn, filter_cols):
             id,
             site,
             equipment,
+            client_id,
+            client_site_id,
             efficiency,
             filter_type,
             pocket_count,
@@ -75,6 +81,8 @@ def _rebuild_filterline_table(conn, filter_cols):
             id,
             site,
             equipment,
+            {client_id_expr},
+            {client_site_id_expr},
             efficiency,
             {filter_type_expr},
             {pocket_count_expr},
@@ -156,6 +164,14 @@ def init_db():
             conn.exec_driver_sql("ALTER TABLE filterline ADD COLUMN pocket_count INTEGER")
         if "info_plus" not in filter_cols:
             conn.exec_driver_sql("ALTER TABLE filterline ADD COLUMN info_plus VARCHAR")
+        if "client_id" not in filter_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE filterline ADD COLUMN client_id INTEGER REFERENCES client(id)"
+            )
+        if "client_site_id" not in filter_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE filterline ADD COLUMN client_site_id INTEGER REFERENCES clientsite(id)"
+            )
         belt_cols = {
             row[1]
             for row in conn.exec_driver_sql("PRAGMA table_info('beltline')")
