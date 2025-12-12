@@ -37,8 +37,10 @@ from defaults import DEFAULT_PRESTATION_GROUPS
 from models import (
     BeltLineCreate,
     BeltLineUpdate,
+    Client,
     ClientCreate,
     ClientUpdate,
+    ClientSite,
     ClientSiteCreate,
     ContactCreate,
     FilterLineCreate,
@@ -3131,6 +3133,8 @@ def list_filters_and_belts(
 
     filters = crud.list_filter_lines(session, q=filters_q or None)
     belts = crud.list_belt_lines(session, q=belts_q or None)
+    clients = crud.list_clients(session, limit=500)
+    client_sites = crud.list_client_sites(session)
     editing_filter = None
     editing_belt = None
 
@@ -3165,6 +3169,8 @@ def list_filters_and_belts(
             "editing_belt": editing_belt,
             "filters_q": filters_q,
             "belts_q": belts_q,
+            "clients": clients,
+            "client_sites": client_sites,
         },
     )
 
@@ -3182,6 +3188,32 @@ def _validate_pocket_count(
             detail="Le nombre de poches doit être supérieur ou égal à 1.",
         )
     return pocket_count
+
+
+def _parse_optional_int(value: Optional[str]) -> Optional[int]:
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Identifiant invalide")
+
+
+def _resolve_client_attachment(
+    session: Session, client_id: Optional[int], client_site_id: Optional[int]
+) -> Tuple[Optional[int], Optional[int]]:
+    resolved_client_id = client_id
+    if client_id is not None:
+        if not session.get(Client, client_id):
+            raise HTTPException(status_code=400, detail="Client introuvable")
+
+    if client_site_id is not None:
+        site = session.get(ClientSite, client_site_id)
+        if not site:
+            raise HTTPException(status_code=400, detail="Site client introuvable")
+        resolved_client_id = site.client_id
+
+    return resolved_client_id, client_site_id
 
 
 @app.get("/taches", response_class=HTMLResponse)
@@ -3409,6 +3441,8 @@ async def create_filter_line(
     _current_user: CurrentUser,
     site: str = Form(...),
     equipment: str = Form(...),
+    client_id: Optional[str] = Form(None),
+    client_site_id: Optional[str] = Form(None),
     efficiency: Optional[str] = Form(None),
     format_type: str = Form(...),
     pocket_count: Optional[str] = Form(None),
@@ -3426,9 +3460,17 @@ async def create_filter_line(
     if quantity < 1:
         raise HTTPException(status_code=400, detail="Quantité invalide")
 
+    resolved_client_id, resolved_client_site_id = _resolve_client_attachment(
+        session,
+        _parse_optional_int(client_id),
+        _parse_optional_int(client_site_id),
+    )
+
     payload = FilterLineCreate(
         site=site.strip(),
         equipment=equipment.strip(),
+        client_id=resolved_client_id,
+        client_site_id=resolved_client_site_id,
         efficiency=(efficiency.strip() if efficiency else None),
         format_type=format_type,
         pocket_count=_validate_pocket_count(
@@ -3451,6 +3493,8 @@ async def update_filter_line(
     line_id: int,
     site: str = Form(...),
     equipment: str = Form(...),
+    client_id: Optional[str] = Form(None),
+    client_site_id: Optional[str] = Form(None),
     efficiency: Optional[str] = Form(None),
     format_type: str = Form(...),
     pocket_count: Optional[str] = Form(None),
@@ -3471,9 +3515,17 @@ async def update_filter_line(
     if quantity < 1:
         raise HTTPException(status_code=400, detail="Quantité invalide")
 
+    resolved_client_id, resolved_client_site_id = _resolve_client_attachment(
+        session,
+        _parse_optional_int(client_id),
+        _parse_optional_int(client_site_id),
+    )
+
     payload = FilterLineUpdate(
         site=site.strip(),
         equipment=equipment.strip(),
+        client_id=resolved_client_id,
+        client_site_id=resolved_client_site_id,
         efficiency=(efficiency.strip() if efficiency else None),
         format_type=format_type,
         pocket_count=_validate_pocket_count(
@@ -3573,6 +3625,18 @@ def bulk_manage_belt_lines(
         crud.bulk_update_belt_lines_included_in_contract(
             session, line_ids, contract_flag
         )
+    elif action == "assign_client":
+        client_id = _parse_optional_int(state or None)
+        if client_id is not None and not session.get(Client, client_id):
+            raise HTTPException(status_code=400, detail="Client introuvable")
+        crud.bulk_assign_belt_lines_client(session, line_ids, client_id)
+    elif action == "assign_site":
+        client_site_id = _parse_optional_int(state or None)
+        if client_site_id is not None and not session.get(
+            ClientSite, client_site_id
+        ):
+            raise HTTPException(status_code=400, detail="Site client introuvable")
+        crud.bulk_assign_belt_lines_site(session, line_ids, client_site_id)
     elif action == "delete":
         crud.bulk_delete_belt_lines(session, line_ids)
     else:
@@ -3660,6 +3724,18 @@ def bulk_manage_filter_lines(
         crud.bulk_update_filter_lines_included_in_contract(
             session, line_ids, contract_flag
         )
+    elif action == "assign_client":
+        client_id = _parse_optional_int(state or None)
+        if client_id is not None and not session.get(Client, client_id):
+            raise HTTPException(status_code=400, detail="Client introuvable")
+        crud.bulk_assign_filter_lines_client(session, line_ids, client_id)
+    elif action == "assign_site":
+        client_site_id = _parse_optional_int(state or None)
+        if client_site_id is not None and not session.get(
+            ClientSite, client_site_id
+        ):
+            raise HTTPException(status_code=400, detail="Site client introuvable")
+        crud.bulk_assign_filter_lines_site(session, line_ids, client_site_id)
     elif action == "delete":
         crud.bulk_delete_filter_lines(session, line_ids)
     else:
@@ -3767,16 +3843,26 @@ async def create_belt_line(
     site: str = Form(...),
     equipment: str = Form(...),
     reference: str = Form(...),
+    client_id: Optional[str] = Form(None),
+    client_site_id: Optional[str] = Form(None),
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
     included_in_contract: bool = Form(False),
     ordered: bool = Form(False),
     session: Session = Depends(get_session),
 ):
+    resolved_client_id, resolved_client_site_id = _resolve_client_attachment(
+        session,
+        _parse_optional_int(client_id),
+        _parse_optional_int(client_site_id),
+    )
+
     payload = BeltLineCreate(
         site=site.strip(),
         equipment=equipment.strip(),
         reference=reference.strip(),
+        client_id=resolved_client_id,
+        client_site_id=resolved_client_site_id,
         quantity=quantity,
         order_week=(order_week.strip().upper() if order_week else None),
         included_in_contract=included_in_contract,
@@ -3793,6 +3879,8 @@ async def update_belt_line(
     site: str = Form(...),
     equipment: str = Form(...),
     reference: str = Form(...),
+    client_id: Optional[str] = Form(None),
+    client_site_id: Optional[str] = Form(None),
     quantity: int = Form(...),
     order_week: Optional[str] = Form(None),
     included_in_contract: bool = Form(False),
@@ -3805,10 +3893,18 @@ async def update_belt_line(
     if quantity < 1:
         raise HTTPException(status_code=400, detail="Quantité invalide")
 
+    resolved_client_id, resolved_client_site_id = _resolve_client_attachment(
+        session,
+        _parse_optional_int(client_id),
+        _parse_optional_int(client_site_id),
+    )
+
     payload = BeltLineUpdate(
         site=site.strip(),
         equipment=equipment.strip(),
         reference=reference.strip(),
+        client_id=resolved_client_id,
+        client_site_id=resolved_client_site_id,
         quantity=quantity,
         order_week=(order_week.strip() if order_week else None),
         included_in_contract=included_in_contract,
