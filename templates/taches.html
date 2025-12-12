@@ -148,6 +148,14 @@
       missingWebhook: 'Webhook non configuré pour cette action.'
     };
 
+    const navigationAbortController = new AbortController();
+    let isUnloading = false;
+
+    window.addEventListener('beforeunload', () => {
+      isUnloading = true;
+      navigationAbortController.abort();
+    });
+
     function makeId() {
       if (typeof crypto?.randomUUID === 'function') return crypto.randomUUID();
       return `upl-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -339,7 +347,11 @@
         }
       });
 
-      const res = await fetch(webhookUrl, { method: 'POST', body: form });
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        body: form,
+        signal: navigationAbortController.signal,
+      });
       const contentType = (res.headers.get('content-type') || '').toLowerCase();
       let bodyText = '';
       try {
@@ -382,6 +394,11 @@
             ui.setOk(`OK ${status}`);
             ui.showResponse(bodyText);
           } catch (error) {
+            if (isUnloading || error?.name === 'AbortError') {
+              ui.setErr('Interrompu');
+              ui.showResponse('Envoi interrompu (rafraîchissement ou navigation).');
+              return;
+            }
             ui.setErr('Échec');
             ui.showResponse(String(error.message || error));
             ui.setRetry(run);
@@ -464,6 +481,11 @@
           ui.showResponse(bodyText);
           cstsReset.click();
         } catch (error) {
+          if (isUnloading || error?.name === 'AbortError') {
+            ui.setErr('Interrompu');
+            ui.showResponse('Envoi interrompu (rafraîchissement ou navigation).');
+            return;
+          }
           ui.setErr('Échec');
           ui.showResponse(String(error.message || error));
           ui.setRetry(run);
