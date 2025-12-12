@@ -189,54 +189,86 @@
           {% set filter_client_input_id = 'client-input-filters-form' %}
           <label class="space-y-2 {{ form_label() }}">
             Client
-            <input
-              type="hidden"
-              name="client_id"
-              id="{{ filter_client_input_id }}"
-              value="{{ editing_filter.client_id if is_editing_filter else '' }}"
-            />
-            <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
-              <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ filter_client_input_id }}">
-                {% if is_editing_filter and editing_filter.client %}
-                  {{ editing_filter.client.name }}
-                {% else %}
-                  Non assigné
-                {% endif %}
-              </span>
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
-                data-open-client-picker="{{ filter_client_input_id }}"
-              >
-                Assigner
-              </button>
-            </div>
+            {% if is_editing_filter %}
+              <input
+                type="hidden"
+                name="client_id"
+                id="{{ filter_client_input_id }}"
+                value="{{ editing_filter.client_id if is_editing_filter else '' }}"
+              />
+              <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
+                <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ filter_client_input_id }}">
+                  {% if is_editing_filter and editing_filter.client %}
+                    {{ editing_filter.client.name }}
+                  {% else %}
+                    Non assigné
+                  {% endif %}
+                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                  data-open-client-picker="{{ filter_client_input_id }}"
+                >
+                  Assigner
+                </button>
+              </div>
+            {% else %}
+              <div class="relative">
+                <select name="client_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                  <option value="" {% if not is_editing_filter %}selected{% endif %}>Non assigné</option>
+                  {% for client in clients %}
+                    <option value="{{ client.id }}">{{ client.name }}</option>
+                  {% endfor %}
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            {% endif %}
           </label>
           {% set filter_client_site_input_id = 'client-site-input-filters-form' %}
           <label class="space-y-2 {{ form_label() }}">
             Site client
-            <input
-              type="hidden"
-              name="client_site_id"
-              id="{{ filter_client_site_input_id }}"
-              value="{{ editing_filter.client_site_id if is_editing_filter else '' }}"
-            />
-            <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
-              <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ filter_client_site_input_id }}">
-                {% if is_editing_filter and editing_filter.client_site %}
-                  {{ editing_filter.client_site.denomination }}{% if editing_filter.client_site.client %} — {{ editing_filter.client_site.client.name }}{% endif %}
-                {% else %}
-                  Non assigné
-                {% endif %}
-              </span>
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
-                data-open-client-site-picker="{{ filter_client_site_input_id }}"
-              >
-                Assigner
-              </button>
-            </div>
+            {% if is_editing_filter %}
+              <input
+                type="hidden"
+                name="client_site_id"
+                id="{{ filter_client_site_input_id }}"
+                value="{{ editing_filter.client_site_id if is_editing_filter else '' }}"
+              />
+              <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
+                <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ filter_client_site_input_id }}">
+                  {% if is_editing_filter and editing_filter.client_site %}
+                    {{ editing_filter.client_site.denomination }}{% if editing_filter.client_site.client %} — {{ editing_filter.client_site.client.name }}{% endif %}
+                  {% else %}
+                    Non assigné
+                  {% endif %}
+                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                  data-open-client-site-picker="{{ filter_client_site_input_id }}"
+                >
+                  Assigner
+                </button>
+              </div>
+            {% else %}
+              <div class="relative">
+                <select name="client_site_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                  <option value="" {% if not is_editing_filter %}selected{% endif %}>Non assigné</option>
+                  {% for site in client_sites %}
+                    <option value="{{ site.id }}">{{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}</option>
+                  {% endfor %}
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            {% endif %}
           </label>
           <label class="space-y-2 {{ form_label() }}">
             Site
@@ -785,54 +817,86 @@
           {% set belt_client_input_id = 'client-input-belts-form' %}
           <label class="space-y-2 {{ form_label() }}">
             Client
-            <input
-              type="hidden"
-              name="client_id"
-              id="{{ belt_client_input_id }}"
-              value="{{ editing_belt.client_id if is_editing_belt else '' }}"
-            />
-            <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
-              <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ belt_client_input_id }}">
-                {% if is_editing_belt and editing_belt.client %}
-                  {{ editing_belt.client.name }}
-                {% else %}
-                  Non assigné
-                {% endif %}
-              </span>
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
-                data-open-client-picker="{{ belt_client_input_id }}"
-              >
-                Assigner
-              </button>
-            </div>
+            {% if is_editing_belt %}
+              <input
+                type="hidden"
+                name="client_id"
+                id="{{ belt_client_input_id }}"
+                value="{{ editing_belt.client_id if is_editing_belt else '' }}"
+              />
+              <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
+                <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ belt_client_input_id }}">
+                  {% if is_editing_belt and editing_belt.client %}
+                    {{ editing_belt.client.name }}
+                  {% else %}
+                    Non assigné
+                  {% endif %}
+                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                  data-open-client-picker="{{ belt_client_input_id }}"
+                >
+                  Assigner
+                </button>
+              </div>
+            {% else %}
+              <div class="relative">
+                <select name="client_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                  <option value="" {% if not is_editing_belt %}selected{% endif %}>Non assigné</option>
+                  {% for client in clients %}
+                    <option value="{{ client.id }}">{{ client.name }}</option>
+                  {% endfor %}
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            {% endif %}
           </label>
           {% set belt_client_site_input_id = 'client-site-input-belts-form' %}
           <label class="space-y-2 {{ form_label() }}">
             Site client
-            <input
-              type="hidden"
-              name="client_site_id"
-              id="{{ belt_client_site_input_id }}"
-              value="{{ editing_belt.client_site_id if is_editing_belt else '' }}"
-            />
-            <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
-              <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ belt_client_site_input_id }}">
-                {% if is_editing_belt and editing_belt.client_site %}
-                  {{ editing_belt.client_site.denomination }}{% if editing_belt.client_site.client %} — {{ editing_belt.client_site.client.name }}{% endif %}
-                {% else %}
-                  Non assigné
-                {% endif %}
-              </span>
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
-                data-open-client-site-picker="{{ belt_client_site_input_id }}"
-              >
-                Assigner
-              </button>
-            </div>
+            {% if is_editing_belt %}
+              <input
+                type="hidden"
+                name="client_site_id"
+                id="{{ belt_client_site_input_id }}"
+                value="{{ editing_belt.client_site_id if is_editing_belt else '' }}"
+              />
+              <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition dark:border-white/15 dark:bg-white/5">
+                <span class="text-slate-900 dark:text-indigo-100" data-display-for="{{ belt_client_site_input_id }}">
+                  {% if is_editing_belt and editing_belt.client_site %}
+                    {{ editing_belt.client_site.denomination }}{% if editing_belt.client_site.client %} — {{ editing_belt.client_site.client.name }}{% endif %}
+                  {% else %}
+                    Non assigné
+                  {% endif %}
+                </span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-500/20"
+                  data-open-client-site-picker="{{ belt_client_site_input_id }}"
+                >
+                  Assigner
+                </button>
+              </div>
+            {% else %}
+              <div class="relative">
+                <select name="client_site_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                  <option value="" {% if not is_editing_belt %}selected{% endif %}>Non assigné</option>
+                  {% for site in client_sites %}
+                    <option value="{{ site.id }}">{{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}</option>
+                  {% endfor %}
+                </select>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            {% endif %}
           </label>
           <label class="space-y-2 {{ form_label() }}">
             Site
