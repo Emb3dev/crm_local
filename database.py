@@ -176,6 +176,14 @@ def init_db():
             row[1]
             for row in conn.exec_driver_sql("PRAGMA table_info('beltline')")
         }
+        if "client_id" not in belt_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE beltline ADD COLUMN client_id INTEGER REFERENCES client(id)"
+            )
+        if "client_site_id" not in belt_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE beltline ADD COLUMN client_site_id INTEGER REFERENCES clientsite(id)"
+            )
         if "order_week" not in belt_cols:
             conn.exec_driver_sql(
                 "ALTER TABLE beltline ADD COLUMN order_week VARCHAR"
