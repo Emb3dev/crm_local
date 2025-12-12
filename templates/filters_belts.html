@@ -438,12 +438,16 @@
               <option value="contract:true">Marquer inclus contrat</option>
               <option value="contract:false">Marquer hors contrat</option>
               <optgroup label="Rattachement client">
+                <option value="assign_client:picker">Modifier le rattachement…</option>
                 <option value="assign_client:">Retirer le rattachement</option>
                 {% for client in clients %}
-                  <option value="assign_client:{{ client.id }}">Client : {{ client.name }}</option>
+                  <option value="assign_client:{{ client.id }}">
+                    Entreprise : {{ client.entreprise.nom if client.entreprise else client.name }}
+                  </option>
                 {% endfor %}
               </optgroup>
               <optgroup label="Rattachement site client">
+                <option value="assign_site:picker">Modifier le rattachement…</option>
                 <option value="assign_site:">Retirer le rattachement</option>
                 {% for site in client_sites %}
                   <option value="assign_site:{{ site.id }}">Site : {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}</option>
@@ -723,7 +727,13 @@
                       data-bulk-group="filters"
                     />
                   </td>
-                  <td class="py-3 pr-4" data-mail-field="client">{{ line.client.name if line.client else '—' }}</td>
+                  <td class="py-3 pr-4" data-mail-field="client">
+                    {% if line.client %}
+                      {{ line.client.entreprise.nom if line.client.entreprise else line.client.name }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
                   <td class="py-3 pr-4" data-mail-field="client_site">
                     {% if line.client_site %}
                       {{ line.client_site.denomination }}
@@ -1021,12 +1031,16 @@
               <option value="contract:true">Marquer inclus contrat</option>
               <option value="contract:false">Marquer hors contrat</option>
               <optgroup label="Rattachement client">
+                <option value="assign_client:picker">Modifier le rattachement…</option>
                 <option value="assign_client:">Retirer le rattachement</option>
                 {% for client in clients %}
-                  <option value="assign_client:{{ client.id }}">Client : {{ client.name }}</option>
+                  <option value="assign_client:{{ client.id }}">
+                    Entreprise : {{ client.entreprise.nom if client.entreprise else client.name }}
+                  </option>
                 {% endfor %}
               </optgroup>
               <optgroup label="Rattachement site client">
+                <option value="assign_site:picker">Modifier le rattachement…</option>
                 <option value="assign_site:">Retirer le rattachement</option>
                 {% for site in client_sites %}
                   <option value="assign_site:{{ site.id }}">Site : {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}</option>
@@ -1249,7 +1263,13 @@
                       data-bulk-group="belts"
                     />
                   </td>
-                  <td class="py-3 pr-4" data-mail-field="client">{{ line.client.name if line.client else '—' }}</td>
+                  <td class="py-3 pr-4" data-mail-field="client">
+                    {% if line.client %}
+                      {{ line.client.entreprise.nom if line.client.entreprise else line.client.name }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
                   <td class="py-3 pr-4" data-mail-field="client_site">
                     {% if line.client_site %}
                       {{ line.client_site.denomination }}
@@ -1407,6 +1427,81 @@
         return true;
       }
 
+      function openValuePicker(modalId, selectId) {
+        return new Promise((resolve) => {
+          const modal = document.getElementById(modalId);
+          const select = modal?.querySelector(`#${selectId}`) || modal?.querySelector("select");
+          const applyButton = modal?.querySelector("[data-picker-apply]");
+          const closeButtons = modal?.querySelectorAll("[data-picker-close]") || [];
+
+          if (!modal || !select || !applyButton) {
+            resolve(null);
+            return;
+          }
+
+          function cleanup() {
+            modal.removeEventListener("click", handleBackdrop);
+            applyButton.removeEventListener("click", handleApply);
+            closeButtons.forEach((button) => button.removeEventListener("click", handleClose));
+          }
+
+          function handleClose() {
+            modal.classList.add("hidden");
+            cleanup();
+            resolve(null);
+          }
+
+          function handleApply() {
+            const value = select.value;
+            modal.classList.add("hidden");
+            cleanup();
+            resolve(value);
+          }
+
+          function handleBackdrop(event) {
+            if (event.target === modal) {
+              handleClose();
+            }
+          }
+
+          select.value = select.value || "";
+          modal.classList.remove("hidden");
+
+          modal.addEventListener("click", handleBackdrop);
+          applyButton.addEventListener("click", handleApply);
+          closeButtons.forEach((button) => button.addEventListener("click", handleClose));
+        });
+      }
+
+      function handleBulkPickerSelection(form, actionSelect, event) {
+        const [action, state] = (actionSelect.value || "").split(":");
+        if (state !== "picker") return false;
+
+        const pickerConfig = {
+          assign_client: { modalId: "client-picker-modal", selectId: "client-picker-select" },
+          assign_site: { modalId: "client-site-picker-modal", selectId: "client-site-picker-select" },
+        }[action];
+
+        if (!pickerConfig) return false;
+
+        event.preventDefault();
+
+        openValuePicker(pickerConfig.modalId, pickerConfig.selectId).then((value) => {
+          if (value === null) return;
+
+          actionSelect.value = `${action}:${value}`;
+          form.dataset.skipBulkPicker = "true";
+
+          if (typeof form.requestSubmit === "function") {
+            form.requestSubmit();
+          } else {
+            form.submit();
+          }
+        });
+
+        return true;
+      }
+
       function togglePocketField(select, root = document) {
         const formId = select.getAttribute("form") || select.form?.id;
         const pocketSelector = formId
@@ -1523,6 +1618,13 @@
 
           form.addEventListener("submit", (event) => {
             if (event.defaultPrevented) return;
+
+            if (form.dataset.skipBulkPicker === "true") {
+              delete form.dataset.skipBulkPicker;
+            } else {
+              const actionSelect = form.querySelector('select[name="bulk_action"]');
+              if (actionSelect && handleBulkPickerSelection(form, actionSelect, event)) return;
+            }
             if (allowExcelExport(form, event)) return;
 
             event.preventDefault();
