@@ -3148,6 +3148,16 @@ def _validate_pocket_count(
     return pocket_count
 
 
+@app.get("/taches", response_class=HTMLResponse)
+def tasks_page(request: Request, _current_user: CurrentUser) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "taches.html",
+        {
+            "request": request,
+        },
+    )
+
+
 @app.get("/plan-de-charge", response_class=HTMLResponse)
 def workload_plan(
     request: Request,
