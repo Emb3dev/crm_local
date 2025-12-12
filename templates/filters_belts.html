@@ -440,7 +440,9 @@
               <optgroup label="Rattachement client">
                 <option value="assign_client:">Retirer le rattachement</option>
                 {% for client in clients %}
-                  <option value="assign_client:{{ client.id }}">Client : {{ client.name }}</option>
+                  <option value="assign_client:{{ client.id }}">
+                    Entreprise : {{ client.entreprise.nom if client.entreprise else client.name }}
+                  </option>
                 {% endfor %}
               </optgroup>
               <optgroup label="Rattachement site client">
@@ -723,7 +725,13 @@
                       data-bulk-group="filters"
                     />
                   </td>
-                  <td class="py-3 pr-4" data-mail-field="client">{{ line.client.name if line.client else '—' }}</td>
+                  <td class="py-3 pr-4" data-mail-field="client">
+                    {% if line.client %}
+                      {{ line.client.entreprise.nom if line.client.entreprise else line.client.name }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
                   <td class="py-3 pr-4" data-mail-field="client_site">
                     {% if line.client_site %}
                       {{ line.client_site.denomination }}
@@ -1023,7 +1031,9 @@
               <optgroup label="Rattachement client">
                 <option value="assign_client:">Retirer le rattachement</option>
                 {% for client in clients %}
-                  <option value="assign_client:{{ client.id }}">Client : {{ client.name }}</option>
+                  <option value="assign_client:{{ client.id }}">
+                    Entreprise : {{ client.entreprise.nom if client.entreprise else client.name }}
+                  </option>
                 {% endfor %}
               </optgroup>
               <optgroup label="Rattachement site client">
@@ -1249,7 +1259,13 @@
                       data-bulk-group="belts"
                     />
                   </td>
-                  <td class="py-3 pr-4" data-mail-field="client">{{ line.client.name if line.client else '—' }}</td>
+                  <td class="py-3 pr-4" data-mail-field="client">
+                    {% if line.client %}
+                      {{ line.client.entreprise.nom if line.client.entreprise else line.client.name }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
                   <td class="py-3 pr-4" data-mail-field="client_site">
                     {% if line.client_site %}
                       {{ line.client_site.denomination }}
