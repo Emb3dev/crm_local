@@ -3,7 +3,7 @@
 {% block title %}Tâches — CRM Local{% endblock %}
 {% block page_eyebrow %}Automatisations n8n{% endblock %}
 {% block page_title %}Tâches & envois rapides{% endblock %}
-{% block page_subtitle %}Centralisez vos téléversements PDF et MP3, déclenchez vos webhooks n8n et accédez aux formulaires opérationnels depuis une même vue.{% endblock %}
+{% block page_subtitle %}Centralisez vos téléversements PDF, déclenchez vos webhooks n8n et accédez aux formulaires opérationnels depuis une même vue.{% endblock %}
 {% block main_classes %}space-y-8{% endblock %}
 {% block head_extra %}
   <style>
@@ -25,7 +25,6 @@
       <button id="btnUpload1" type="button" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:border-indigo-300/60 dark:hover:bg-indigo-500/10">📄 Téléverser PDF → Rangement d'un rapport S/T</button>
       <button id="btnUpload2" type="button" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:border-indigo-300/60 dark:hover:bg-indigo-500/10">📑 Téléverser PDF → Régularisation d'une DI</button>
       <button id="btnUploadCSTS" type="button" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:border-indigo-300/60 dark:hover:bg-indigo-500/10">🧾 Téléverser PDF → Création d'un CSTS</button>
-      <button id="btnUploadMP3" type="button" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:border-indigo-300/60 dark:hover:bg-indigo-500/10">🎤 Soumettre un fichier MP3 → Transcription</button>
       <a href="https://forms.monday.com/forms/f2ad375540d46b0472e61808a03eb02e?r=euc1" target="_blank" class="inline-flex items-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-400/10">📦 Demande de matériel</a>
       <a href="https://wkf.ms/40kXh9x?priority_1=" target="_blank" class="inline-flex items-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-400/10">📝 Demande DC4</a>
       <a href="https://wkf.ms/3GRfc0O" target="_blank" class="inline-flex items-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 dark:border-indigo-400/40 dark:bg-indigo-500/10 dark:text-indigo-100 dark:hover:bg-indigo-400/10">🧾 Demande CSTS (-15k€)</a>
@@ -108,12 +107,10 @@
 
   <input id="fileInput1" type="file" accept="application/pdf" class="hidden" multiple />
   <input id="fileInput2" type="file" accept="application/pdf" class="hidden" multiple />
-  <input id="fileInputMP3" type="file" accept="audio/mpeg,audio/mp3" class="hidden" multiple />
 
   <script>
     const WEBHOOK_URL_1 = "https://n8n.srv947303.hstgr.cloud/webhook/50a1f768-40ec-4886-a38a-e42c98e07b9f";
     const WEBHOOK_URL_2 = "https://n8n.srv947303.hstgr.cloud/webhook/8057a176-0940-4b5f-b461-401831223a4a";
-    const WEBHOOK_URL_MP3 = "";
     const WEBHOOK_URL_CSTS = "https://n8n.srv947303.hstgr.cloud/webhook/c8760a79-7ab1-42cc-974a-88c728f418f2";
     const MAX_SIZE_MB = 25;
     const HISTORY_KEY = 'tachesUploadHistory';
@@ -121,12 +118,10 @@
 
     const btnUpload1 = document.getElementById('btnUpload1');
     const btnUpload2 = document.getElementById('btnUpload2');
-    const btnUploadMP3 = document.getElementById('btnUploadMP3');
     const btnUploadCSTS = document.getElementById('btnUploadCSTS');
 
     const fileInput1 = document.getElementById('fileInput1');
     const fileInput2 = document.getElementById('fileInput2');
-    const fileInputMP3 = document.getElementById('fileInputMP3');
 
     const cstsPanel = document.getElementById('cstsPanel');
     const cstsFile = document.getElementById('cstsFile');
@@ -445,7 +440,6 @@
 
     wireButton(btnUpload1, fileInput1, WEBHOOK_URL_1, 'application/pdf');
     wireButton(btnUpload2, fileInput2, WEBHOOK_URL_2, 'application/pdf');
-    wireButton(btnUploadMP3, fileInputMP3, WEBHOOK_URL_MP3, ['audio/mpeg', 'audio/mp3']);
 
     btnUploadCSTS?.addEventListener('click', () => {
       cstsPanel.classList.toggle('hidden');
