@@ -30,7 +30,6 @@
       <span>Nom entreprise *</span>
       <input
         name="company_name"
-        list="entreprise-names"
         required
         value="{{ form_values.company_name }}"
         placeholder="Ex: Dupont SARL"
@@ -153,10 +152,4 @@
     </div>
   </form>
 </section>
-
-<datalist id="entreprise-names">
-  {% for name in entreprise_name_options %}
-    <option value="{{ name }}"></option>
-  {% endfor %}
-</datalist>
 {% endblock %}
