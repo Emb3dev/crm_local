@@ -1065,7 +1065,14 @@ def _normalize_filter_dimensions(
 def list_filter_lines(
     session: Session, q: Optional[str] = None
 ) -> List[FilterLine]:
-    stmt = select(FilterLine).order_by(FilterLine.created_at.desc())
+    stmt = (
+        select(FilterLine)
+        .order_by(FilterLine.created_at.desc())
+        .options(
+            selectinload(FilterLine.client),
+            selectinload(FilterLine.client_site),
+        )
+    )
     if q:
         like = f"%{q}%"
         stmt = stmt.where(
@@ -1198,7 +1205,14 @@ def list_filter_lines_by_ids(session: Session, line_ids: Sequence[int]) -> List[
 
 
 def list_belt_lines(session: Session, q: Optional[str] = None) -> List[BeltLine]:
-    stmt = select(BeltLine).order_by(BeltLine.created_at.desc())
+    stmt = (
+        select(BeltLine)
+        .order_by(BeltLine.created_at.desc())
+        .options(
+            selectinload(BeltLine.client),
+            selectinload(BeltLine.client_site),
+        )
+    )
     if q:
         like = f"%{q}%"
         stmt = stmt.where(
@@ -1219,6 +1233,87 @@ def create_belt_line(session: Session, data: BeltLineCreate) -> BeltLine:
     session.commit()
     session.refresh(record)
     return record
+
+
+def bulk_assign_filter_lines_client(
+    session: Session, line_ids: Sequence[int], client_id: Optional[int]
+) -> int:
+    if not line_ids:
+        return 0
+
+    stmt = select(FilterLine).where(FilterLine.id.in_(line_ids))
+    records = session.exec(stmt).all()
+
+    for record in records:
+        record.client_id = client_id
+        record.client_site_id = None
+        session.add(record)
+
+    session.commit()
+    return len(records)
+
+
+def bulk_assign_filter_lines_site(
+    session: Session, line_ids: Sequence[int], client_site_id: Optional[int]
+) -> int:
+    if not line_ids:
+        return 0
+
+    stmt = select(FilterLine).where(FilterLine.id.in_(line_ids))
+    records = session.exec(stmt).all()
+
+    for record in records:
+        record.client_site_id = client_site_id
+        record.client_id = None
+        session.add(record)
+
+    session.commit()
+    return len(records)
+
+
+def bulk_assign_belt_lines_client(
+    session: Session, line_ids: Sequence[int], client_id: Optional[int]
+) -> int:
+    if not line_ids:
+        return 0
+
+    stmt = select(BeltLine).where(BeltLine.id.in_(line_ids))
+    records = session.exec(stmt).all()
+
+    for record in records:
+        record.client_id = client_id
+        record.client_site_id = None
+        session.add(record)
+
+    session.commit()
+    return len(records)
+
+
+def bulk_assign_belt_lines_site(
+    session: Session, line_ids: Sequence[int], client_site_id: Optional[int]
+) -> int:
+    if not line_ids:
+        return 0
+
+    stmt = select(BeltLine).where(BeltLine.id.in_(line_ids))
+    records = session.exec(stmt).all()
+
+    for record in records:
+        record.client_site_id = client_site_id
+        record.client_id = None
+        session.add(record)
+
+    session.commit()
+    return len(records)
+
+
+def list_client_sites(session: Session) -> List[ClientSite]:
+    stmt = (
+        select(ClientSite)
+        .order_by(ClientSite.denomination.asc())
+        .options(selectinload(ClientSite.client))
+    )
+    return session.exec(stmt).all()
 
 
 def get_belt_line(session: Session, line_id: int) -> Optional[BeltLine]:

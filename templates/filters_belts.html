@@ -129,6 +129,40 @@
       >
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2 {{ form_label() }}">
+            Client
+            <div class="relative">
+              <select name="client_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                <option value="" {% if not is_editing_filter or not editing_filter.client_id %}selected{% endif %}>Aucun</option>
+                {% for client in clients %}
+                  <option value="{{ client.id }}" {% if is_editing_filter and editing_filter.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+                {% endfor %}
+              </select>
+              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </div>
+          </label>
+          <label class="space-y-2 {{ form_label() }}">
+            Site client
+            <div class="relative">
+              <select name="client_site_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                <option value="" {% if not is_editing_filter or not editing_filter.client_site_id %}selected{% endif %}>Aucun</option>
+                {% for site in client_sites %}
+                  <option value="{{ site.id }}" {% if is_editing_filter and editing_filter.client_site_id == site.id %}selected{% endif %}>
+                    {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </div>
+          </label>
+          <label class="space-y-2 {{ form_label() }}">
             Site
             <input name="site" type="text" required value="{{ editing_filter.site if is_editing_filter else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
           </label>
@@ -295,6 +329,18 @@
               <option value="ordered:false">Marquer non commandé</option>
               <option value="contract:true">Marquer inclus contrat</option>
               <option value="contract:false">Marquer hors contrat</option>
+              <optgroup label="Rattachement client">
+                <option value="assign_client:">Retirer le rattachement</option>
+                {% for client in clients %}
+                  <option value="assign_client:{{ client.id }}">Client : {{ client.name }}</option>
+                {% endfor %}
+              </optgroup>
+              <optgroup label="Rattachement site client">
+                <option value="assign_site:">Retirer le rattachement</option>
+                {% for site in client_sites %}
+                  <option value="assign_site:{{ site.id }}">Site : {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}</option>
+                {% endfor %}
+              </optgroup>
               <option value="delete">Supprimer les lignes</option>
             </select>
             <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
@@ -322,6 +368,8 @@
             <th class="py-3 pr-4">
               <span class="sr-only">Sélection</span>
             </th>
+            <th class="py-3 pr-4">Client</th>
+            <th class="py-3 pr-4">Site client</th>
             <th class="py-3 pr-4">Site</th>
             <th class="py-3 pr-4">Équipement</th>
             <th class="py-3 pr-4">Format</th>
@@ -349,6 +397,46 @@
                     <input type="hidden" form="filter-inline-{{ line.id }}" name="belts_q" value="{{ belts_q }}" />
                   {% endif %}
                   <td class="py-3 pr-4">—</td>
+                  <td class="py-3 pr-4">
+                    <div class="relative">
+                      <select
+                        form="filter-inline-{{ line.id }}"
+                        name="client_id"
+                        class="nova-select peer w-full rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
+                      >
+                        <option value="" {% if not editing_filter.client_id %}selected{% endif %}>Aucun</option>
+                        {% for client in clients %}
+                          <option value="{{ client.id }}" {% if editing_filter.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+                        {% endfor %}
+                      </select>
+                      <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                        </svg>
+                      </span>
+                    </div>
+                  </td>
+                  <td class="py-3 pr-4">
+                    <div class="relative">
+                      <select
+                        form="filter-inline-{{ line.id }}"
+                        name="client_site_id"
+                        class="nova-select peer w-full rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
+                      >
+                        <option value="" {% if not editing_filter.client_site_id %}selected{% endif %}>Aucun</option>
+                        {% for site in client_sites %}
+                          <option value="{{ site.id }}" {% if editing_filter.client_site_id == site.id %}selected{% endif %}>
+                            {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}
+                          </option>
+                        {% endfor %}
+                      </select>
+                      <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                        </svg>
+                      </span>
+                    </div>
+                  </td>
                   <td id="filter-{{ line.id }}" class="py-3 pr-4">
                     <input
                       form="filter-inline-{{ line.id }}"
@@ -515,6 +603,14 @@
                       data-bulk-group="filters"
                     />
                   </td>
+                  <td class="py-3 pr-4" data-mail-field="client">{{ line.client.name if line.client else '—' }}</td>
+                  <td class="py-3 pr-4" data-mail-field="client_site">
+                    {% if line.client_site %}
+                      {{ line.client_site.denomination }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
                   <td id="filter-{{ line.id }}" class="py-3 pr-4 font-medium text-slate-900 dark:text-white" data-mail-field="site">{{ line.site }}</td>
                   <td class="py-3 pr-4" data-mail-field="equipment">{{ line.equipment }}</td>
                   <td class="py-3 pr-4" data-mail-field="format">{{ filter_format_labels.get(line.format_type, line.format_type) }}</td>
@@ -598,6 +694,40 @@
         id="belts-form"
       >
         <div class="grid gap-4 sm:grid-cols-2">
+          <label class="space-y-2 {{ form_label() }}">
+            Client
+            <div class="relative">
+              <select name="client_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                <option value="" {% if not is_editing_belt or not editing_belt.client_id %}selected{% endif %}>Aucun</option>
+                {% for client in clients %}
+                  <option value="{{ client.id }}" {% if is_editing_belt and editing_belt.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+                {% endfor %}
+              </select>
+              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </div>
+          </label>
+          <label class="space-y-2 {{ form_label() }}">
+            Site client
+            <div class="relative">
+              <select name="client_site_id" class="nova-select peer mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                <option value="" {% if not is_editing_belt or not editing_belt.client_site_id %}selected{% endif %}>Aucun</option>
+                {% for site in client_sites %}
+                  <option value="{{ site.id }}" {% if is_editing_belt and editing_belt.client_site_id == site.id %}selected{% endif %}>
+                    {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </div>
+          </label>
           <label class="space-y-2 {{ form_label() }}">
             Site
             <input name="site" type="text" required value="{{ editing_belt.site if is_editing_belt else '' }}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/15 dark:bg-gradient-to-r dark:from-midnight-800/80 dark:via-midnight-900/80 dark:to-midnight-900 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:ring-indigo-400/70" />
@@ -720,6 +850,18 @@
               <option value="ordered:false">Marquer non commandé</option>
               <option value="contract:true">Marquer inclus contrat</option>
               <option value="contract:false">Marquer hors contrat</option>
+              <optgroup label="Rattachement client">
+                <option value="assign_client:">Retirer le rattachement</option>
+                {% for client in clients %}
+                  <option value="assign_client:{{ client.id }}">Client : {{ client.name }}</option>
+                {% endfor %}
+              </optgroup>
+              <optgroup label="Rattachement site client">
+                <option value="assign_site:">Retirer le rattachement</option>
+                {% for site in client_sites %}
+                  <option value="assign_site:{{ site.id }}">Site : {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}</option>
+                {% endfor %}
+              </optgroup>
               <option value="delete">Supprimer les lignes</option>
             </select>
             <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
@@ -747,6 +889,8 @@
             <th class="py-3 pr-4">
               <span class="sr-only">Sélection</span>
             </th>
+            <th class="py-3 pr-4">Client</th>
+            <th class="py-3 pr-4">Site client</th>
             <th class="py-3 pr-4">Site</th>
             <th class="py-3 pr-4">Équipement</th>
             <th class="py-3 pr-4">Référence</th>
@@ -770,6 +914,46 @@
                     <input type="hidden" form="belt-inline-{{ line.id }}" name="belts_q" value="{{ belts_q }}" />
                   {% endif %}
                   <td class="py-3 pr-4">—</td>
+                  <td class="py-3 pr-4">
+                    <div class="relative">
+                      <select
+                        form="belt-inline-{{ line.id }}"
+                        name="client_id"
+                        class="nova-select peer w-full rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
+                      >
+                        <option value="" {% if not editing_belt.client_id %}selected{% endif %}>Aucun</option>
+                        {% for client in clients %}
+                          <option value="{{ client.id }}" {% if editing_belt.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+                        {% endfor %}
+                      </select>
+                      <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                        </svg>
+                      </span>
+                    </div>
+                  </td>
+                  <td class="py-3 pr-4">
+                    <div class="relative">
+                      <select
+                        form="belt-inline-{{ line.id }}"
+                        name="client_site_id"
+                        class="nova-select peer w-full rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
+                      >
+                        <option value="" {% if not editing_belt.client_site_id %}selected{% endif %}>Aucun</option>
+                        {% for site in client_sites %}
+                          <option value="{{ site.id }}" {% if editing_belt.client_site_id == site.id %}selected{% endif %}>
+                            {{ site.denomination }}{% if site.client %} — {{ site.client.name }}{% endif %}
+                          </option>
+                        {% endfor %}
+                      </select>
+                      <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition peer-focus:text-indigo-500 dark:text-indigo-200 dark:peer-focus:text-indigo-100 dark:peer-hover:text-indigo-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                        </svg>
+                      </span>
+                    </div>
+                  </td>
                   <td id="belt-{{ line.id }}" class="py-3 pr-4">
                     <input
                       form="belt-inline-{{ line.id }}"
@@ -882,6 +1066,14 @@
                       class="h-4 w-4 rounded border-slate-300 text-indigo-600 shadow-sm focus:ring-indigo-400 dark:border-slate-600 dark:bg-midnight-800 dark:checked:bg-indigo-500"
                       data-bulk-group="belts"
                     />
+                  </td>
+                  <td class="py-3 pr-4" data-mail-field="client">{{ line.client.name if line.client else '—' }}</td>
+                  <td class="py-3 pr-4" data-mail-field="client_site">
+                    {% if line.client_site %}
+                      {{ line.client_site.denomination }}
+                    {% else %}
+                      —
+                    {% endif %}
                   </td>
                   <td id="belt-{{ line.id }}" class="py-3 pr-4 font-medium text-slate-900 dark:text-white" data-mail-field="site">{{ line.site }}</td>
                   <td class="py-3 pr-4" data-mail-field="equipment">{{ line.equipment }}</td>

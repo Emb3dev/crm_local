@@ -417,6 +417,12 @@ class WorkloadCellUpdate(SQLModel):
 class FilterLineBase(SQLModel):
     site: str = Field(index=True, description="Nom du site")
     equipment: str = Field(index=True, description="Équipement concerné")
+    client_id: Optional[int] = Field(
+        default=None, foreign_key="client.id", description="Client rattaché"
+    )
+    client_site_id: Optional[int] = Field(
+        default=None, foreign_key="clientsite.id", description="Site client rattaché"
+    )
     efficiency: Optional[str] = Field(default=None, description="Classe d'efficacité du filtre")
     format_type: str = Field(
         description="Format du filtre (cousus sur fil, cadre…)",
@@ -442,6 +448,8 @@ class FilterLineBase(SQLModel):
 class FilterLine(FilterLineBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    client: Optional[Client] = Relationship()
+    client_site: Optional[ClientSite] = Relationship()
 
 
 class FilterLineCreate(FilterLineBase):
@@ -460,6 +468,8 @@ class FilterLineUpdate(SQLModel):
     order_week: Optional[str] = None
     included_in_contract: Optional[bool] = None
     ordered: Optional[bool] = None
+    client_id: Optional[int] = None
+    client_site_id: Optional[int] = None
 
 
 # =======================
@@ -471,6 +481,12 @@ class BeltLineBase(SQLModel):
     site: str = Field(index=True, description="Nom du site")
     equipment: str = Field(index=True, description="Équipement concerné")
     reference: str = Field(description="Référence de la courroie")
+    client_id: Optional[int] = Field(
+        default=None, foreign_key="client.id", description="Client rattaché"
+    )
+    client_site_id: Optional[int] = Field(
+        default=None, foreign_key="clientsite.id", description="Site client rattaché"
+    )
     quantity: int = Field(default=1, description="Quantité requise")
     order_week: Optional[str] = Field(default=None, description="Semaine de commande (S01…)")
     included_in_contract: bool = Field(
@@ -482,6 +498,8 @@ class BeltLineBase(SQLModel):
 class BeltLine(BeltLineBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    client: Optional[Client] = Relationship()
+    client_site: Optional[ClientSite] = Relationship()
 
 
 class BeltLineCreate(BeltLineBase):
@@ -496,6 +514,8 @@ class BeltLineUpdate(SQLModel):
     order_week: Optional[str] = None
     included_in_contract: Optional[bool] = None
     ordered: Optional[bool] = None
+    client_id: Optional[int] = None
+    client_site_id: Optional[int] = None
 
 
 # =======================
