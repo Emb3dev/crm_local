@@ -425,13 +425,15 @@
         {% if belts_q %}
           <input type="hidden" name="belts_q" value="{{ belts_q }}" />
         {% endif %}
-        <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Action sélection
-          <div class="relative">
-            <select
-              name="bulk_action"
-              class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
-            >
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+            Action sélection
+            <div class="relative">
+              <select
+                id="filters-bulk-action"
+                name="bulk_action"
+                class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
+              >
               <option value="export:excel">Exporter en Excel</option>
               <option value="ordered:true">Marquer commandé</option>
               <option value="ordered:false">Marquer non commandé</option>
@@ -458,8 +460,18 @@
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
               </svg>
             </span>
-          </div>
-        </label>
+            </div>
+          </label>
+          <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+            <span class="sr-only">Filtrer les entreprises ou sites</span>
+            <input
+              type="search"
+              data-bulk-filter-for="filters-bulk-action"
+              placeholder="Filtrer entreprises ou sites"
+              class="w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70"
+            />
+          </label>
+        </div>
         <button
           type="submit"
           class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/60 dark:bg-indigo-500/90 dark:hover:bg-indigo-400"
@@ -1016,13 +1028,15 @@
         {% if belts_q %}
           <input type="hidden" name="belts_q" value="{{ belts_q }}" />
         {% endif %}
-        <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Action sélection
-          <div class="relative">
-            <select
-              name="bulk_action"
-              class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
-            >
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+            Action sélection
+            <div class="relative">
+              <select
+                id="belts-bulk-action"
+                name="bulk_action"
+                class="nova-select peer w-full rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-400/40 dark:bg-white/5 dark:text-indigo-100 dark:shadow-indigo-500/20 dark:focus:border-indigo-200 dark:focus:ring-indigo-400/70"
+              >
               <option value="export:excel">Exporter en Excel</option>
               <option value="ordered:true">Marquer commandé</option>
               <option value="ordered:false">Marquer non commandé</option>
@@ -1049,8 +1063,18 @@
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
               </svg>
             </span>
-          </div>
-        </label>
+            </div>
+          </label>
+          <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 transition-colors duration-300 dark:text-slate-300">
+            <span class="sr-only">Filtrer les entreprises ou sites</span>
+            <input
+              type="search"
+              data-bulk-filter-for="belts-bulk-action"
+              placeholder="Filtrer entreprises ou sites"
+              class="w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:focus:border-indigo-300 dark:focus:ring-indigo-400/70"
+            />
+          </label>
+        </div>
         <button
           type="submit"
           class="inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30 transition hover:bg-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-indigo-400/60 dark:bg-indigo-500/90 dark:hover:bg-indigo-400"
@@ -1423,6 +1447,36 @@
         return true;
       }
 
+      function filterBulkOptions(input, context = document) {
+        const targetId = input?.dataset.bulkFilterFor;
+        if (!targetId) return;
+
+        const select = context.getElementById(targetId) || document.getElementById(targetId);
+        if (!select) return;
+
+        const query = input.value.trim().toLowerCase();
+
+        select.querySelectorAll("optgroup option").forEach((option) => {
+          const matches = !query || option.textContent.toLowerCase().includes(query);
+          option.hidden = Boolean(query) && !matches;
+        });
+
+        select.querySelectorAll("optgroup").forEach((group) => {
+          const hasVisible = Array.from(group.querySelectorAll("option")).some((option) => !option.hidden);
+          group.hidden = Boolean(query) && !hasVisible;
+        });
+      }
+
+      function bindBulkFilters(context = document) {
+        context.querySelectorAll("input[data-bulk-filter-for]").forEach((input) => {
+          if (input.dataset.bulkFilterBound === "true") return;
+          input.dataset.bulkFilterBound = "true";
+
+          filterBulkOptions(input, context);
+          input.addEventListener("input", () => filterBulkOptions(input, context));
+        });
+      }
+
       function togglePocketField(select, root = document) {
         const formId = select.getAttribute("form") || select.form?.id;
         const pocketSelector = formId
@@ -1528,6 +1582,7 @@
 
         bindPocketFields(shell);
         bindPickers(shell);
+        bindBulkFilters(shell);
 
         shell
           .querySelectorAll('form[action$="bulk-actions"]')
